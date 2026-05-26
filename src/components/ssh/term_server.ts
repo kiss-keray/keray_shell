@@ -199,9 +199,7 @@ export default class TermServer {
             }
             this.terminal!.write(message);
             const text = terminalDataToString(message);
-            console.log("text", text);
             for (const path of parseOsc7Cwd(text, this.homeDir)) {
-                console.log("path", path, "  text:", text);
                 this._setCwd(path);
             }
         };

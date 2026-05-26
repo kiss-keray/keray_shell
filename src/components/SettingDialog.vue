@@ -98,7 +98,25 @@ watch(
     loadFalg,
     (newVal) => {
         if (!newVal) return;
-        Object.assign(draft, { ...configStore });
+        const config: ConfigModel = {
+            theme: configStore.theme,
+            themeMode: configStore.themeMode,
+            fontSize: configStore.fontSize,
+            downloadDir: configStore.downloadDir,
+            compactMode: configStore.compactMode,
+            overviewWidthPx: configStore.overviewWidthPx,
+            sftpPanelHeightPx: configStore.sftpPanelHeightPx,
+            sftpTreeWidthPx: configStore.sftpTreeWidthPx,
+            termFontSize: configStore.termFontSize,
+            termLineHeight: configStore.termLineHeight,
+            termFontFamily: configStore.termFontFamily,
+            termScrollback: configStore.termScrollback,
+            serverSyncKey: configStore.serverSyncKey,
+            serverSyncType: configStore.serverSyncType,
+            serverSyncData: configStore.serverSyncData,
+            autoServerSync: configStore.autoServerSync,
+        };
+        Object.assign(draft, config);
         serverSyncPath.value = draft.serverSyncType === "localFile" ? (draft.serverSyncData as string) : "";
         serverSyncUrl.value = draft.serverSyncType === "http" ? (draft.serverSyncData as string) : "";
         remoteSync.value = draft.serverSyncType === "remoteFile" ? (draft.serverSyncData as ServerRemoteData) : remoteSync.value;

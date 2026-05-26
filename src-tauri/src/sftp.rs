@@ -2,7 +2,7 @@ use crate::dto::res::Res;
 use crate::sftp::TransferFileRes::{Cancelled, Paused, Success};
 use crate::ssh::{server_get_channel, server_get_channel_other, ServerModel};
 use crate::utils::now_millis;
-use log::{debug, info};
+use log::debug;
 use once_cell::sync::Lazy;
 use russh::client::Msg;
 use russh::{Channel, ChannelMsg};

@@ -251,7 +251,14 @@ function platformWindowChrome(): Pick<WindowOptions, "decorations" | "titleBarSt
 
 /** 创建新窗口 */
 async function createNewWindow(label: string, tp: AppType, queryStr: string, params: Omit<WebviewOptions, "x" | "y" | "width" | "height"> & WindowOptions, data: unknown): Promise<WebviewWindow> {
-    const win = new WebviewWindow(label, {
+    once<AppStartOkPayload>(APP_START_OK_EVENT, (e) => {
+        const okLabel = e.payload.label;
+        if (okLabel !== label) return;
+        emitTo({ kind: "Window", label: label }, WEBVIEW_INIT_DATA_EVENT, data).catch((e) => {
+            console.error("send WEBVIEW_INIT_DATA_EVENT error", e);
+        });
+    });
+    return new WebviewWindow(label, {
         url: `index.html?tp=${tp}${queryStr}`,
         title: "",
         center: true,
@@ -260,14 +267,6 @@ async function createNewWindow(label: string, tp: AppType, queryStr: string, par
         ...platformWindowChrome(),
         ...params,
     });
-    once<AppStartOkPayload>(APP_START_OK_EVENT, (e) => {
-        const okLabel = e.payload.label;
-        if (okLabel !== win.label) return;
-        emitTo({ kind: "Window", label: win.label }, WEBVIEW_INIT_DATA_EVENT, data).catch((e) => {
-            console.error("send WEBVIEW_INIT_DATA_EVENT error", e);
-        });
-    });
-    return win;
 }
 
 export function getMainWinLabel() {

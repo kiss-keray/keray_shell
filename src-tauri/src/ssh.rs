@@ -1,6 +1,6 @@
 use crate::dto::res::Res;
 use getset::{Getters, Setters};
-use log::{debug, info};
+use log::debug;
 use once_cell::sync::Lazy;
 use russh::client::{Handle, Msg};
 use russh::keys::{decode_secret_key, ssh_key, Error as KeyError, PrivateKeyWithHashAlg};
@@ -93,7 +93,11 @@ fn decrypt_legacy_des_rsa_pem(pem: &str, passphrase: &str) -> Result<String, Key
         if line.starts_with("-----END ") {
             break;
         }
-        if in_body && line.chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=') {
+        if in_body
+            && line
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '/' || c == '=')
+        {
             b64.push_str(line);
         }
     }
@@ -144,7 +148,10 @@ fn decrypt_legacy_des_rsa_pem(pem: &str, passphrase: &str) -> Result<String, Key
 }
 
 /// 若 PEM 为 DES-EDE3-CBC 加密的 RSA 私钥，先解密再交给 russh 解析。
-fn preprocess_legacy_encrypted_pem(pem: &str, passphrase: Option<&str>) -> Result<String, KeyError> {
+fn preprocess_legacy_encrypted_pem(
+    pem: &str,
+    passphrase: Option<&str>,
+) -> Result<String, KeyError> {
     if !pem.contains("Proc-Type: 4,ENCRYPTED") || !pem.contains("DEK-Info: DES-EDE3-CBC,") {
         return Ok(pem.to_string());
     }
@@ -153,7 +160,10 @@ fn preprocess_legacy_encrypted_pem(pem: &str, passphrase: Option<&str>) -> Resul
 }
 
 /// 解析多种 SSH 私钥格式（OpenSSH / PKCS#8 / PKCS#1 / 传统 DES 加密 PEM）。
-fn decode_private_key(pem: &str, passphrase: Option<&str>) -> Result<ssh_key::PrivateKey, KeyError> {
+fn decode_private_key(
+    pem: &str,
+    passphrase: Option<&str>,
+) -> Result<ssh_key::PrivateKey, KeyError> {
     let pem = normalize_pem(pem);
     let passphrase = non_empty_passphrase(passphrase);
 
@@ -231,9 +241,7 @@ async fn get_handle(model: &ServerModel) -> Result<Handle<Client>, Res<()>> {
 
     let password = model.password().clone().filter(|p| !p.is_empty());
     if let Some(password) = password {
-        let res = session
-            .authenticate_password(model.user(), password)
-            .await;
+        let res = session.authenticate_password(model.user(), password).await;
         if let Ok(auth) = res {
             if auth.success() {
                 return Ok(session);

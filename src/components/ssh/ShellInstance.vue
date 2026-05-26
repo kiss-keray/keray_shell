@@ -35,16 +35,11 @@ const selectUid = computed(() => channelInstancesStore.selectSessionId);
 let dragPayload: DragStartPayload | null = null; // 当前拖动tab的数据
 let dragOverOtherWindow = false; // 是否拖动到其他窗口 在其他窗口时释放时不创建新窗口
 
-watch(
-    windowInitData,
-    (initData) => {
-        if (!initData) return;
-        if (appType !== "child") return;
-        if (!initData) return;
-        dragOk(initData);
-    },
-    { immediate: true },
-);
+watch(windowInitData, (initData) => {
+    if (appType !== "child") return;
+    if (!initData) return;
+    dragOk(initData);
+});
 
 const closeInstance = (item: ChannelInstance) => {
     invoke("close_term", { sid: item.sessionId });
@@ -132,6 +127,9 @@ onMounted(async () => {
         }
     });
     observer.observe(root.value);
+    if (appType === "child" && windowInitData.value) {
+        dragOk(windowInitData.value);
+    }
 });
 
 onUnmounted(() => {

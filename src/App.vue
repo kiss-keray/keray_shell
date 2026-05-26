@@ -118,6 +118,7 @@ onMounted(async () => {
         win.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async () => {
             const mls = await mainLabels();
             if (mls.length === 1 && mls[0] === win.label) {
+                win.setFocus();
                 // 主窗口了 提示确定关闭
                 const ok = await showConfirm({
                     title: "确定关闭",
