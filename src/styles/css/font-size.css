@@ -1,0 +1,18 @@
+/**
+ * UI 字号比例尺（以 --font-size-base 为 12px 基准设计）。
+ * 基准由 config.fontSize 经 applyUiFontSize() 写入，html font-size 同步为 rem 锚点。
+ */
+:root {
+    --font-size-base: 12px;
+
+    --font-size-2xs: calc(var(--font-size-base) * 10 / 12);
+    --font-size-xs: calc(var(--font-size-base) * 11 / 12);
+    --font-size-md: calc(var(--font-size-base) * 13 / 12);
+    --font-size-lg: calc(var(--font-size-base) * 14 / 12);
+    --font-size-xl: calc(var(--font-size-base) * 15 / 12);
+    --font-size-2xl: calc(var(--font-size-base) * 16 / 12);
+    --font-size-3xl: calc(var(--font-size-base) * 18 / 12);
+    --font-size-4xl: calc(var(--font-size-base) * 20 / 12);
+    --font-size-icon: calc(var(--font-size-base) * 2);
+    --font-size-icon-lg: calc(var(--font-size-base) * 26 / 12);
+}
