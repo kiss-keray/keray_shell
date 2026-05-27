@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { buildMoveConfirmMessage } from "@/utils/confirmMessage";
 import { ChannelInstanceProvideKey, CustomMenusEventKey, SftpActiveItemKey } from "@/utils/constant";
-import { addFileItem, changeFileItemName, changeFileItemPermissions, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
+import { addFileItem, changeFileItemName, changeFileItemPermissions, compareNameLikeExplorer, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
 import { showPermissionEditor } from "./ui";
 import useBus, { FileDragEndEventKey, FileDragStartEventKey, RefreshFileListEventKey } from "@/composables/useBus";
 import { baseName, checkLinuxFileName } from "@/utils/fsUtil";
@@ -28,6 +28,10 @@ const editNameInputRef = ref<HTMLInputElement | null>(null);
 const leaf = computed(() => {
     if (props.fileItem.children === null) return false;
     return props.fileItem.children.filter((v) => v.isDir).length === 0;
+});
+
+const showChildren = computed(() => {
+    return (props.fileItem.children || []).filter((v) => v.isDir).sort((a, b) => compareNameLikeExplorer(a.id, b.id));
 });
 
 watch(activeItem, (newVal) => {
@@ -361,7 +365,7 @@ async function drop(e: DragEvent) {
             </div>
         </div>
         <div v-show="fileItem.open">
-            <SftpDirTreeItem v-for="child in (fileItem.children ?? []).filter((v) => v.isDir)" :key="child.id" :file-item="child" :tree-root-ref="treeRootRef" />
+            <SftpDirTreeItem v-for="child in showChildren" :key="child.id" :file-item="child" :tree-root-ref="treeRootRef" />
         </div>
     </div>
 </template>

@@ -995,8 +995,6 @@
 
     /* SftpTransferItem.vue */
     .transfer-item {
-        border-radius: 8px;
-        padding: 8px 10px;
         @include nt-out;
 
         .download-track {
@@ -1004,7 +1002,7 @@
         }
 
         .download-bar {
-            background: linear-gradient(90deg, rgba(from var(--nt-accent) r g b / 0.78), var(--nt-danger-solid));
+            background: linear-gradient(90deg, rgba(from var(--nt-danger) r g b / 0.78), var(--nt-success));
         }
 
         .group-ic {

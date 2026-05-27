@@ -77,7 +77,7 @@ function openContextMenu(e: MouseEvent) {
 
 <template>
     <div v-if="item.status !== 'cancelled'" :style="{ marginLeft: `${level * 24}px` }" class="transfer-item" @contextmenu="openContextMenu($event)">
-        <div class="w-full">
+        <div class="title-line">
             <div class="line1" :class="{ [item.isDir ? 'is-dir' : 'is-file']: true }">
                 <div class="flex items-center gap-2">
                     <Icon v-if="item.isDir" :icon="open ? 'mdi:chevron-down' : 'mdi:chevron-right'" class="group-ic" @click.stop="open = !open" />
@@ -117,6 +117,11 @@ function openContextMenu(e: MouseEvent) {
 <style scoped lang="scss">
 .transfer-item {
     margin: 8px 0;
+    border-radius: 8px;
+    padding: 8px 0px 8px 10px;
+    .title-line {
+        width: 98%;
+    }
     .line1 {
         display: flex;
         justify-content: space-between;

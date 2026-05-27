@@ -3,7 +3,7 @@ import Draggable from "vuedraggable";
 
 import { buildDeleteConfirmMessage, buildMoveConfirmMessage } from "@/utils/confirmMessage";
 import { baseName, oneFileRemoteItem, remoteCopy, writeLocalFileToRemote } from "@/utils/fsUtil";
-import { addFileItem, changeFileItemName, changeFileItemPermissions, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
+import { addFileItem, changeFileItemName, changeFileItemPermissions, compareNameLikeExplorer, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
 import { showPermissionEditor } from "./ui";
 import { dragListener, formatAdaptiveBytes } from "@/utils/project";
 import dayjs from "dayjs";
@@ -220,7 +220,6 @@ const renameItem = ref<FileStoreItem | null>(null); // 重命名项
 const editName = ref(""); // 重命名，新建文件的名称
 const uiActive = ref<boolean>(true); // 是否是UI激活状态
 const sortState = reactive<{ key: ColKey; order: SortOrder }>({ key: "name", order: "asc" });
-const sortCollator = new Intl.Collator(undefined, { sensitivity: "base", numeric: true });
 let resizeState: { key: ColKey; startX: number; startW: number } | null = null;
 const editNameInputRef = ref<HTMLInputElement | null>(null);
 const shiftKeyIndex = ref<number | null>(null);
@@ -286,13 +285,6 @@ function formatPermissionSymbolic(row: FileStoreItem): string {
 
 function isEditableTextFile(row: FileStoreItem): boolean {
     return !row.isDir && !NON_EDITABLE_EXTS.has(fileExtension(baseName(row.id)));
-}
-
-function compareNameLikeExplorer(a: string, b: string): number {
-    const ah = a.startsWith(".");
-    const bh = b.startsWith(".");
-    if (ah !== bh) return ah ? -1 : 1;
-    return sortCollator.compare(a, b);
 }
 
 function compareNullableNumber(a: number | null, b: number | null): number {

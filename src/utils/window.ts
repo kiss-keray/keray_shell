@@ -49,7 +49,6 @@ export async function openOrFocusServerTreeWindow(): Promise<void> {
         {
             width: 1000,
             height: 600,
-            center: false,
         },
         {},
     );
@@ -145,7 +144,6 @@ export async function openOrFocusMonacoEditorWindow(payload: MonacoEditorWindowP
         {
             width: 800,
             height: 680,
-            center: false,
         },
         payload,
     );
@@ -232,7 +230,6 @@ export async function openOrFocusChildWindow(item: ChannelInstance, payload: Chi
             width: document.body.clientWidth,
             height: document.body.clientHeight,
             fullscreen: payload.fullscreen,
-            center: false,
         },
         {
             window: payload.window,
@@ -261,7 +258,7 @@ async function createNewWindow(label: string, tp: AppType, queryStr: string, par
     return new WebviewWindow(label, {
         url: `index.html?tp=${tp}${queryStr}`,
         title: "",
-        center: true,
+        center: false,
         resizable: true,
         transparent: true,
         ...platformWindowChrome(),

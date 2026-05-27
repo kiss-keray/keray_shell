@@ -296,6 +296,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             detail.error = errText(error, "失败");
         } finally {
             clearInterval(bpsTask);
+            detail.requestId = undefined;
         }
         syncParentStatus(detail);
     }
@@ -365,6 +366,9 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             });
             treeForEachDeep(task, (item, parent) => {
                 item.parent = parent;
+                if (item.isDir) {
+                    item.total = item.children!.reduce((acc, child) => acc + (child.isDir ? child.total! : 1), 0);
+                }
             });
             taskItems.value.push(task);
         }
