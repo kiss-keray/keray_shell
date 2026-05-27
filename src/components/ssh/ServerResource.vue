@@ -1,7 +1,11 @@
 <script setup lang="ts">
 const serverOverviewStore = useServerOverviewStore();
 const channelInstancesStore = useChannelInstancesStore();
-const { selectSession, selectSessionId } = toRefs(channelInstancesStore);
+const { selectSession, selectSessionId } = toRefs(channelInstancesStore) as {
+    selectSessionId: Ref<string>;
+    selectSession: Ref<ChannelInstance>;
+};
+
 const overview = computed<ServerOverviewState | undefined>(() => selectSession.value?.overview);
 const processes = computed(() => overview.value?.processes ?? []);
 const procSort = computed<OverviewProcessSort>(() => (overview.value?.processSort === "cpu" ? "cpu" : "mem"));

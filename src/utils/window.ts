@@ -136,7 +136,6 @@ export async function openOrFocusMonacoEditorWindow(payload: MonacoEditorWindowP
         await existingWin.setFocus();
         return;
     }
-    console.log("payload:", payload);
     await createNewWindow(
         `monaco-editor-${uuid()}`,
         "monaco-editor",

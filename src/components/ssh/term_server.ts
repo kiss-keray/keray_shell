@@ -7,7 +7,6 @@ import { SearchAddon } from "@xterm/addon-search";
 import { invoke } from "../../utils/project";
 import type { ChannelInstance } from "../../stores/channelInstances";
 import { SerializeAddon } from "@xterm/addon-serialize";
-import type { ServerRustModel } from "@/stores/serverData";
 import { resolveRemoteHome } from "@/utils/fsUtil";
 import { normalizePosixPath, parseOsc7Cwd, terminalDataToString } from "@/utils/termCwd";
 const searchOptions: ISearchOptions = {
@@ -35,23 +34,22 @@ export interface TerminalSnapshot {
     select?: IBufferRange;
     offsety: number;
 }
-
 export default class TermServer {
-    private server: ChannelInstance;
+    private readonly server: ChannelInstance;
     private fitAddon: FitAddon;
     private searchAddon: SearchAddon;
     private serializeAddon: SerializeAddon;
     private terminal: Terminal | null = null;
     private pingTask: ReturnType<typeof setTimeout> | undefined;
-    private enterEscCall: VoidFunction = () => {};
+    private zeroLineNumber: number = 0;
+    private currentCwd = "/";
+    private homeDir = "/";
+    private selectedText: string | null = null;
+
     private lineNumberChangeFun: VoidFunction = () => {};
     private keyEventFun: KeyEventCallback = () => false;
-    private zeroLineNumber: number = 0;
-    private inputBuffer = "";
-    private currentCwd = "/";
-    private previousCwd: string | null = null;
-    private homeDir = "/";
     private cwdChangeCallback: ((path: string) => void) | null = null;
+    private onDataCallback: ((data: string) => void) | null = null;
 
     //
     private _lastChangeFontSizeTime: number = 0;
@@ -170,6 +168,18 @@ export default class TermServer {
         const readerChannel = new Channel<string | Uint8Array<ArrayBufferLike>>();
         this.server.status = "connecting";
         if (noSnapshot) this.terminal!.write("连接中...\r\n");
+        readerChannel.onmessage = (message) => {
+            if (message.length === 1 && message[0] === 0) {
+                // 连接断开
+                this.server.status = "disconnected";
+                return;
+            }
+            this.terminal!.write(message);
+            const text = terminalDataToString(message);
+            for (const path of parseOsc7Cwd(text, this.homeDir)) {
+                this._setCwd(path);
+            }
+        };
         await invoke("open_ssh", {
             ...this._ps(),
             reader: readerChannel,
@@ -177,7 +187,6 @@ export default class TermServer {
         })
             .then(async () => {
                 this.server.status = "connected";
-                if (noSnapshot) this.terminal!.clear();
                 try {
                     const home = await resolveRemoteHome(this.server.server.id);
                     this.homeDir = normalizePosixPath(home);
@@ -191,18 +200,6 @@ export default class TermServer {
                 this.server.status = "disconnected";
                 if (noSnapshot) this.terminal!.write("连接失败\r\n");
             });
-        readerChannel.onmessage = (message) => {
-            if (message.length === 1 && message[0] === 0) {
-                // 连接断开
-                this.server.status = "disconnected";
-                return;
-            }
-            this.terminal!.write(message);
-            const text = terminalDataToString(message);
-            for (const path of parseOsc7Cwd(text, this.homeDir)) {
-                this._setCwd(path);
-            }
-        };
     }
 
     close() {
@@ -349,10 +346,11 @@ export default class TermServer {
 
     _onData(data: string) {
         this.lineNumberChangeFun();
-        if (data === "\x1b") {
-            this.enterEscCall();
+        // 如果是ctrl+c 并且有选择文本 不处理
+        if (data === "\u0003" && this.selectedText) {
             return;
         }
+        this.onDataCallback?.(data);
         try {
             invoke("write_cmd", { ...this._ps(), cmd: data });
         } catch (e) {
@@ -363,7 +361,6 @@ export default class TermServer {
     private _setCwd(path: string) {
         const normalized = normalizePosixPath(path);
         if (normalized === this.currentCwd) return;
-        this.previousCwd = this.currentCwd;
         this.currentCwd = normalized;
         this.cwdChangeCallback?.(normalized);
     }
@@ -394,6 +391,10 @@ export default class TermServer {
     onSelectionChange(selectionChangeFun: (text: string) => void) {
         this.terminal!.onSelectionChange(() => {
             const text = this.terminal!.getSelection();
+            // 延迟赋值到this
+            setTimeout(() => {
+                this.selectedText = text;
+            }, 60);
             selectionChangeFun(text);
         });
     }
@@ -406,8 +407,7 @@ export default class TermServer {
         this.cwdChangeCallback = call;
     }
 
-    // setter
-    setEnterEscCall(call: VoidFunction) {
-        this.enterEscCall = call;
+    onData(call: (data: string) => void) {
+        this.onDataCallback = call;
     }
 }

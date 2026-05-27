@@ -8,6 +8,7 @@ export const ActiveFileEventKey = "ActiveFileEventKey"; // 选择目录事件
 export const FileDragStartEventKey = "FileDragStartEventKey"; // 文件拖拽开始事件
 export const FileDragEndEventKey = "FileDragEndEventKey"; // 文件拖拽结束事件
 export const SftpProcessEventKey = "SftpProcessEventKey"; // sftp非上传下载时的传输进度事件
+export const TermGroupCommandEventKey = "TermGroupCommandEventKey"; // 终端组命令事件
 
 export type BusEvents = {
     [DirectRemotePathEventKey]: { sid: string; path: string };
@@ -17,6 +18,7 @@ export type BusEvents = {
     [FileDragStartEventKey]: RemoteFileItem[];
     [FileDragEndEventKey]: void;
     [SftpProcessEventKey]: number;
+    [TermGroupCommandEventKey]: { groupId: string; command: string; sessionId: string };
 };
 
 const emitter: Emitter<BusEvents> = mitt<BusEvents>();

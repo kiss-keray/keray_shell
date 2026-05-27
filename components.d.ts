@@ -51,6 +51,7 @@ declare module 'vue' {
     SftpTransfersTab: typeof import('./src/components/sftp/SftpTransfersTab.vue')['default']
     ShellInstance: typeof import('./src/components/ssh/ShellInstance.vue')['default']
     Term: typeof import('./src/components/ssh/term.vue')['default']
+    TermGroup: typeof import('./src/components/ssh/TermGroup.vue')['default']
     UploadConflictWin: typeof import('./src/components/window/UploadConflictWin.vue')['default']
     WindowTitleBar: typeof import('./src/components/WindowTitleBar.vue')['default']
   }
@@ -97,6 +98,7 @@ declare global {
   const SftpTransfersTab: typeof import('./src/components/sftp/SftpTransfersTab.vue')['default']
   const ShellInstance: typeof import('./src/components/ssh/ShellInstance.vue')['default']
   const Term: typeof import('./src/components/ssh/term.vue')['default']
+  const TermGroup: typeof import('./src/components/ssh/TermGroup.vue')['default']
   const UploadConflictWin: typeof import('./src/components/window/UploadConflictWin.vue')['default']
   const WindowTitleBar: typeof import('./src/components/WindowTitleBar.vue')['default']
 }

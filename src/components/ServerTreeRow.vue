@@ -5,6 +5,7 @@ import { emitTo, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
 import { EDIT_SERVER_SAVED_EVENT, type EditServerSavedPayload, openOrFocusEditServerWindow } from "@/utils/window";
 import dayjs from "dayjs";
+import { CHANNEL_INSTANCE_GROUP_CREATE_EVENT, type ChannelInstanceGroupCreatePayload } from "@/stores/channelInstances";
 
 const props = defineProps<{
     row: RowData;
@@ -137,13 +138,21 @@ function match(row: RowData) {
 }
 
 /** 批量打开：先清空再逐个 add，保证用户明确从当前列表发起一批新会话。 */
-async function openServers(servers: ServerDataModel[]) {
+async function openServers(servers: ServerDataModel[], isGroup: boolean = false) {
     if (!servers.length) return;
-    /** 打开服务器 */
-    async function openServer(server: ServerDataModel) {
-        const from = new URLSearchParams(location.search).get("from");
-        console.log("openServer", server, from);
-        if (from) {
+    const from = new URLSearchParams(location.search).get("from");
+    if (!from) return;
+    if (isGroup) {
+        emitTo<ChannelInstanceGroupCreatePayload>(
+            {
+                kind: "Window",
+                label: from,
+            },
+            CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
+            { ids: servers.map((item) => item.id) },
+        );
+    } else {
+        servers.map((server) => {
             emitTo<ServerTreeClickServerPayload>(
                 {
                     kind: "Window",
@@ -152,9 +161,8 @@ async function openServers(servers: ServerDataModel[]) {
                 SERVER_TREE_CLICK_SERVER_EVENT,
                 { id: server.id },
             );
-        }
+        });
     }
-    await Promise.all(servers.map(openServer));
     getCurrentWindow().destroy();
 }
 
@@ -362,7 +370,6 @@ function openEditServerWindow(data: RowData) {
 
 /** 打开上下文菜单 */
 function openContextMenu(e: MouseEvent, notRow: boolean = false) {
-    console.log("openContextMenu", notRow);
     e.preventDefault();
     e.stopPropagation();
     const multiSelect = props.selectedRawData.size > 1;
@@ -374,13 +381,22 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
     const dataHaveInCopyData = !notRow && !canTargetAcceptData(data, props.copyData.data);
     const sl = selectedServers.value.length;
     const isRootRow = isRoot(data);
-    const link = {
-        label: (isGroup || multiSelect) && !notRow ? `连接(${sl})` : "连接",
-        handler: () => {
-            openServers(selectedServers.value);
+    const link = [
+        {
+            label: (isGroup || multiSelect) && !notRow ? `连接(${sl})` : "连接",
+            handler: () => {
+                openServers(selectedServers.value);
+            },
+            disabled: notRow,
         },
-        disabled: notRow,
-    };
+        {
+            label: `融合终端(+${sl})`,
+            handler: () => {
+                openServers(selectedServers.value, true);
+            },
+            disabled: sl < 2,
+        },
+    ];
     const copys = [
         {
             label: "复制",
@@ -479,7 +495,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
         },
     ];
     const serverMenus = [
-        link,
+        ...link,
         "---",
         {
             label: "编辑",
@@ -505,7 +521,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
         ...sync,
     ];
     const groupMenus = [
-        link,
+        ...link,
         rename,
         "---",
         ...copys,

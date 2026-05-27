@@ -1001,7 +1001,6 @@ const handleTableKeyDowns: KeyEventCallback[] = [
         }
         if (!oneSelect) return false;
         if (key === "Enter") {
-            console.log("Enter", key, oneSelect, renameItem.value);
             if (renameItem.value) {
                 confirmName();
             } else {

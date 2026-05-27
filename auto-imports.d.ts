@@ -7,6 +7,7 @@
 export {}
 declare global {
   const APP_START_OK_EVENT: typeof import('./src/stores/app').APP_START_OK_EVENT
+  const CHANNEL_INSTANCE_GROUP_CREATE_EVENT: typeof import('./src/stores/channelInstances').CHANNEL_INSTANCE_GROUP_CREATE_EVENT
   const CONCURRENCY_MAX: typeof import('./src/stores/downloadStore').CONCURRENCY_MAX
   const CONCURRENCY_MIN: typeof import('./src/stores/downloadStore').CONCURRENCY_MIN
   const ChannelInstanceProvideKey: typeof import('./src/utils/constant').ChannelInstanceProvideKey
@@ -77,6 +78,8 @@ declare global {
   const initialState: typeof import('./src/stores/config').initialState
   const inject: typeof import('vue').inject
   const invoke: typeof import('./src/utils/project').invoke
+  const isChannelInstance: typeof import('./src/stores/channelInstances').isChannelInstance
+  const isChannelInstanceGroup: typeof import('./src/stores/channelInstances').isChannelInstanceGroup
   const isProxy: typeof import('vue').isProxy
   const isReactive: typeof import('vue').isReactive
   const isReadonly: typeof import('vue').isReadonly
@@ -233,7 +236,7 @@ declare global {
   export type { AppStartOkPayload } from './src/stores/app'
   import('./src/stores/app')
   // @ts-ignore
-  export type { ServerTreeClickServerPayload, ChannelInstance } from './src/stores/channelInstances'
+  export type { ServerTreeClickServerPayload, ChannelInstanceGroupCreatePayload, ChannelInstance, ChannelInstanceGroup, ChannelData } from './src/stores/channelInstances'
   import('./src/stores/channelInstances')
   // @ts-ignore
   export type { Theme, ThemeMode, ServerSyncType, ServerRemoteData, ConfigModel } from './src/stores/config'

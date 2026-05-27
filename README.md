@@ -11,19 +11,23 @@
 
 ### 拟态风格
 
-![拟态风格](screenshot/拟态风格.png)
+![拟态风格](docs/images/拟态风格.png)
 
 ### 毛玻璃风格
 
-![毛玻璃风格](screenshot/毛玻璃风格.png)
+![毛玻璃风格](docs/images/毛玻璃风格.png)
 
 ### 在线文本编辑
 
-![在线文本编辑](screenshot/在线文本编辑.png)
+![在线文本编辑](docs/images/在线文本编辑.png)
 
 ### 服务器数据同步
 
-![服务器数据同步](screenshot/服务器数据同步.png)
+![服务器数据同步](docs/images/服务器数据同步.png)
+
+### 融合终端
+
+![融合终端](docs/images/融合终端.png)
 
 ## 项目亮点
 

@@ -231,6 +231,39 @@
         }
     }
 
+    /* TermGroup.vue */
+    .term-group {
+        .child-box {
+            @include nt-out;
+            &.active {
+                @include nt-in;
+            }
+            .child-box-header {
+                .child-box-meta {
+                    color: var(--nt-text-muted);
+                }
+
+                .child-box-status {
+                    &.connected {
+                        color: var(--nt-success);
+                    }
+
+                    &.connecting {
+                        color: var(--nt-warning);
+                    }
+
+                    &.disconnected {
+                        color: var(--nt-danger-solid);
+                    }
+                }
+            }
+            .term-module {
+                box-shadow: none;
+                background: transparent;
+            }
+        }
+    }
+
     .server-list-page {
         color: var(--nt-text);
         .server-list-kicker,

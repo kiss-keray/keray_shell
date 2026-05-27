@@ -4,7 +4,7 @@
 -->
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
-import type { ChannelInstance } from "@/stores/channelInstances";
+import { CHANNEL_INSTANCE_GROUP_CREATE_EVENT, type ChannelInstance, type ChannelInstanceGroupCreatePayload } from "@/stores/channelInstances";
 import type { ServerDataModel, ServerGroupModel } from "@/stores/serverData";
 import dayjs from "dayjs";
 import { emitTo } from "@tauri-apps/api/event";
@@ -130,6 +130,21 @@ function openContextMenu(e: MouseEvent, server: ServerDataModel) {
                     openServer(server);
                 }
             },
+        },
+        {
+            label: `融合终端(+${selectedServers.value.length})`,
+            handler: () => {
+                channelInstancesStore.clear();
+                emitTo<ChannelInstanceGroupCreatePayload>(
+                    {
+                        kind: "Window",
+                        label: appStore.label,
+                    },
+                    CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
+                    { ids: selectedServers.value.map((item) => item.id) },
+                );
+            },
+            disabled: selectedServers.value.length < 2,
         },
         {
             label: "删除",

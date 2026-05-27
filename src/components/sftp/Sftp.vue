@@ -91,7 +91,6 @@ onUnmounted(() => {
 
 on(SftpProcessEventKey, (event) => {
     process.value = event;
-    console.log("process111", process.value);
 });
 
 provide(SftpActiveItemKey, activeItem);

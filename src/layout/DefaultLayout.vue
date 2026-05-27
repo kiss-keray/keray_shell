@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { isChannelInstance } from "@/stores/channelInstances";
 import { storeToRefs } from "pinia";
 
 const configStore = useConfigStore();
 const appStore = useAppStore();
+const channelInstancesStore = useChannelInstancesStore();
+const { selectSession } = toRefs(channelInstancesStore);
 
-const { appType } = appStore;
 const { showOverviewPanel } = storeToRefs(appStore);
 const { overviewWidthPx } = storeToRefs(configStore);
 
@@ -18,15 +20,18 @@ onMounted(async () => {
 
 <template>
     <div ref="viwer" class="w-full h-full relative flex flex-row default-layout">
-        <div v-show="showOverviewPanel" :style="{ width: `${overviewWidthPx}px` }">
-            <ServerOverviewPanel />
-        </div>
-        <LayoutColumnResizer v-show="showOverviewPanel" v-model="overviewWidthPx" :min="OVERVIEW_MIN" :max="OVERVIEW_MAX" />
+        <template v-if="selectSession && isChannelInstance(selectSession)">
+            <div v-show="showOverviewPanel" :style="{ width: `${overviewWidthPx}px` }">
+                <ServerOverviewPanel />
+            </div>
+            <LayoutColumnResizer v-show="showOverviewPanel" v-model="overviewWidthPx" :min="OVERVIEW_MIN" :max="OVERVIEW_MAX" />
+        </template>
         <div class="flex flex-col grow min-w-0 right-box">
             <ShellInstance />
             <Channels>
                 <template #default="{ server }">
-                    <Term :server="server" />
+                    <Term v-if="isChannelInstance(server)" :server="server" />
+                    <TermGroup v-else :group="server" />
                 </template>
             </Channels>
         </div>

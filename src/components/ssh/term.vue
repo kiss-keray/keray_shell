@@ -4,16 +4,24 @@ import TermServer, { type TerminalSnapshot } from "./term_server";
 import "@xterm/xterm/css/xterm.css";
 import { storeToRefs } from "pinia";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import useBus, { DirectRemotePathEventKey } from "@/composables/useBus";
+import useBus, { DirectRemotePathEventKey, TermGroupCommandEventKey } from "@/composables/useBus";
 
-const props = defineProps<{
-    server: ChannelInstance;
-}>();
+const props = withDefaults(
+    defineProps<{
+        server: ChannelInstance;
+        groupId?: string;
+        groupActive?: boolean;
+    }>(),
+    {
+        isGroup: false,
+        groupActive: false,
+    },
+);
 const appStore = useAppStore();
 const configStore = useConfigStore();
 const serverDataStore = useServerDataStore();
 const keyEventStore = useKeyEventStore();
-const { emit } = useBus();
+const { emit, on, off } = useBus();
 const { showSftpPanel, showTermPanel } = storeToRefs(appStore);
 const { termFontSize, termLineHeight, termFontFamily, termScrollback, sftpPanelHeightPx } = storeToRefs(configStore);
 const { serverDataChange } = serverDataStore;
@@ -95,11 +103,13 @@ function updateLineNumbers({ nums, height, fontSize }: { nums: Array<[number, nu
     for (const [showNum, realNum] of nums) {
         html += `<div class="num" style="height:${height}px;font-size:${fontSize}px" line="${realNum}">${showNum}</div>`;
     }
+    if (!lineNumber.value) return;
     lineNumber.value!.innerHTML = html;
 }
 
 function termServerEventListen() {
     termServer.onLineNumberChange(updateLineNumbers);
+    // 响应win系统的ctrl+c
     termServer.onKeyEvent(termKeydown);
     termServer.onSelectionChange((text) => {
         selectedText = text;
@@ -111,10 +121,19 @@ function termServerEventListen() {
         selectPrompt.x = mousePos.x;
         selectPrompt.y = mousePos.y;
     });
-    termServer.setEnterEscCall(enterEsc);
     termServer.onCwdChange((path) => {
-        console.log("onCwdChange", path);
         emit(DirectRemotePathEventKey, { sid: props.server.sessionId, path });
+    });
+    termServer.onData((command) => {
+        emit(TermGroupCommandEventKey, { groupId: props.groupId!, command, sessionId: props.server.sessionId });
+    });
+    on(TermGroupCommandEventKey, (event) => {
+        if (event.groupId !== props.groupId) return;
+        if (event.sessionId === props.server.sessionId) return;
+        termServer.write(event.command);
+    });
+    closeFuns.push(() => {
+        off(TermGroupCommandEventKey);
     });
 }
 function termChangeFontSize(add: number) {
@@ -161,6 +180,12 @@ function domEventListen() {
             }),
         );
     });
+    // 响应mac的command
+    closeFuns.push(
+        keyEventStore.register((e) => {
+            return termKeydown(e);
+        }),
+    );
 }
 
 function termKeydown(e: KeyboardEvent): boolean {
@@ -171,7 +196,6 @@ function termKeydown(e: KeyboardEvent): boolean {
     const curl = e.ctrlKey || e.metaKey;
     if (curl) {
         if (e.key === "f") {
-            console.log("f");
             if (!searchData.text || selectedText) searchData.text = selectedText;
             search();
         } else if (e.key === "v") {
@@ -187,6 +211,9 @@ function termKeydown(e: KeyboardEvent): boolean {
         } else {
             return false;
         }
+        return true;
+    } else if (e.key === "Escape") {
+        enterEsc();
         return true;
     }
     return false;
@@ -293,7 +320,7 @@ async function sid_new_window_init() {
     if (!snapshot) return false;
     const { termData, webData } = snapshot;
     // 快照用了就要删除
-    // delete server.snapshot.termData;
+    delete server.snapshot.termData;
     termServer.snapshotReset(termData, divRef.value!);
     Object.assign(searchData, webData.searchData);
     Object.assign(selectPrompt, webData.selectPrompt);
@@ -366,8 +393,8 @@ provide(ChannelInstanceProvideKey, props.server);
 
 <template>
     <div ref="panelRoot" class="relative flex h-full w-full min-h-0 flex-col overflow-hidden">
-        <div v-show="showTermPanel" class="relative viwer root term-module min-h-0 flex-1 overflow-hidden" ref="root">
-            <div ref="lineNumber" class="line-number" @click="selectLine" @contextmenu="menuLineNumber"></div>
+        <div v-show="showTermPanel || groupId" class="relative viwer root term-module min-h-0 flex-1 overflow-hidden" ref="root">
+            <div v-if="!groupId || groupActive" ref="lineNumber" class="line-number" @click="selectLine" @contextmenu="menuLineNumber"></div>
             <div class="term" ref="divRef"></div>
             <div v-show="searchData.show" class="search">
                 <div class="grow flex justify-between items-center ml-2 left">
@@ -416,7 +443,7 @@ provide(ChannelInstanceProvideKey, props.server);
                 <Icon icon="si:search-alt-fill" class="pointer icon" @click.stop="applySearch" />
             </div>
         </div>
-        <template v-if="termReady">
+        <template v-if="termReady && !groupId">
             <LayoutRowResizer v-show="showSftpPanel && showTermPanel" :container="panelRoot" v-model="sftpPanelHeightPx" />
             <div v-show="showSftpPanel" class="overflow-hidden" :class="{ 'min-h-0 flex-1': !showTermPanel }" :style="showTermPanel ? { height: `${sftpPanelHeightPx}px` } : {}">
                 <Sftp class="h-full min-h-0" :server="server" :write-terminal="writeToTerm" />

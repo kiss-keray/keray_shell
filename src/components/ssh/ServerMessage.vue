@@ -1,5 +1,6 @@
 <script setup lang="ts">
-const { selectSession } = toRefs(useChannelInstancesStore());
+const channelInstancesStore = useChannelInstancesStore();
+const { selectSession } = toRefs(channelInstancesStore) as { selectSession: Ref<ChannelInstance> };
 
 const metrics = computed(() => {
     const o = selectSession.value?.overview;

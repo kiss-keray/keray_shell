@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ActiveFileEventKey, DirectRemotePathEventKey, useBus } from "@/composables/useBus";
 
-const { selectSession } = useChannelInstancesStore();
+const channelInstancesStore = useChannelInstancesStore();
+const { selectSession } = toRefs(channelInstancesStore) as { selectSession: Ref<ChannelInstance> };
 const { emit, on, off } = useBus();
 
-const overview = computed(() => selectSession?.overview);
+const overview = computed(() => selectSession.value?.overview);
 
 const activePath = ref("/");
 
@@ -20,12 +21,12 @@ const activeDisk = computed(() => {
 
 function onActiveDisk(path: string) {
     activePath.value = path;
-    emit(DirectRemotePathEventKey, { sid: selectSession!.sessionId, path: activePath.value });
+    emit(DirectRemotePathEventKey, { sid: selectSession.value.sessionId, path: activePath.value });
 }
 
 onMounted(() => {
     on(ActiveFileEventKey, (event) => {
-        if (event.sid !== selectSession?.sessionId) return;
+        if (event.sid !== selectSession.value?.sessionId) return;
         activePath.value = event.path;
     });
 });

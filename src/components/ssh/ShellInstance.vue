@@ -3,6 +3,7 @@ import { getCurrentWindow, LogicalPosition } from "@tauri-apps/api/window";
 import { emitTo, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { storeToRefs } from "pinia";
 import { openOrFocusChildWindow } from "@/utils/window";
+import { isChannelInstance, isChannelInstanceGroup, type ChannelData, type ChannelInstance } from "@/stores/channelInstances";
 const appWindow = getCurrentWindow();
 export type DragStartPayload = {
     window: string;
@@ -41,16 +42,32 @@ watch(windowInitData, (initData) => {
     dragOk(initData);
 });
 
-const closeInstance = (item: ChannelInstance) => {
-    invoke("close_term", { sid: item.sessionId });
+watch(isFullScreenWindow, (val) => {
+    if (val) {
+        left.value = 0;
+    } else {
+        const rect = root.value.getBoundingClientRect();
+        left.value = Math.max(0, 80 - rect.left - window.scrollX);
+    }
+});
+
+const closeInstance = (item: ChannelData) => {
+    if (isChannelInstance(item)) {
+        invoke("close_term", { sid: item.sessionId });
+    } else {
+        item.instances.forEach((instance) => {
+            invoke("close_term", { sid: instance.sessionId });
+        });
+    }
     channelInstancesStore.del(item);
 };
 
-const selectInstance = async (item: ChannelInstance) => {
+const selectInstance = async (item: ChannelData) => {
     channelInstancesStore.select(item);
 };
 
-const dragstart = async (e: MouseEvent, item: ChannelInstance) => {
+const dragstart = async (e: MouseEvent, item: ChannelData) => {
+    if (!isChannelInstance(item)) return;
     // 计算新窗口位置
     dragsPosition.x = e.screenX;
     dragsPosition.y = e.screenY;
@@ -72,7 +89,8 @@ const dragstart = async (e: MouseEvent, item: ChannelInstance) => {
     emitTo<DragStartPayload>({ kind: "Any" }, "sid_new_window_dragstart", dragsPosition.data);
 };
 
-const dragend = async (e: MouseEvent, item: ChannelInstance) => {
+const dragend = async (e: MouseEvent, item: ChannelData) => {
+    if (!isChannelInstance(item)) return;
     emitTo<string>({ kind: "Any" }, "sid_new_window_dragend", getCurrentWindow().label);
     if (dragsPosition.x < 0) return;
     const { screenX, screenY } = e;
@@ -259,12 +277,13 @@ getCurrentWindow()
             @dragstart="(e) => dragstart(e, item)"
             @dragend="(e) => dragend(e, item)"
         >
-            <p>{{ item.server.name }}</p>
+            <p v-if="isChannelInstance(item)">{{ item.server.name }}</p>
+            <p v-else>融合终端(+{{ item.instances.length }})</p>
             <div
                 class="status xy-center"
                 :class="{
-                    dis: item.status === 'disconnected',
-                    connect: item.status === 'connected',
+                    dis: isChannelInstance(item) && item.status === 'disconnected',
+                    connect: isChannelInstanceGroup(item) || item.status === 'connected',
                     active: item.sessionId === selectUid,
                 }"
                 @click.stop="closeInstance(item)"
