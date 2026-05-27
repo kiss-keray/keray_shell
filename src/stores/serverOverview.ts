@@ -245,7 +245,8 @@ export const useServerOverviewStore = defineStore("serverOverview", () => {
     const { instances } = instancesStore;
 
     function getOverview(sid: string): ServerOverviewState | undefined {
-        return instances.value.find((i) => i.sessionId === sid)?.overview;
+        const inst = instances.value.find((i) => i.sessionId === sid) as ChannelInstance | undefined;
+        return inst?.overview;
     }
 
     /** 核心轮询失败等场景：直接设置错误文案并结束 loading */

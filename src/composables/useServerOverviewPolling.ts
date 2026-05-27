@@ -346,7 +346,7 @@ export function useServerOverviewPolling() {
 
     function getActiveOverviewInstance(): ActiveOverviewInstance | undefined {
         const id = instancesStore.selectSessionId;
-        const inst = instancesStore.instances.find((i) => i.sessionId === id);
+        const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
         if (!inst?.overview || inst.status !== "connected") return undefined;
         return { id, inst: inst as ActiveOverviewInstance["inst"] };
     }
@@ -450,7 +450,7 @@ export function useServerOverviewPolling() {
     watch(
         () => {
             const id = instancesStore.selectSessionId;
-            const inst = instancesStore.instances.find((i) => i.sessionId === id);
+            const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
             return { id, status: inst?.status ?? 0 };
         },
         (cur, prev) => {
@@ -464,7 +464,7 @@ export function useServerOverviewPolling() {
     watch(
         () => {
             const id = instancesStore.selectSessionId;
-            const inst = instancesStore.instances.find((i) => i.sessionId === id);
+            const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
             return {
                 id,
                 sort: inst?.overview?.processSort === "cpu" ? ("cpu" as const) : ("mem" as const),
@@ -473,7 +473,7 @@ export function useServerOverviewPolling() {
         (cur, prev) => {
             if (!cur.id || cur.sort === prev?.sort) return;
             if (instancesStore.selectSessionId !== cur.id) return;
-            const inst = instancesStore.instances.find((i) => i.sessionId === cur.id);
+            const inst = instancesStore.instances.find((i) => i.sessionId === cur.id) as ChannelInstance | undefined;
             if (!inst?.overview || inst.status !== "connected") return;
             void pollProc(cur.id, inst, cur.sort);
         },
