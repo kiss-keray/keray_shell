@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getVersion } from "@tauri-apps/api/app";
 import { open } from "@tauri-apps/plugin-dialog";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { storeToRefs } from "pinia";
@@ -26,6 +27,7 @@ const defaultEnglishTermFont = ref("");
 const defaultChineseTermFont = ref("");
 const fontsLoading = ref(false);
 const fontLoadError = ref("");
+const version = ref("");
 
 const serverSyncPath = ref("");
 const serverSyncUrl = ref("");
@@ -125,9 +127,10 @@ watch(
     { immediate: true },
 );
 
-onMounted(() => {
+onMounted(async () => {
     activeTab.value = "general";
     loadLocalFonts();
+    version.value = await getVersion();
 });
 
 const tabs: { id: SettingsTab; label: string }[] = [
@@ -213,9 +216,6 @@ function resetLayoutDraft() {
     draft.sftpPanelHeightPx = def.sftpPanelHeightPx;
     draft.sftpTreeWidthPx = def.sftpTreeWidthPx;
 }
-
-/** 模板里不能写 import.meta，需在 script 中取出 */
-const buildMode = import.meta.env.MODE;
 
 async function pickLocalSyncFile() {
     const current = serverSyncPath.value.replace(/\\/g, "/");
@@ -468,7 +468,7 @@ async function clickDownloadServerData() {
                 <section v-show="activeTab === 'about'" class="setting-panel setting-about">
                     <p class="setting-about-name">Keray Shell</p>
                     <p class="setting-about-line">本地 SSH / SFTP 客户端</p>
-                    <p class="setting-about-line muted">构建模式：{{ buildMode }}</p>
+                    <p class="setting-about-line muted">版本：{{ version }}</p>
                 </section>
             </div>
         </div>
