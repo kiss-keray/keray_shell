@@ -224,7 +224,7 @@ const sortState = reactive<{ key: ColKey; order: SortOrder }>({ key: "name", ord
 let resizeState: { key: ColKey; startX: number; startW: number } | null = null;
 const editNameInputRef = ref<HTMLInputElement | null>(null);
 const shiftKeyIndex = ref<number | null>(null);
-const { on, off, emit } = useBus();
+const { on, emit } = useBus();
 const closeFuns: UnlistenFn[] = [];
 const copyData: { data: FileStoreItem[]; type: "copy" | "cut" } = { data: [], type: "copy" };
 
@@ -1068,24 +1068,32 @@ onMounted(async () => {
         loadFileItem(activeItem.value);
     }
     // 监听直接远程路径事件
-    on(DirectRemotePathEventKey, ({ sid, path }) => {
-        if (sid !== server.sessionId) return;
-        directLoadPath(path);
-    });
+    closeFuns.push(
+        on(DirectRemotePathEventKey, ({ sid, path }) => {
+            if (sid !== server.sessionId) return;
+            directLoadPath(path);
+        }),
+    );
     // 监听刷新文件列表事件
-    on(RefreshFileListEventKey, () => {
-        loadFileItem(activeItem.value, true);
-    });
+    closeFuns.push(
+        on(RefreshFileListEventKey, () => {
+            loadFileItem(activeItem.value, true);
+        }),
+    );
     // 监听下载菜单打开事件
-    on(DownloadMenuOpenEventKey, () => {
-        const items = fileList.value.filter((item) => selectedPaths.value.has(item.id));
-        if (items.length === 0) return;
-        clickDownload(items);
-    });
+    closeFuns.push(
+        on(DownloadMenuOpenEventKey, () => {
+            const items = fileList.value.filter((item) => selectedPaths.value.has(item.id));
+            if (items.length === 0) return;
+            clickDownload(items);
+        }),
+    );
     // 监听上传菜单打开事件
-    on(UploadFileEventKey, () => {
-        clickUpload(activeItem.value);
-    });
+    closeFuns.push(
+        on(UploadFileEventKey, () => {
+            clickUpload(activeItem.value);
+        }),
+    );
     // 更新列宽
     updateColWidths();
     // 监听窗口大小变化事件
@@ -1114,9 +1122,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
     stopResize();
-    off(DirectRemotePathEventKey);
-    off(RefreshFileListEventKey);
-    off(DownloadMenuOpenEventKey);
     uiActive.value = false;
     closeFuns.forEach((unlisten) => unlisten());
 });

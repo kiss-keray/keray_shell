@@ -24,15 +24,17 @@ function onActiveDisk(path: string) {
     emit(DirectRemotePathEventKey, { sid: selectSession.value.sessionId, path: activePath.value });
 }
 
+function handleActiveFile(event: { sid: string; path: string }) {
+    if (event.sid !== selectSession.value?.sessionId) return;
+    activePath.value = event.path;
+}
+
 onMounted(() => {
-    on(ActiveFileEventKey, (event) => {
-        if (event.sid !== selectSession.value?.sessionId) return;
-        activePath.value = event.path;
-    });
+    on(ActiveFileEventKey, handleActiveFile);
 });
 
 onUnmounted(() => {
-    off(ActiveFileEventKey);
+    off(ActiveFileEventKey, handleActiveFile);
 });
 </script>
 

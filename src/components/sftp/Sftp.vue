@@ -56,6 +56,11 @@ const rootFile = ref<FileStoreItem>({
 });
 const activeItem = ref<FileStoreItem>(rootFile.value);
 const process = ref<number>(0);
+
+function handleSftpProcess(event: number) {
+    process.value = event;
+}
+
 onBeforeMount(() => {
     server.snapshotFn.sftpData = () => {
         return {
@@ -86,12 +91,10 @@ onBeforeMount(() => {
 });
 
 onUnmounted(() => {
-    off(SftpProcessEventKey);
+    off(SftpProcessEventKey, handleSftpProcess);
 });
 
-on(SftpProcessEventKey, (event) => {
-    process.value = event;
-});
+on(SftpProcessEventKey, handleSftpProcess);
 
 provide(SftpActiveItemKey, activeItem);
 </script>

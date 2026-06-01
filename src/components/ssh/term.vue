@@ -127,14 +127,13 @@ function termServerEventListen() {
     termServer.onData((command) => {
         emit(TermGroupCommandEventKey, { groupId: props.groupId!, command, sessionId: props.server.sessionId });
     });
-    on(TermGroupCommandEventKey, (event) => {
-        if (event.groupId !== props.groupId) return;
-        if (event.sessionId === props.server.sessionId) return;
-        termServer.write(event.command);
-    });
-    closeFuns.push(() => {
-        off(TermGroupCommandEventKey);
-    });
+    closeFuns.push(
+        on(TermGroupCommandEventKey, (event) => {
+            if (event.groupId !== props.groupId) return;
+            if (event.sessionId === props.server.sessionId) return;
+            termServer.write(event.command);
+        }),
+    );
 }
 function termChangeFontSize(add: number) {
     const size = termServer.changeFontSize(add);

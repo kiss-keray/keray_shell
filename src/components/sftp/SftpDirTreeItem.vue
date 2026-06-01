@@ -285,20 +285,24 @@ function handleTableKeyDown(e: KeyboardEvent) {
     }
 }
 
-onUnmounted(() => {
-    off(FileDragStartEventKey);
-    off(FileDragEndEventKey);
-});
+const dragItems: FileStoreItem[] = [];
 
-on(FileDragStartEventKey, (items) => {
+function handleFileDragStart(items: FileStoreItem[]) {
     dragItems.length = 0;
     dragItems.push(...items);
-});
-on(FileDragEndEventKey, () => {
+}
+
+function handleFileDragEnd() {
     dragItems.length = 0;
+}
+
+onUnmounted(() => {
+    off(FileDragStartEventKey, handleFileDragStart);
+    off(FileDragEndEventKey, handleFileDragEnd);
 });
 
-const dragItems: FileStoreItem[] = [];
+on(FileDragStartEventKey, handleFileDragStart);
+on(FileDragEndEventKey, handleFileDragEnd);
 
 function dragover(e: DragEvent) {
     if (dragItems.length === 0) return;
