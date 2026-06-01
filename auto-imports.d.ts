@@ -71,6 +71,7 @@ declare global {
   const getCurrentInstance: typeof import('vue').getCurrentInstance
   const getCurrentScope: typeof import('vue').getCurrentScope
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
+  const getCurrentWindowScaleFactor: typeof import('./src/utils/project').getCurrentWindowScaleFactor
   const getFileDirPath: typeof import('./src/utils/localFsUtils').getFileDirPath
   const getMainWinLabel: typeof import('./src/utils/window').getMainWinLabel
   const getUiFontSizeCss: typeof import('./src/utils/fontSize').getUiFontSizeCss

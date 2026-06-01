@@ -1,6 +1,7 @@
 import { invoke as coreInvoke } from "@tauri-apps/api/core";
 import type { UnlistenFn } from "@tauri-apps/api/event";
-import { getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
+import { currentMonitor, getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
+import { type } from "@tauri-apps/plugin-os";
 
 /** 调用 Tauri 插件命令 */
 export async function invoke<T>(name: string, params?: { [key: string]: any }): Promise<T> {
@@ -100,7 +101,12 @@ export function dragListener(getDoms: () => HTMLElement[]): Promise<UnlistenFn> 
     let time = 0;
     async function onDragOverEvent(payload: DragDropEvent) {
         if (payload.type !== "over") return;
-        const { x, y } = payload.position; // x,y时鼠标在body上的x,y坐标
+        let { x, y } = payload.position; // x,y时鼠标在body上的x,y坐标
+        if (type() === "windows") {
+            const scaleFactor = await getCurrentWindowScaleFactor();
+            x = x / scaleFactor;
+            y = y / scaleFactor;
+        }
         const now = Date.now();
         // 100毫秒计算一次坐标 避免频繁计算
         if (now - time < 100) return;
@@ -156,4 +162,10 @@ export function dragListener(getDoms: () => HTMLElement[]): Promise<UnlistenFn> 
             onDragDropEvent(payload);
         }
     });
+}
+
+export async function getCurrentWindowScaleFactor(): Promise<number> {
+    const monitor = await currentMonitor();
+    if (!monitor) return 1;
+    return monitor.scaleFactor;
 }

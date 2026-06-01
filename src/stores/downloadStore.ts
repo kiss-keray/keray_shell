@@ -54,6 +54,7 @@ export type TransferItem = {
     resume: () => Promise<void>; // 恢复传输
     cancel: () => Promise<void>; // 取消传输
     retry: () => Promise<void>; // 重试传输
+    endCall: () => void;
 } & ByteProgressMeta;
 
 export const CONCURRENCY_MIN = 1;
@@ -422,7 +423,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
 
             const requestId = uuid();
             detail.requestId = requestId;
-            return __transfer(
+            await __transfer(
                 detail,
                 sftpDownloadFile(requestId, serverId, remotePath, localPathOk, detail.loaded, total, (data) => {
                     ensureProgressListener(detail, data);
@@ -459,9 +460,9 @@ export const useDownloadStore = defineStore("sftp-download", () => {
      * @param ctx 上下文
      * @param localPaths 本地路径
      * @param remoteDir 远程目录
-     * @param callback 回调函数 没完成一个文件就会回调一次 参数为传输成功的文件的本地路径
+     * @param callback 回调函数 每完成一个文件就会回调一次 参数为传输任务
      */
-    async function addUploadTask(ctx: SftpPaneTransferBinding, localPaths: string[], remoteDir: string, callback?: (path: string) => void): Promise<void> {
+    async function addUploadTask(ctx: SftpPaneTransferBinding, localPaths: string[], remoteDir: string, callback?: (item: TransferItem) => void): Promise<void> {
         const conflictList: TransferItem[] = [];
         async function addPath(localPath: string, localAbsPath?: string): Promise<TransferItem | null> {
             const localInfo = await stat(localPath);
@@ -501,6 +502,9 @@ export const useDownloadStore = defineStore("sftp-download", () => {
                 retry() {
                     return retryItem(this);
                 },
+                endCall() {
+                    callback?.(this);
+                }
             };
             if (localInfo.isDirectory) {
                 const children = await readDir(localPath);
@@ -603,7 +607,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             }
             const requestId = uuid();
             detail.requestId = requestId;
-            return __transfer(
+            await __transfer(
                 detail,
                 sftpUploadFile(requestId, serverId, remotePath, localPath, detail.loaded, total, (data) => {
                     ensureProgressListener(detail, data);
@@ -614,6 +618,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             detail.status = "error";
             detail.error = errText(error, "上传失败");
         }
+        detail.endCall();
         syncParentStatus(detail);
     }
 

@@ -1128,7 +1128,11 @@ onUnmounted(() => {
 
 function dragLocalFile(payload: DragDropEvent) {
     if (payload.type !== "drop") return;
-    const { x, y } = payload.position;
+    let { x, y } = payload.position;
+    if (appStore.osType === "windows") {
+        x = x / appStore.scaleFactor;
+        y = y / appStore.scaleFactor;
+    }
     // 获取tableWrapRef的x,y,endx,endy
     const tableWrapRect = tableWrapRef.value!.getBoundingClientRect();
     const tableWrapX = tableWrapRect.left;
@@ -1169,24 +1173,29 @@ function dragstart() {
 }
 
 function dragend() {
-    fileTableDrag = false;
-    emit(FileDragEndEventKey);
+    // dragend先于drop执行 延迟60ms
+    setTimeout(() => {
+        fileTableDrag = false;
+        emit(FileDragEndEventKey);
+    }, 60);
 }
 
-function dragover({ target }: { target: HTMLElement }) {
+function dragover(event: DragEvent) {
     if (!fileTableDrag) return;
+    const target = event.target as HTMLElement;
     const isDir = target.getAttribute("data-is-dir") === "true";
     if (!isDir) return;
     target.classList.add("drag-over");
 }
-function dragleave({ target }: { target: HTMLElement }) {
+function dragleave(event: DragEvent) {
     if (!fileTableDrag) return;
+    const target = event.target as HTMLElement;
     target.classList.remove("drag-over");
 }
-async function drop(event: { target: HTMLElement }) {
+async function drop(event: DragEvent) {
     if (!fileTableDrag) return;
-    const { target } = event;
-    target.classList.remove("drag-over");
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
     const isDir = target.getAttribute("data-is-dir") === "true";
     if (!isDir) return;
     const id = target.getAttribute("data-id");
@@ -1246,45 +1255,51 @@ function checkMove() {
                     <td colspan="6" class="px-3 py-6 text-center text-white/50 h-[100px]">暂无数据</td>
                 </tr>
             </tbody>
-            <Draggable v-else :list="showRows" item-key="id" :move="checkMove" tag="tbody" @dragstart="dragstart" @dragend="dragend" @dragover="dragover" @dragleave="dragleave" @drop="drop">
-                <template #item="{ element: row }: { element: FileStoreItem }">
-                    <tr
-                        :data-id="row.id"
-                        :data-is-dir="row.isDir"
-                        class="data-row"
-                        :class="{ sel: selectedPaths.has(row.id) }"
-                        @dblclick.prevent.stop="dblclickRow(row)"
-                        @contextmenu="openRowContextMenu($event, row)"
-                        @click="handleRowClick(row)"
-                    >
-                        <td class="cell-name">
-                            <template v-if="renameItem !== row">
-                                <span class="name-cell-inner">
-                                    <span class="icon-stack text-base shrink-0">
-                                        <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
-                                        <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="lnk-corner-ic" aria-hidden="true" />
-                                    </span>
-                                    <span class="name-text">{{ baseName(row.id) }}</span>
+            <tbody>
+                <tr
+                    v-for="row in showRows"
+                    :key="row.id"
+                    :data-id="row.id"
+                    :data-is-dir="row.isDir"
+                    class="data-row"
+                    :class="{ sel: selectedPaths.has(row.id) }"
+                    draggable="true"
+                    @dblclick.prevent.stop="dblclickRow(row)"
+                    @contextmenu="openRowContextMenu($event, row)"
+                    @click="handleRowClick(row)"
+                    @dragstart="dragstart"
+                    @dragend="dragend"
+                    @dragover="dragover"
+                    @dragleave="dragleave"
+                    @drop="drop"
+                >
+                    <td class="cell-name">
+                        <template v-if="renameItem !== row">
+                            <span class="name-cell-inner">
+                                <span class="icon-stack text-base shrink-0">
+                                    <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
+                                    <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="lnk-corner-ic" aria-hidden="true" />
                                 </span>
-                            </template>
-                            <template v-else>
-                                <span class="name-cell-inner">
-                                    <span class="icon-stack text-base shrink-0">
-                                        <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
-                                        <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="icon-link-icon" aria-hidden="true" />
-                                    </span>
-                                    <input v-model="editName" ref="editNameInputRef" class="table-inline-input" @blur="confirmName(true)" @click.stop />
+                                <span class="name-text">{{ baseName(row.id) }}</span>
+                            </span>
+                        </template>
+                        <template v-else>
+                            <span class="name-cell-inner">
+                                <span class="icon-stack text-base shrink-0">
+                                    <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
+                                    <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="icon-link-icon" aria-hidden="true" />
                                 </span>
-                            </template>
-                        </td>
-                        <td class="cell-numeric">{{ row.size !== null ? formatAdaptiveBytes(row.size) : "" }}</td>
-                        <td>{{ row.isDir ? "文件夹" : fileExtension(baseName(row.id)) }}</td>
-                        <td class="cell-mtime">{{ row.updatedAt ? dayjs(new Date(row.updatedAt * 1000)).format("YYYY/MM/DD HH:mm") : "" }}</td>
-                        <td class="cell-perm font-mono text-xs">{{ formatPermissionSymbolic(row) }}</td>
-                        <td class="cell-owner text-xs">{{ row.owner }}/{{ row.group }}</td>
-                    </tr>
-                </template>
-            </Draggable>
+                                <input v-model="editName" ref="editNameInputRef" class="table-inline-input" @blur="confirmName(true)" @click.stop />
+                            </span>
+                        </template>
+                    </td>
+                    <td class="cell-numeric">{{ row.size !== null ? formatAdaptiveBytes(row.size) : "" }}</td>
+                    <td>{{ row.isDir ? "文件夹" : fileExtension(baseName(row.id)) }}</td>
+                    <td class="cell-mtime">{{ row.updatedAt ? dayjs(new Date(row.updatedAt * 1000)).format("YYYY/MM/DD HH:mm") : "" }}</td>
+                    <td class="cell-perm font-mono text-xs">{{ formatPermissionSymbolic(row) }}</td>
+                    <td class="cell-owner text-xs">{{ row.owner }}/{{ row.group }}</td>
+                </tr>
+            </tbody>
         </table>
     </div>
 </template>

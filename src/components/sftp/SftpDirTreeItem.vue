@@ -315,7 +315,8 @@ function dragleave(e: DragEvent) {
     target.classList.remove("drag-over");
 }
 async function drop(e: DragEvent) {
-    if (dragItems.length === 0) return;
+    const dragItemsCopy = [...dragItems];
+    if (dragItemsCopy.length === 0) return;
     const target = e.target as HTMLElement;
     target.classList.remove("drag-over");
     const dirItem = props.fileItem;
@@ -323,11 +324,11 @@ async function drop(e: DragEvent) {
     // 移动之前弹窗确定下 避免移动错误
     const ok = await showConfirm({
         title: "确认移动",
-        message: buildMoveConfirmMessage(dragItems, dirItem.id),
+        message: buildMoveConfirmMessage(dragItemsCopy, dirItem.id),
         danger: true,
     });
     if (!ok) return;
-    for (const moveItem of dragItems) {
+    for (const moveItem of dragItemsCopy) {
         const newPath = await remoteJoin(dirItem.id, baseName(moveItem.id));
         await remoteMove(server.server.id, moveItem.id, newPath);
         fileList.remove(moveItem);
