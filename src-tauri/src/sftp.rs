@@ -15,7 +15,7 @@ use std::io::SeekFrom;
 use std::sync::atomic::{AtomicBool, AtomicI8, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
-use tokio::fs::{File, OpenOptions};
+use tokio::fs::{remove_file, File, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::RwLock;
 use tokio::sync::{mpsc, Mutex};
@@ -91,8 +91,12 @@ async fn __download_file(
     request_id: &String,
     server_id: &String,
     local_path: &String,
+    offset: &u64,
 ) -> Result<(File, Channel<Msg>, Arc<DownloadControl>), String> {
-    // 前端已经创建了目录
+    if *offset == 0 {
+        // 0的时候如果删除本地文件存在删除本地
+        let _ = remove_file(local_path).await.map_err(|_| {});
+    }
     // 创建文件并打开文件
     let file_res = OpenOptions::new()
         .create(true)
@@ -135,7 +139,7 @@ pub async fn cat_download_file(
         __emit(&stream, &loaded, &delta, &total);
     };
     let (mut local_file, mut channel, ctrl) =
-        match __download_file(&request_id, &server_id, &local_path).await {
+        match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
                 return Res::fail(&err);
@@ -238,7 +242,7 @@ pub async fn download_file(
         __emit(&stream, &loaded, &delta, &total);
     };
     let (local_file, channel, ctrl) =
-        match __download_file(&request_id, &server_id, &local_path).await {
+        match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
                 return Res::fail(&err);
@@ -278,8 +282,8 @@ pub async fn download_file(
                 return Err("写入本地文件失败".into());
             }
             let delta = bys.len() as u64;
-            let _loaded = loaded.fetch_add(delta, Ordering::SeqCst);
-            let size = pending_delta.fetch_add(delta, Ordering::SeqCst);
+            let _loaded = loaded.fetch_add(delta, Ordering::SeqCst) + delta;
+            let size = pending_delta.fetch_add(delta, Ordering::SeqCst) + delta;
             let now = now_millis();
             // 进度事件节流，避免前端在高吞吐时被消息风暴阻塞。
             if size >= 1024 * 1024
@@ -369,7 +373,7 @@ pub async fn upload_file(
     let pending_delta = Arc::new(AtomicU64::new(0)); // 每次通知的增量
     let last_emit_at = Arc::new(AtomicU64::new(now_millis())); // 上次通知的时间戳
     let res = Arc::new(AtomicI8::new(1)); // 结束状态 0 暂停 -1 取消 1成功
-    match _sftp_write(channel, &remote_path, &true, || {
+    match _sftp_write(channel, &remote_path, &(offset > 0), || {
         let request_id = request_id.clone();
         let ctrl = ctrl.clone();
         let local_file = local_file.clone();
@@ -395,8 +399,8 @@ pub async fn upload_file(
             match local_file.read(&mut buf).await {
                 Ok(n) => {
                     let delta = n as u64;
-                    let _loaded = loaded.fetch_add(delta, Ordering::SeqCst);
-                    let size = pending_delta.fetch_add(delta, Ordering::SeqCst);
+                    let _loaded = loaded.fetch_add(delta, Ordering::SeqCst) + delta;
+                    let size = pending_delta.fetch_add(delta, Ordering::SeqCst) + delta;
                     let now = now_millis();
                     // 进度事件节流，避免前端在高吞吐时被消息风暴阻塞。
                     if now - last_emit_at.load(Ordering::SeqCst) >= 100
@@ -503,12 +507,12 @@ pub async fn sftp_upload_local_file(
                 Ok(n) => {
                     if n > 0 {
                         buf.truncate(n); // 别忘了截断
-                        let loaded = loaded.fetch_add(n as u64, Ordering::SeqCst);
+                        let loaded = loaded.fetch_add(n as u64, Ordering::SeqCst) + n as u64;
                         let _ = stream.send(loaded as f32 / total as f32);
                         Ok(Some(buf))
                     } else {
                         // 上传完成
-                        let _ = stream.send(100f32);
+                        let _ = stream.send(1f32);
                         Ok(None)
                     }
                 }
@@ -636,7 +640,7 @@ where
                 Ok(n) => {
                     if n > 0 {
                         buf.truncate(n);
-                        let _ = tx.send(buf).await;
+                        let _ = tx.send(buf).await.map_err(|_| {});
                     } else {
                         break;
                     }
@@ -651,7 +655,13 @@ where
         let data = rx.recv().await;
         if let Some(bys) = data {
             match call(bys).await {
-                Ok(_) => continue,
+                Ok(n) => {
+                    if n == 0 {
+                        // 前端暂停了 通知异步线程结束不要再读了
+                        write_flag.store(false, Ordering::Relaxed);
+                        break;
+                    }
+                }
                 // 回调写入失败了  直接返回错误
                 Err(e) => {
                     // 通知异步线程写入失败  不要再读了
@@ -665,6 +675,7 @@ where
             break;
         }
     }
+    drop(rx);
     future.await.unwrap_or_else(|_| Err("读取失败".into()))
 }
 
