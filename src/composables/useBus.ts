@@ -4,6 +4,7 @@ import { onUnmounted } from "vue";
 export const DirectRemotePathEventKey = "DirectRemotePathEventKey"; // 直接打开远程路径事件
 export const RefreshFileListEventKey = "RefreshFileListEventKey"; // 刷新文件列表事件
 export const DownloadMenuOpenEventKey = "DownloadMenuOpenEventKey"; // 下载菜单打开事件
+export const UploadFileEventKey = "UploadFileEventKey"; // 上传菜单打开事件
 export const ActiveFileEventKey = "ActiveFileEventKey"; // 选择目录事件
 export const FileDragStartEventKey = "FileDragStartEventKey"; // 文件拖拽开始事件
 export const FileDragEndEventKey = "FileDragEndEventKey"; // 文件拖拽结束事件
@@ -14,6 +15,7 @@ export type BusEvents = {
     [DirectRemotePathEventKey]: { sid: string; path: string };
     [RefreshFileListEventKey]: void;
     [DownloadMenuOpenEventKey]: void;
+    [UploadFileEventKey]: void;
     [ActiveFileEventKey]: { sid: string; path: string };
     [FileDragStartEventKey]: RemoteFileItem[];
     [FileDragEndEventKey]: void;

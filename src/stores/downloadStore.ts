@@ -466,11 +466,11 @@ export const useDownloadStore = defineStore("sftp-download", () => {
         async function addPath(localPath: string, localAbsPath?: string): Promise<TransferItem | null> {
             const localInfo = await stat(localPath);
             const name = await basename(localPath);
-            const parentDir = await dirname(localPath);
             let remotePath = "";
             if (localAbsPath) {
-                const relativePath = localPath.replace(localAbsPath, "");
-                remotePath = await remoteJoin(remoteDir, relativePath);
+                const relativePath = localPath.replace(localAbsPath, ""); // 获取本地的相对路径
+                const linuxRelativePath = localPathToLinuxPath(relativePath).slice(1); // 将本地的相对路径转成linux路径并删除前面的/
+                remotePath = await remoteJoin(remoteDir, linuxRelativePath);
             } else {
                 remotePath = await remoteJoin(remoteDir, name);
             }
@@ -506,7 +506,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
                 const children = await readDir(localPath);
                 const taskChildren: TransferItem[] = [];
                 for (const child of children) {
-                    const childTask = await addPath(await join(localPath, child.name), localAbsPath ?? parentDir);
+                    const childTask = await addPath(await join(localPath, child.name), localAbsPath ?? (await dirname(localPath)));
                     if (!childTask) continue;
                     taskChildren.push(childTask);
                 }

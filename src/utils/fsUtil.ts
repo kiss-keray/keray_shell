@@ -73,7 +73,6 @@ export async function oneFileRemoteItem(serverId: string, path: string): Promise
     fi
     `;
     const raw = await execRemote(serverId, shell);
-    console.log("oneFileRemoteItem:", serverId, shell, raw);
     const lines = raw
         .split(/\r?\n/)
         .map((x) => x.trim())
@@ -342,7 +341,7 @@ function parseRemoteSubFile(line: string, next?: string): RemoteFileItem | null 
     // group: string; // 所属组
     // -rw-r--r-- 1 root root 3175677 2026/05/21 15:47 /root/人才引进报告.pdf Copy
     // lrwxrwxrwx 1 root root 9 2023/03/15 06:41 /lib32 -> usr/lib32
-
+    if (!line) return null;
     const ls = line.split(RegExp(" "));
     if (ls.length < 8 || line.includes("cannot access")) return null;
     const isLink = ls[0].startsWith("l");

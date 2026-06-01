@@ -334,7 +334,7 @@ pub async fn exec_shell(server_id: &str, cmd: &str) -> Result<Vec<u8>, String> {
     if let Some(code) = exit_status {
         if code != 0 {
             debug!("远端命令退出码:{}", code);
-            return Err(format!("执行失败:code {}", code));
+            // 不返回Err 由前端自行更新返回内容判断是否失败
         }
     }
     Ok(stdout_bytes)

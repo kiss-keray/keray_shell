@@ -15,6 +15,7 @@ import useBus, {
     FileDragStartEventKey,
     RefreshFileListEventKey,
     SftpProcessEventKey,
+    UploadFileEventKey,
 } from "@/composables/useBus";
 import { storeToRefs } from "pinia";
 import { checkLinuxFileName } from "@/utils/fsUtil";
@@ -463,6 +464,24 @@ function clickDownload(items: FileStoreItem[]) {
         });
 }
 
+async function clickUpload(row: FileStoreItem, directory: boolean = true) {
+    const uploadDefaultPath = await appStore.homeDir;
+    if (appStore.osType === "macos") {
+        const paths = await invoke<string[]>("pick_file_or_folder", { title: "上传", multiple: true, defaultPath: uploadDefaultPath });
+        if (!paths) return;
+        uploadFiles(paths, row);
+        return;
+    }
+    const paths = await open({
+        title: "上传",
+        multiple: true,
+        directory,
+        defaultPath: uploadDefaultPath,
+    });
+    if (!paths) return;
+    uploadFiles(paths, row);
+}
+
 function uploadFiles(paths: string[], fileItem: RemoteFileItem = activeItem.value) {
     const dirItem = fileItem.isDir ? fileItem : fileItem.parent;
     if (!dirItem || !dirItem.isDir) {
@@ -490,7 +509,6 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
     }
     const selectedItems = fileList.value.filter((item) => selectedPaths.value.has(item.id));
     const canBulkEdit = selectedItems.every((item) => isEditableTextFile(item));
-    const uploadDefaultPath = await appStore.homeDir;
 
     /* 使用系统关联软件打开文件 */
     async function openFileWithSystem(path: string, appPath: string | null): Promise<void> {
@@ -690,9 +708,7 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
                   label: "上传",
                   disabled: offline,
                   handler: async () => {
-                      const paths = await invoke<string[]>("pick_file_or_folder", { title: "上传", multiple: true, defaultPath: uploadDefaultPath });
-                      if (!paths) return;
-                      uploadFiles(paths, onlyOne ? row : activeItem.value);
+                      clickUpload(onlyOne ? row : activeItem.value);
                   },
               }
             : {
@@ -702,27 +718,13 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
                       {
                           label: "上传文件",
                           handler: async () => {
-                              const paths = await open({
-                                  title: "上传",
-                                  multiple: true,
-                                  directory: false,
-                                  defaultPath: uploadDefaultPath,
-                              });
-                              if (!paths) return;
-                              uploadFiles(paths, onlyOne ? row : activeItem.value);
+                              clickUpload(onlyOne ? row : activeItem.value, false);
                           },
                       },
                       {
                           label: "上传文件夹",
                           handler: async () => {
-                              const paths = await open({
-                                  title: "上传",
-                                  multiple: true,
-                                  directory: true,
-                                  defaultPath: uploadDefaultPath,
-                              });
-                              if (!paths) return;
-                              uploadFiles(paths, onlyOne ? row : activeItem.value);
+                              clickUpload(onlyOne ? row : activeItem.value);
                           },
                       },
                   ],
@@ -1080,6 +1082,10 @@ onMounted(async () => {
         if (items.length === 0) return;
         clickDownload(items);
     });
+    // 监听上传菜单打开事件
+    on(UploadFileEventKey, () => {
+        clickUpload(activeItem.value);
+    });
     // 更新列宽
     updateColWidths();
     // 监听窗口大小变化事件
@@ -1130,6 +1136,7 @@ function dragLocalFile(payload: DragDropEvent) {
 }
 
 // 将窗口拖回来
+
 getCurrentWindow()
     .onDragDropEvent(({ payload }) => {
         if (payload.type !== "drop" || payload.paths.length === 0) return;
@@ -1146,7 +1153,9 @@ dragListener(() => {
     closeFuns.push(unlisten);
 });
 
+let fileTableDrag = false;
 function dragstart() {
+    fileTableDrag = true;
     const items = Array.from(selectedPaths.value)
         .map((v) => fileList.value.find((item) => item.id === v))
         .filter((v) => v) as FileStoreItem[];
@@ -1155,18 +1164,22 @@ function dragstart() {
 }
 
 function dragend() {
+    fileTableDrag = false;
     emit(FileDragEndEventKey);
 }
 
 function dragover({ target }: { target: HTMLElement }) {
+    if (!fileTableDrag) return;
     const isDir = target.getAttribute("data-is-dir") === "true";
     if (!isDir) return;
     target.classList.add("drag-over");
 }
 function dragleave({ target }: { target: HTMLElement }) {
+    if (!fileTableDrag) return;
     target.classList.remove("drag-over");
 }
 async function drop(event: { target: HTMLElement }) {
+    if (!fileTableDrag) return;
     const { target } = event;
     target.classList.remove("drag-over");
     const isDir = target.getAttribute("data-is-dir") === "true";

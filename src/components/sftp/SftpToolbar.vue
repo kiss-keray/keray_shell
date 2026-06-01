@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SftpActiveItemKey } from "@/utils/constant";
 import type { FileStoreItem } from ".";
-import useBus, { DirectRemotePathEventKey, DownloadMenuOpenEventKey, RefreshFileListEventKey } from "@/composables/useBus";
+import useBus, { DirectRemotePathEventKey, DownloadMenuOpenEventKey, RefreshFileListEventKey, UploadFileEventKey } from "@/composables/useBus";
 import { removeArrayItem } from "@/utils";
 const server = inject<ChannelInstance>(ChannelInstanceProvideKey)!;
 
@@ -46,7 +46,7 @@ function onSelectHistory(path: string) {
             </button>
             <div class="relative">
                 <button type="button" class="icon-btn" title="上传">
-                    <Icon icon="mdi:upload" class="text-lg" />
+                    <Icon icon="mdi:upload" class="text-lg" @click="emit(UploadFileEventKey)" />
                 </button>
             </div>
             <button type="button" class="icon-btn" title="下载" @click="emit(DownloadMenuOpenEventKey)">
