@@ -1196,6 +1196,7 @@ async function drop(event: DragEvent) {
     if (!fileTableDrag) return;
     const target = event.target as HTMLElement | null;
     if (!target) return;
+    target.classList.remove("drag-over");
     const isDir = target.getAttribute("data-is-dir") === "true";
     if (!isDir) return;
     const id = target.getAttribute("data-id");

@@ -1,6 +1,6 @@
 {
   "name": "keray_shell_rust",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "description": "A Tauri SSH and SFTP desktop client.",
   "author": "Keray",
@@ -17,7 +17,8 @@
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "set-version": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@iconify/vue": "^5.0.0",
