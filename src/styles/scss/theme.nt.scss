@@ -1,52 +1,76 @@
 .theme.nt {
     &.dark {
-        --nt-surface: #3a3b3b;
-        --nt-ink: #ffffff;
-        --nt-shadow: #000000;
-        --nt-highlight: #ffffff;
-        --nt-accent: #6eb3ff;
+        color-scheme: dark;
+        --nt-surface: #262c35;
+        --nt-surface-raised: linear-gradient(145deg, #2b323d, #222831);
+        --nt-ink: #eef4ff;
+        --nt-shadow: #0d1117;
+        --nt-highlight: #91a0b5;
+        --nt-accent: #73a7ff;
         --nt-success: #4ade80;
-        --nt-warning: #fb923c;
-        --nt-danger: #fca5a5;
-        --nt-danger-solid: #ef4444;
+        --nt-warning: #f6ad55;
+        --nt-danger: #ff9b9b;
+        --nt-danger-solid: #ff5d68;
+        --nt-overlay-base: #090c11;
+        --nt-shadow-deep: #080b10;
+        --nt-shadow-highlight: #728399;
+        --nt-line-highlight: #becde0;
+
+        // 深色拟态不能依赖纯白高光，否则边缘会像描边；改用低饱和蓝灰模拟柔和环境光。
+        --nt-bg-well: #222831;
+        --nt-bg-frost: rgba(from var(--nt-surface) r g b / 0.94);
+        --nt-bg-overlay: rgba(from var(--nt-overlay-base) r g b / 0.62);
+        --nt-bg-row-dark: rgba(from var(--nt-shadow) r g b / 0.13);
+        --nt-shadow-out-dark: rgba(from var(--nt-shadow-deep) r g b / 0.58);
+        --nt-shadow-out-light: rgba(from var(--nt-shadow-highlight) r g b / 0.16);
+        --nt-shadow-in-dark: rgba(from var(--nt-shadow-deep) r g b / 0.68);
+        --nt-shadow-in-light: rgba(from var(--nt-shadow-highlight) r g b / 0.12);
+        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow-deep) r g b / 0.48), -4px -4px 14px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow-deep) r g b / 0.5), -6px -6px 20px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-line-highlight) r g b / 0.1);
+        --nt-border: rgba(from var(--nt-line-highlight) r g b / 0.1);
+        --nt-divider: rgba(from var(--nt-line-highlight) r g b / 0.08);
+        --nt-track-bg: rgba(from var(--nt-shadow) r g b / 0.28);
+        --nt-bg-hover: rgba(from var(--nt-line-highlight) r g b / 0.055);
+        --nt-bg-hover-strong: rgba(from var(--nt-line-highlight) r g b / 0.09);
     }
     &.light {
-        --nt-surface: #e6e8ec;
-        --nt-ink: #0f172a;
-        --nt-shadow: #0f172a;
+        color-scheme: light;
+        --nt-surface: #e7ecf3;
+        --nt-surface-raised: linear-gradient(145deg, #edf2f8, #dfe5ed);
+        --nt-ink: #263247;
+        --nt-shadow: #8e9cad;
         --nt-highlight: #ffffff;
-        --nt-accent: #2563eb;
+        --nt-accent: #4f7fff;
         --nt-success: #16a34a;
         --nt-warning: #ea580c;
-        --nt-danger: #dc2626;
+        --nt-danger: #d83b48;
         --nt-danger-solid: #ef4444;
+
+        // 浅色模式按参考图采用冷蓝灰底，左上高光、右下阴影形成稳定且干净的凸起层级。
+        --nt-bg-well: #e2e8f0;
+        --nt-bg-frost: rgba(from var(--nt-surface) r g b / 0.95);
+        --nt-bg-overlay: rgba(from var(--nt-ink) r g b / 0.28);
+        --nt-bg-row-dark: rgba(from var(--nt-shadow) r g b / 0.08);
+        --nt-shadow-out-dark: rgba(from var(--nt-shadow) r g b / 0.34);
+        --nt-shadow-out-light: rgba(from var(--nt-highlight) r g b / 0.92);
+        --nt-shadow-in-dark: rgba(from var(--nt-shadow) r g b / 0.38);
+        --nt-shadow-in-light: rgba(from var(--nt-highlight) r g b / 0.86);
+        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow) r g b / 0.34), -5px -5px 16px rgba(from var(--nt-highlight) r g b / 0.82);
+        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow) r g b / 0.34), -7px -7px 22px rgba(from var(--nt-highlight) r g b / 0.88);
+        --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-highlight) r g b / 0.82);
+        --nt-border: rgba(from var(--nt-shadow) r g b / 0.16);
+        --nt-divider: rgba(from var(--nt-shadow) r g b / 0.14);
+        --nt-track-bg: rgba(from var(--nt-shadow) r g b / 0.18);
+        --nt-bg-hover: rgba(from var(--nt-highlight) r g b / 0.42);
+        --nt-bg-hover-strong: rgba(from var(--nt-highlight) r g b / 0.62);
     }
 
-    --nt-bg-well: rgba(from var(--nt-surface) r g b / 0.9); // 下凹区域背景（输入区/表头等）
-    --nt-bg-frost: rgba(from var(--nt-surface) r g b / 0.8); // 毛玻璃背景（浮层）
-
-    --nt-bg-popup: rgba(from var(--nt-shadow) r g b / 0.48); // 浮层背景（菜单/历史弹层）
-    --nt-bg-input-dark: rgba(from var(--nt-shadow) r g b / 0.25); // 深色输入框背景
-    --nt-bg-overlay: rgba(from var(--nt-shadow) r g b / 0.45); // 遮罩层背景
-    --nt-bg-row-dark: rgba(from var(--nt-shadow) r g b / 0.08); // 表格暗行背景
-    --nt-table-header-bg: rgba(from var(--nt-shadow) r g b / 0.25); // 表头背景色
-    --nt-shadow-out-dark: rgba(from var(--nt-shadow) r g b / 0.18); // 外凸阴影暗部
-    --nt-shadow-in-dark: rgba(from var(--nt-shadow) r g b / 0.32); // 内凹阴影暗部
-    --nt-shadow-popup: 0 8px 24px rgba(from var(--nt-shadow) r g b / 0.45); // 弹层阴影
-    --nt-shadow-dialog: 0 10px 28px rgba(from var(--nt-shadow) r g b / 0.35); // 对话框阴影
     --nt-shadow-dot: inset 1px 1px 2px rgba(from var(--nt-shadow) r g b / 0.4); // 状态点内阴影
     --nt-focus-glow-dark: drop-shadow(1px 1px 2px rgba(from var(--nt-shadow) r g b / 0.15)); // 图标暗部光晕
-    --nt-shadow-out: 6px 6px 14px var(--nt-shadow-out-dark), -6px -6px 14px var(--nt-shadow-out-light); // 统一外凸阴影
-    --nt-shadow-in: inset 4px 4px 10px var(--nt-shadow-in-dark), inset -4px -4px 10px var(--nt-shadow-in-light); // 统一内凹阴影
-
-    --nt-bg-hover: rgba(from var(--nt-highlight) r g b / 0.08); // 常规悬浮背景
-    --nt-bg-hover-strong: rgba(from var(--nt-highlight) r g b / 0.1); // 强悬浮背景
-    --nt-shadow-out-light: rgba(from var(--nt-highlight) r g b / 0.07); // 外凸阴影亮部
-    --nt-shadow-in-light: rgba(from var(--nt-highlight) r g b / 0.08); // 内凹阴影亮部
-    --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-highlight) r g b / 0.12); // 顶部高光线（标准）
-    --nt-border: rgba(from var(--nt-highlight) r g b / 0.12); // 标准边框
-    --nt-divider: rgba(from var(--nt-highlight) r g b / 0.1); // 分割线颜色
-    --nt-track-bg: rgba(from var(--nt-highlight) r g b / 0.14); // 轨道背景色
+    --nt-shadow-out-soft: 4px 4px 10px var(--nt-shadow-out-dark), -4px -4px 10px var(--nt-shadow-out-light); // 小控件外凸阴影
+    --nt-shadow-in: inset 3px 3px 8px var(--nt-shadow-in-dark), inset -3px -3px 8px var(--nt-shadow-in-light); // 统一内凹阴影
+    --nt-shadow-in-soft: inset 2px 2px 5px var(--nt-shadow-in-dark), inset -2px -2px 5px var(--nt-shadow-in-light); // 小控件内凹阴影
     --nt-focus-glow-light: drop-shadow(-1px -1px 2px rgba(from var(--nt-highlight) r g b / 0.8)); // 图标亮部光晕
     --nt-focus-glow-strong: drop-shadow(2px 2px 2px rgba(from var(--nt-highlight) r g b / 0.6)); // 激活图标暗部高光
 
@@ -64,7 +88,7 @@
     --nt-accent-soft-hover: rgba(from var(--nt-accent) r g b / 0.35); // 强调色弱背景悬浮
     --nt-accent-border: rgba(from var(--nt-accent) r g b / 0.55); // 强调色边框
     --nt-btn-primary-bg: rgba(from var(--nt-accent) r g b / 0.85); // 主按钮背景
-    --nt-btn-primary-border: rgba(from var(--nt-accent) r g b / 0.55); // 主按钮边框
+    --nt-btn-primary-border: var(--nt-accent-border); // 主按钮边框
 
     --nt-success-bg: rgba(from var(--nt-success) r g b / 0.28); // 成功按钮背景
     --nt-success-bg-hover: rgba(from var(--nt-success) r g b / 0.38); // 成功按钮悬浮背景
@@ -79,13 +103,13 @@
     --nt-danger-glow: rgba(from var(--nt-danger-solid) r g b / 0.4); // 危险状态外发光
     --nt-btn-danger-bg: rgba(from var(--nt-danger-solid) r g b / 0.9); // 危险按钮背景
 
-    @mixin nt-in-fun($bg: var(--nt-surface), $shadowa: var(--nt-shadow-in-dark), $shadowb: var(--nt-shadow-in-light)) {
+    @mixin nt-in-fun($bg: var(--nt-bg-well), $shadowa: var(--nt-shadow-in-dark), $shadowb: var(--nt-shadow-in-light)) {
         background: $bg;
         box-shadow:
-            inset 28px 28px 61px $shadowa,
-            inset -28px -28px 61px $shadowb;
+            inset 3px 3px 8px $shadowa,
+            inset -3px -3px 8px $shadowb;
     }
-    @mixin nt-out-fun($bg: var(--nt-surface), $shadowa: var(--nt-shadow-out-dark), $shadowb: var(--nt-shadow-out-light)) {
+    @mixin nt-out-fun($bg: var(--nt-surface-raised), $shadowa: var(--nt-shadow-out-dark), $shadowb: var(--nt-shadow-out-light)) {
         background: $bg;
         box-shadow:
             7px 7px 16px $shadowa,
@@ -93,22 +117,47 @@
     }
 
     @mixin nt-in {
-        @include nt-in-fun(var(--nt-surface), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
+        @include nt-in-fun(var(--nt-bg-well), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
     }
 
     @mixin nt-in-b {
-        @include nt-in-fun(linear-gradient(145deg, var(--nt-shadow-in-light), var(--nt-shadow-in-dark)), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
+        @include nt-in-fun(var(--nt-bg-well), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
     }
 
     @mixin nt-out {
-        @include nt-out-fun(var(--nt-surface), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
+        @include nt-out-fun(var(--nt-surface-raised), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
     }
 
     @mixin nt-out-b {
-        @include nt-out-fun(linear-gradient(145deg, var(--nt-shadow-out-light), var(--nt-shadow-out-dark)), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
+        @include nt-out-fun(var(--nt-surface-raised), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
     }
 
-    @include nt-in;
+    // 小按钮统一保持“凸起 -> 悬浮抬高 -> 按下内凹”的交互，避免各业务模块手感不一致。
+    @mixin nt-control-out {
+        box-shadow: var(--nt-shadow-out-soft);
+        transition:
+            transform 0.16s ease,
+            box-shadow 0.16s ease,
+            background-color 0.16s ease,
+            border-color 0.16s ease;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled),
+        &.active {
+            transform: translateY(0);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        &:disabled {
+            box-shadow: none;
+        }
+    }
+
+    // 页面本身是承载所有拟态组件的同色背景，不应做成一个巨大的内凹面。
+    background: var(--nt-surface);
     color: var(--nt-text);
 
     &.ui-compact {
@@ -162,9 +211,6 @@
     .term-module {
         color: var(--nt-ink);
         @include nt-in;
-        box-shadow:
-            inset 24px -24px 36px var(--nt-shadow-in-dark),
-            inset -24px 24px 36px var(--nt-shadow-in-light);
         .term {
             .xterm-rows {
                 color: var(--nt-ink);
@@ -205,14 +251,10 @@
 
         .item {
             @include nt-out;
-            box-shadow:
-                -7px -7px 14px var(--nt-shadow-out-dark),
-                7px 7px 14px var(--nt-shadow-out-light);
 
             &.active {
-                box-shadow:
-                    inset 7px 7px 14px var(--nt-shadow-in-dark),
-                    inset -7px -7px 14px var(--nt-shadow-in-light);
+                background: var(--nt-bg-well);
+                box-shadow: var(--nt-shadow-in);
             }
             .status {
                 @include nt-in;
@@ -305,9 +347,7 @@
 
         .server-list-search {
             @include nt-in;
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
 
             input {
                 color: var(--nt-text-strong);
@@ -374,9 +414,7 @@
             color: var(--nt-text-strong);
             border: 1px solid var(--nt-border);
             @include nt-in;
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
 
             &:focus {
                 border-color: var(--nt-accent-border);
@@ -393,6 +431,7 @@
         .server-tree-action {
             color: var(--nt-text-strong);
             background: var(--nt-accent-soft);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-accent-soft-hover);
@@ -407,9 +446,7 @@
 
         .server-tree-search {
             @include nt-in;
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
 
             input {
                 color: var(--nt-text-strong);
@@ -529,9 +566,7 @@
                 color: var(--nt-text-strong);
                 border: 1px solid var(--nt-border);
                 @include nt-in;
-                box-shadow:
-                    inset 2px 2px 6px var(--nt-shadow-in-dark),
-                    inset -2px -2px 6px var(--nt-shadow-in-light);
+                box-shadow: var(--nt-shadow-in-soft);
 
                 &::placeholder {
                     color: var(--nt-text-dim);
@@ -554,6 +589,7 @@
             border: 1px solid var(--nt-border);
             background: var(--nt-bg-well);
             @include nt-out;
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-accent-soft-hover);
@@ -581,8 +617,8 @@
 
         .edit-server-danger-btn {
             color: #8f1d1d;
-            background: rgba(239, 68, 68, 0.12);
-            border-color: rgba(239, 68, 68, 0.32);
+            background: rgba(from var(--nt-danger-solid) r g b / 0.12);
+            border-color: rgba(from var(--nt-danger-solid) r g b / 0.32);
         }
 
         .edit-server-link-btn {
@@ -834,9 +870,8 @@
     /* SftpToolbar.vue */
     .toolbar {
         .path-input {
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
             border: 1px solid var(--nt-border);
             color: inherit;
         }
@@ -844,6 +879,7 @@
         .tb-btn {
             background: var(--nt-bg-hover);
             color: var(--nt-text-muted);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-bg-hover-strong);
@@ -852,6 +888,7 @@
 
         .icon-btn {
             color: var(--nt-text-muted);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-bg-hover-strong);
@@ -890,9 +927,7 @@
 
         .tree-inline-input {
             @include nt-in;
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
             border: 1px solid var(--nt-border);
             color: inherit;
         }
@@ -961,9 +996,7 @@
 
             .table-inline-input {
                 @include nt-in;
-                box-shadow:
-                    inset 2px 2px 6px var(--nt-shadow-in-dark),
-                    inset -2px -2px 6px var(--nt-shadow-in-light);
+                box-shadow: var(--nt-shadow-in-soft);
                 border: 1px solid var(--nt-border);
                 color: inherit;
             }
@@ -989,6 +1022,7 @@
 
         .clean-btn {
             background: var(--nt-bg-hover-strong);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-bg-hover-strong);
@@ -999,6 +1033,7 @@
             color: var(--nt-text-strong);
             background: var(--nt-accent-soft);
             border: 1px solid var(--nt-accent-border);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-accent-soft-hover);
@@ -1067,6 +1102,7 @@
             color: var(--nt-text-strong);
             background: var(--nt-accent-soft);
             border: 1px solid var(--nt-accent-border);
+            @include nt-control-out;
 
             &:hover {
                 background: var(--nt-accent-soft-hover);
@@ -1096,7 +1132,27 @@
 
     /* Setting.vue */
     .global-button {
-        @include nt-out;
+        background: var(--nt-surface-raised);
+        border: 1px solid var(--nt-border);
+        box-shadow:
+            2px 2px 6px var(--nt-shadow-out-dark),
+            -2px -2px 6px var(--nt-shadow-out-light);
+
+        .btn {
+            color: var(--nt-text-muted);
+            box-shadow: none;
+
+            &:hover:not(:disabled) {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+
+            &.active {
+                color: var(--nt-accent);
+                background: var(--nt-bg-well);
+                box-shadow: var(--nt-shadow-in-soft);
+            }
+        }
     }
 
     /* Confirm.vue / Prompt.vue / PermissionEditor.vue */
@@ -1143,9 +1199,7 @@
             .prompt-input {
                 color: var(--nt-text-strong);
                 @include nt-in;
-                box-shadow:
-                    inset 2px 2px 6px var(--nt-shadow-in-dark),
-                    inset -2px -2px 6px var(--nt-shadow-in-light);
+                box-shadow: var(--nt-shadow-in-soft);
                 border-color: var(--nt-accent-border);
             }
 
@@ -1155,6 +1209,7 @@
                 border-color: var(--nt-btn-primary-border);
                 color: var(--nt-text-strong);
                 background: var(--nt-btn-primary-bg);
+                @include nt-control-out;
             }
 
             .confirm-btn.secondary,
@@ -1215,9 +1270,7 @@
         .upload-conflict-path {
             @include nt-in;
             border: 1px solid var(--nt-border);
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
         }
 
         .upload-conflict-path-label {
@@ -1240,6 +1293,7 @@
             border-color: var(--nt-btn-primary-border);
             color: var(--nt-text-strong);
             background: var(--nt-btn-primary-bg);
+            @include nt-control-out;
 
             &.secondary {
                 color: var(--nt-text-muted);
@@ -1299,6 +1353,7 @@
                 color: var(--nt-text-strong);
                 border-color: var(--nt-accent-border);
                 background: var(--nt-accent-soft);
+                box-shadow: var(--nt-shadow-in-soft);
             }
         }
 
@@ -1331,9 +1386,7 @@
             color: var(--nt-text-strong);
             border: 1px solid var(--nt-border);
             @include nt-in;
-            box-shadow:
-                inset 2px 2px 6px var(--nt-shadow-in-dark),
-                inset -2px -2px 6px var(--nt-shadow-in-light);
+            box-shadow: var(--nt-shadow-in-soft);
 
             &:focus {
                 border-color: var(--nt-accent-border);
@@ -1348,6 +1401,7 @@
             border: 1px solid var(--nt-btn-primary-border);
             color: var(--nt-text-strong);
             background: var(--nt-btn-primary-bg);
+            @include nt-control-out;
 
             &:hover {
                 filter: brightness(1.05);

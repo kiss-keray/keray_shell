@@ -19,8 +19,9 @@ body {
 
 .global-button {
     position: fixed;
-    top: 5px;
-    right: 10px;
+    // 收进标题栏右上角，保留少量边距防止外阴影被裁切。
+    top: 3px;
+    right: 6px;
     left: unset;
     z-index: 3001;
 }

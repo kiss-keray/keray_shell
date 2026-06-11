@@ -952,6 +952,22 @@
     /* Setting.vue */
     .global-button {
         @include glass-card();
+
+        .btn {
+            color: var(--glass-text-muted);
+            box-shadow: none;
+
+            &:hover:not(:disabled) {
+                color: var(--glass-text);
+                background: var(--glass-hover);
+            }
+
+            &.active {
+                color: var(--glass-accent);
+                background: var(--glass-surface-well);
+                box-shadow: var(--glass-shadow-in);
+            }
+        }
     }
     .confirm-mask,
     .prompt-mask,
