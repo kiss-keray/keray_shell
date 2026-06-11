@@ -1,5 +1,5 @@
 use crate::app_icon::get_app_icon;
-use crate::os::{local_fonts, pick_file_or_folder, read_clipboard_text};
+use crate::os::{disable_native_fullscreen, local_fonts, pick_file_or_folder, read_clipboard_text};
 use crate::sftp::{
     cat_download_file, download_file, one_read_string, one_write_string, sftp_read,
     sftp_upload_local_file, transfer_cancel, transfer_pause, upload_file,
@@ -59,6 +59,7 @@ pub fn run() {
             local_fonts,
             sync_window_glass,
             sync_window_transparent,
+            disable_native_fullscreen
         ])
         .plugin(
             tauri_plugin_log::Builder::new()

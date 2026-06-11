@@ -148,3 +148,36 @@ pub async fn pick_file_or_folder(
 pub async fn pick_file_or_folder() -> Res<Vec<String>> {
     Res::ok()
 }
+
+#[tauri::command]
+pub fn disable_native_fullscreen(app: tauri::AppHandle, label: String) -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        use tauri::Manager;
+        let win = app
+            .get_webview_window(&label)
+            .ok_or_else(|| format!("window not found: {label}"))?;
+        let w = win.clone();
+        win.run_on_main_thread(move || {
+            use cocoa::appkit::{NSWindow, NSWindowCollectionBehavior};
+            use cocoa::base::id;
+            if let Ok(ns_window) = w.ns_window() {
+                let ns_window = ns_window as id;
+                unsafe {
+                    let mut behavior = ns_window.collectionBehavior();
+                    behavior.remove(
+                        NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenPrimary,
+                    );
+                    behavior.insert(
+                        NSWindowCollectionBehavior::NSWindowCollectionBehaviorFullScreenAuxiliary,
+                    );
+                    ns_window.setCollectionBehavior_(behavior);
+                }
+            }
+        })
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = (app, label);
+    Ok(())
+}

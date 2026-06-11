@@ -254,7 +254,7 @@ async function createNewWindow(label: string, tp: AppType, queryStr: string, par
             console.error("send WEBVIEW_INIT_DATA_EVENT error", e);
         });
     });
-    return new WebviewWindow(label, {
+    const win = new WebviewWindow(label, {
         url: `index.html?tp=${tp}${queryStr}`,
         title: "",
         center: false,
@@ -263,6 +263,12 @@ async function createNewWindow(label: string, tp: AppType, queryStr: string, par
         ...platformWindowChrome(),
         ...params,
     });
+    if (type() === "macos") {
+        win.once("tauri://created", () => {
+            invoke("disable_native_fullscreen", { label }).catch(console.error);
+        });
+    }
+    return win;
 }
 
 export function getMainWinLabel() {
