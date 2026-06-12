@@ -834,27 +834,23 @@
 
     /* Sftp.vue */
     .sftp-panel {
-        @include nt-in-b;
-
+        .tabs {
+            @include nt-in-b;
+            .tab {
+                &.on {
+                    @include nt-control-out;
+                }
+            }
+            .tab-badge {
+                background: var(--nt-accent-soft);
+                color: var(--nt-text-strong);
+            }
+        }
         .files-view {
             .main {
                 margin: 0 6px 6px;
                 border-radius: 10px;
             }
-        }
-
-        .tab {
-            color: var(--nt-text-fade);
-
-            &.on {
-                background: var(--nt-bg-hover);
-                color: var(--nt-ink);
-            }
-        }
-
-        .tab-badge {
-            background: var(--nt-accent-soft);
-            color: var(--nt-text-strong);
         }
 
         .process-container {
@@ -870,9 +866,7 @@
     /* SftpToolbar.vue */
     .toolbar {
         .path-input {
-            background: var(--nt-bg-well);
-            box-shadow: var(--nt-shadow-in-soft);
-            border: 1px solid var(--nt-border);
+            @include nt-in-b;
             color: inherit;
         }
 
@@ -944,6 +938,9 @@
         &.active {
             background: var(--nt-accent-soft);
             color: var(--nt-ink);
+            &:hover {
+                background: rgba(from var(--nt-accent) r g b / 0.15);
+            }
         }
 
         &.drag-over {
@@ -964,9 +961,18 @@
             .data-row {
                 &.sel {
                     background: var(--nt-bg-selected);
+                    &:hover {
+                        background: rgba(from var(--nt-accent) r g b / 0.15);
+                    }
                 }
                 &.drag-over {
                     background: var(--nt-warning);
+                    &:hover {
+                        background: rgba(from var(--nt-warning) r g b / 0.5);
+                    }
+                }
+                &:hover {
+                    background: var(--nt-bg-hover);
                 }
             }
 

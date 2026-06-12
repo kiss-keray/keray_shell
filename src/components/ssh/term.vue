@@ -5,6 +5,7 @@ import "@xterm/xterm/css/xterm.css";
 import { storeToRefs } from "pinia";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import useBus, { DirectRemotePathEventKey, TermGroupCommandEventKey } from "@/composables/useBus";
+import type { SystemInputExpose } from "../SystemInput.vue";
 
 const props = withDefaults(
     defineProps<{
@@ -36,7 +37,7 @@ function writeToTerm(cmd: string) {
 const divRef = ref<HTMLElement>();
 const lineNumber = ref<HTMLElement>();
 const root = ref<HTMLDivElement>();
-const searchInput = ref<HTMLInputElement>();
+const searchInput = ref<SystemInputExpose>();
 const panelRoot = ref<HTMLDivElement>();
 
 let selectedText = "";
@@ -126,6 +127,10 @@ function termServerEventListen() {
     });
     termServer.onData((command) => {
         emit(TermGroupCommandEventKey, { groupId: props.groupId!, command, sessionId: props.server.sessionId });
+    });
+    termServer.onSearchChange((count, index) => {
+        searchData.count = count;
+        searchData.index = index + 1;
     });
     closeFuns.push(
         on(TermGroupCommandEventKey, (event) => {
@@ -229,20 +234,13 @@ async function ctrlC() {
 }
 
 const clickSearch = (next: boolean) => {
-    if (!searchData.text)
-        return {
-            count: 0,
-            index: 0,
-        };
     const options = {
         regex: searchData.regex,
         caseSensitive: searchData.caseSensitive,
         wholeWord: searchData.wholeWord,
     };
     const fun = next ? termServer.findNext : termServer.findPrevious;
-    const { count, index } = fun.bind(termServer)(searchData.text, options);
-    searchData.count = count;
-    searchData.index = index;
+    fun.bind(termServer)(searchData.text, options);
 };
 
 const search = () => {
@@ -398,7 +396,8 @@ provide(ChannelInstanceProvideKey, props.server);
             <div v-show="searchData.show" class="search">
                 <div class="grow flex justify-between items-center ml-2 left">
                     <Icon icon="si:search-alt-fill" class="mr-1" />
-                    <input ref="searchInput" v-model="searchData.text" class="grow w-full" @input="search" @focus="searchIsFocus = true" @blur="searchIsFocus = false" />
+                    <!-- 搜索内容需要严格保留用户输入的大小写，避免 macOS/WebKit 按自然语言自动改写。 -->
+                    <SystemInput ref="searchInput" v-model="searchData.text" class="grow w-full" @input="search" @focus="searchIsFocus = true" @blur="searchIsFocus = false" />
                     <Icon
                         icon="mdi:format-lowercase"
                         class="pointer icon"

@@ -30,7 +30,7 @@ function onSelectHistory(path: string) {
 
 <template>
     <div class="toolbar shrink-0 flex items-center gap-2 px-2 py-2">
-        <input v-model="pathDraft" class="path-input grow min-w-0 rounded px-2 py-1 text-sm outline-none" placeholder="路径" @keydown.enter.prevent="applyPath" />
+        <SystemInput v-model="pathDraft" class="path-input grow min-w-0 rounded px-2 py-1 text-sm outline-none" placeholder="路径" @keydown.enter.prevent="applyPath" />
         <div class="actions flex items-center gap-1 shrink-0">
             <div class="relative">
                 <button type="button" class="tb-btn" @click="historyOpen = !historyOpen">历史</button>
@@ -70,8 +70,8 @@ function onSelectHistory(path: string) {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    width: 26px;
+    height: 26px;
     border-radius: 4px;
 }
 </style>

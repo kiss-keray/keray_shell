@@ -26,6 +26,7 @@ import { getCurrentWindow, type DragDropEvent } from "@tauri-apps/api/window";
 import { MONACO_EDITOR_SAVED_EVENT, openOrFocusMonacoEditorWindow, type MonacoEditorSavedPayload } from "@/utils/window";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 import type { MenuItem } from "../DefaultMenuItems.vue";
+import type { SystemInputExpose } from "../SystemInput.vue";
 
 type ColKey = "name" | "size" | "type" | "mtime" | "perm" | "owner";
 type SortOrder = "asc" | "desc";
@@ -222,7 +223,7 @@ const editName = ref(""); // 重命名，新建文件的名称
 const uiActive = ref<boolean>(true); // 是否是UI激活状态
 const sortState = reactive<{ key: ColKey; order: SortOrder }>({ key: "name", order: "asc" });
 let resizeState: { key: ColKey; startX: number; startW: number } | null = null;
-const editNameInputRef = ref<HTMLInputElement | null>(null);
+const editNameInputRef = ref<SystemInputExpose[] | null>(null);
 const shiftKeyIndex = ref<number | null>(null);
 const { on, emit } = useBus();
 const closeFuns: UnlistenFn[] = [];
@@ -249,7 +250,8 @@ watch(activeItem, (newVal) => {
 watch(renameItem, (newVal) => {
     if (newVal) {
         nextTick(() => {
-            const el = editNameInputRef.value;
+            const el = editNameInputRef.value?.[0];
+            console.log("el", el);
             if (!el) return;
             el.focus({ preventScroll: true });
             el.select();
@@ -906,6 +908,14 @@ function dblclickRow(row: FileStoreItem) {
     }
 }
 
+function inputKeyDown(e: KeyboardEvent) {
+    const { key } = e;
+    if (key === "Enter") {
+        confirmName();
+    } else if (key === "Escape") {
+        renameItem.value = null;
+    }
+}
 async function confirmName(blur: boolean = false) {
     if (!editName.value) {
         renameItem.value = null;
@@ -1003,12 +1013,8 @@ const handleTableKeyDowns: KeyEventCallback[] = [
         }
         if (!oneSelect) return false;
         if (key === "Enter") {
-            if (renameItem.value) {
-                confirmName();
-            } else {
-                renameItem.value = oneSelect;
-                editName.value = baseName(renameItem.value!.id);
-            }
+            renameItem.value = oneSelect;
+            editName.value = baseName(renameItem.value!.id);
             return true;
         } else if (key === "ArrowUp" || key === "ArrowDown") {
             const index = showRows.value.indexOf(oneSelect);
@@ -1256,7 +1262,7 @@ function checkMove() {
                     <td colspan="6" class="px-3 py-6 text-center text-white/50 h-[100px]">暂无数据</td>
                 </tr>
             </tbody>
-            <tbody>
+            <tbody v-else>
                 <tr
                     v-for="row in showRows"
                     :key="row.id"
@@ -1290,7 +1296,7 @@ function checkMove() {
                                     <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
                                     <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="icon-link-icon" aria-hidden="true" />
                                 </span>
-                                <input v-model="editName" ref="editNameInputRef" class="table-inline-input" @blur="confirmName(true)" @click.stop />
+                                <SystemInput v-model="editName" ref="editNameInputRef" class="table-inline-input" @blur="confirmName(true)" @keydown.stop="inputKeyDown" @click.stop />
                             </span>
                         </template>
                     </td>

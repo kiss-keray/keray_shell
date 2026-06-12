@@ -182,7 +182,7 @@ function openContextMenu(e: MouseEvent, server: ServerDataModel) {
                 <div class="server-list-toolbar">
                     <label class="server-list-search">
                         <Icon icon="si:search-alt-fill" class="server-list-search-icon" />
-                        <input v-model="keyword" type="search" placeholder="搜索名称、IP、路径或用户" />
+                        <SystemInput v-model="keyword" type="search" placeholder="搜索名称、IP、路径或用户" />
                     </label>
                     <span class="server-list-count">{{ totalText }}</span>
                 </div>

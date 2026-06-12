@@ -307,12 +307,12 @@ async function pickPrivateKeyFile() {
             <p class="edit-server-group-text">当前分组：{{ currentGroupName }}</p>
             <label class="edit-server-field">
                 <span>名称</span>
-                <input v-model="form.name" type="text" placeholder="例如：生产服务器" />
+                <SystemInput v-model="form.name" type="text" placeholder="例如：生产服务器" />
             </label>
             <div class="edit-server-grid">
                 <label class="edit-server-field">
                     <span>地址</span>
-                    <input v-model="form.ip" type="text" placeholder="IP 或域名" />
+                    <SystemInput v-model="form.ip" type="text" placeholder="IP 或域名" />
                 </label>
                 <label class="edit-server-field">
                     <span>端口</span>
@@ -321,7 +321,7 @@ async function pickPrivateKeyFile() {
             </div>
             <label class="edit-server-field">
                 <span>用户</span>
-                <input v-model="form.user" type="text" placeholder="root" />
+                <SystemInput v-model="form.user" type="text" placeholder="root" />
             </label>
 
             <div class="edit-server-section-title">连接方式</div>

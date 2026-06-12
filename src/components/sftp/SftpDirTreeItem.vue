@@ -9,6 +9,7 @@ import { useKeyEventStore } from "@/stores/keyEvent";
 import { open } from "@tauri-apps/plugin-dialog";
 import { storeToRefs } from "pinia";
 import type { MenuItem } from "../DefaultMenuItems.vue";
+import type { SystemInputExpose } from "../SystemInput.vue";
 
 const props = defineProps<{
     fileItem: FileStoreItem;
@@ -23,7 +24,7 @@ const server = inject<ChannelInstance>(ChannelInstanceProvideKey)!;
 const activeItem = inject<Ref<FileStoreItem>>(SftpActiveItemKey)!;
 const editName = ref<string | null>(null);
 const rowRef = ref<HTMLDivElement>();
-const editNameInputRef = ref<HTMLInputElement | null>(null);
+const editNameInputRef = ref<SystemInputExpose | null>(null);
 
 const leaf = computed(() => {
     if (props.fileItem.children === null) return false;
@@ -41,8 +42,8 @@ watch(activeItem, (newVal) => {
     }
     autoScrollToActive(newVal);
 
-    watch(editName, (newVal) => {
-        if (newVal) {
+    watch(editName, (newVal, old) => {
+        if (newVal && !old) {
             nextTick(() => {
                 const el = editNameInputRef.value;
                 if (!el) return;
@@ -296,6 +297,15 @@ function handleFileDragEnd() {
     dragItems.length = 0;
 }
 
+function inputKeyDown(e: KeyboardEvent) {
+    const { key } = e;
+    if (key === "Enter") {
+        confirmName();
+    } else if (key === "Escape") {
+        editName.value = null;
+    }
+}
+
 onUnmounted(() => {
     off(FileDragStartEventKey, handleFileDragStart);
     off(FileDragEndEventKey, handleFileDragEnd);
@@ -366,7 +376,7 @@ async function drop(e: DragEvent) {
                     <Icon v-if="fileItem.linkPath" icon="ion:arrow-redo" class="lnk-corner-ic" aria-hidden="true" />
                 </span>
                 <span v-if="editName === null" class="truncate">{{ baseName(fileItem.id) }}</span>
-                <input v-else v-model="editName" ref="editNameInputRef" class="tree-inline-input" @blur="confirmName(true)" @keydown.enter="confirmName" @keydown.esc="editName = null" @click.stop />
+                <SystemInput v-else v-model="editName" ref="editNameInputRef" class="tree-inline-input" @blur="confirmName(true)" @keydown.stop="inputKeyDown" @click.stop />
             </div>
         </div>
         <div v-show="fileItem.open">

@@ -50,6 +50,7 @@ export default class TermServer {
     private keyEventFun: KeyEventCallback = () => false;
     private cwdChangeCallback: ((path: string) => void) | null = null;
     private onDataCallback: ((data: string) => void) | null = null;
+    private onSearchChangeCallback: ((count: number, index: number) => void) | null = null;
 
     //
     private _lastChangeFontSizeTime: number = 0;
@@ -162,6 +163,7 @@ export default class TermServer {
             });
             observer.observe(dom);
         }
+        this.bindSearchAddon();
     }
 
     public async connect(noSnapshot: boolean = true): Promise<void> {
@@ -210,9 +212,11 @@ export default class TermServer {
 
     resetSearch() {
         // 清空后如果搜索打开的 重置搜索
+        this.clearDecorations();
         this.searchAddon.dispose();
         this.searchAddon = new SearchAddon();
         this.terminal!.loadAddon(this.searchAddon);
+        this.bindSearchAddon();
     }
 
     clearSelection() {
@@ -220,7 +224,8 @@ export default class TermServer {
     }
 
     clearDecorations() {
-        this.searchAddon.clearDecorations();
+        // findNext("")才会清除搜索结果
+        this.searchAddon.findNext("");
     }
 
     clear() {
@@ -228,51 +233,21 @@ export default class TermServer {
     }
 
     selectLines(start: number, end: number) {
-        const zero = this.zeroLineNumber;
         this.terminal!.selectLines(start, end);
     }
 
-    _findDetail(): {
-        count: number;
-        index: number;
-    } {
-        // @ts-ignore
-        const decorations = this.searchAddon._highlightDecorations;
-        // @ts-ignore
-        const activeDecoration = this.searchAddon._selectedDecoration.value;
-        const index = decorations.findIndex((v: any) => v.match.col === activeDecoration.match.col && v.match.row === activeDecoration.match.row) + 1;
-        return {
-            count: decorations.length,
-            index,
-        };
-    }
-
-    findNext(
-        term: string,
-        options?: ISearchOptions,
-    ): {
-        count: number;
-        index: number;
-    } {
+    findNext(term: string, options?: ISearchOptions) {
         this.searchAddon.findNext(term, {
             ...searchOptions,
             ...options,
         });
-        return this._findDetail();
     }
 
-    findPrevious(
-        term: string,
-        options?: ISearchOptions,
-    ): {
-        count: number;
-        index: number;
-    } {
+    findPrevious(term: string, options?: ISearchOptions) {
         this.searchAddon.findPrevious(term, {
             ...searchOptions,
             ...options,
         });
-        return this._findDetail();
     }
 
     async write(cmd: string) {
@@ -399,6 +374,10 @@ export default class TermServer {
         });
     }
 
+    onSearchChange(call: (count: number, index: number) => void) {
+        this.onSearchChangeCallback = call;
+    }
+
     onKeyEvent(call: KeyEventCallback) {
         this.keyEventFun = call;
     }
@@ -409,5 +388,11 @@ export default class TermServer {
 
     onData(call: (data: string) => void) {
         this.onDataCallback = call;
+    }
+
+    private bindSearchAddon() {
+        this.searchAddon.onDidChangeResults(({ resultCount, resultIndex }) => {
+            this.onSearchChangeCallback?.(resultCount, resultIndex);
+        });
     }
 }

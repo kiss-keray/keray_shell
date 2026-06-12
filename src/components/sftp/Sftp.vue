@@ -101,7 +101,7 @@ provide(SftpActiveItemKey, activeItem);
 
 <template>
     <div class="sftp-panel relative flex flex-col h-full">
-        <div class="tabs shrink-0 flex items-center gap-1 px-2 pt-2">
+        <div class="tabs shrink-0 flex items-center gap-1">
             <button type="button" class="tab" :class="{ on: activeTab === 'files' }" @click="activeTab = 'files'">文件</button>
             <button type="button" class="tab" :class="{ on: activeTab === 'downloads' }" @click="activeTab = 'downloads'">
                 传输
@@ -129,13 +129,19 @@ provide(SftpActiveItemKey, activeItem);
 <style scoped lang="scss">
 .sftp-panel {
     overflow: hidden;
-    border-radius: 8px;
-}
-.tab {
-    padding: 6px 14px;
-    font-size: var(--font-size-md);
-    &.on {
-        border-radius: 6px;
+    .tabs {
+        padding: 2px 4px;
+        width: min-content;
+        border-radius: 8px;
+        overflow: hidden;
+        .tab {
+            padding: 4px 10px;
+            font-size: var(--font-size-md);
+            white-space: nowrap;
+            &.on {
+                border-radius: 6px;
+            }
+        }
     }
 }
 

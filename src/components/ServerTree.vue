@@ -109,7 +109,7 @@ dragListener(() => {
             <div class="server-tree-toolbar">
                 <label class="server-tree-search">
                     <Icon icon="si:search-alt-fill" class="server-tree-search-icon" />
-                    <input v-model="keyword" type="search" placeholder="搜索分组、名称、IP 或用户" />
+                    <SystemInput v-model="keyword" type="search" placeholder="搜索分组、名称、IP 或用户" />
                 </label>
                 <span class="server-tree-count">{{ showServerCount }} 台服务器</span>
             </div>

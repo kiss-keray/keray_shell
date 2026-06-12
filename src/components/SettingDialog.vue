@@ -285,7 +285,7 @@ async function clickDownloadServerData() {
                         <label class="setting-label" for="dl-dir">本地下载保存路径</label>
                     </p>
                     <div class="setting-row mb-4">
-                        <input id="dl-dir" v-model="draft.downloadDir" type="text" class="setting-input grow" autocomplete="off" />
+                        <SystemInput id="dl-dir" v-model="draft.downloadDir" type="text" class="setting-input grow" autocomplete="off" />
                         <button type="button" class="setting-btn secondary" @click="pickDownloadDir">选择文件夹</button>
                     </div>
                     <p class="setting-field">
@@ -393,7 +393,7 @@ async function clickDownloadServerData() {
                 <section v-show="activeTab === 'server'" class="setting-panel setting-server">
                     <p class="setting-field">
                         <label class="setting-label" for="server-sync-key">同步 key</label>
-                        <input id="server-sync-key" v-model="draft.serverSyncKey" type="text" class="setting-input setting-input-narrow" autocomplete="off" />
+                        <SystemInput id="server-sync-key" v-model="draft.serverSyncKey" type="text" class="setting-input setting-input-narrow" autocomplete="off" />
                     </p>
                     <p class="setting-field">
                         <span class="setting-label">同步类型</span>
@@ -426,7 +426,7 @@ async function clickDownloadServerData() {
                         <div class="setting-sync-remote-grid">
                             <p class="setting-field">
                                 <label class="setting-label" for="server-sync-ip">主机 IP</label>
-                                <input id="server-sync-ip" v-model="remoteSync.ip" type="text" class="setting-input setting-input-wide" autocomplete="off" placeholder="192.168.1.1" />
+                                <SystemInput id="server-sync-ip" v-model="remoteSync.ip" type="text" class="setting-input setting-input-wide" autocomplete="off" placeholder="192.168.1.1" />
                             </p>
                             <p class="setting-field">
                                 <label class="setting-label" for="server-sync-port">端口</label>
@@ -434,7 +434,7 @@ async function clickDownloadServerData() {
                             </p>
                             <p class="setting-field">
                                 <label class="setting-label" for="server-sync-user">用户名</label>
-                                <input id="server-sync-user" v-model="remoteSync.user" type="text" class="setting-input setting-input-wide" autocomplete="username" />
+                                <SystemInput id="server-sync-user" v-model="remoteSync.user" type="text" class="setting-input setting-input-wide" autocomplete="username" />
                             </p>
                             <p class="setting-field">
                                 <label class="setting-label" for="server-sync-password">密码</label>
@@ -442,7 +442,7 @@ async function clickDownloadServerData() {
                             </p>
                             <p class="setting-field">
                                 <label class="setting-label" for="server-sync-path">远程目录</label>
-                                <input id="server-sync-path" v-model="remoteSync.path" type="text" class="setting-input setting-input-wide" autocomplete="off" placeholder="/home" />
+                                <SystemInput id="server-sync-path" v-model="remoteSync.path" type="text" class="setting-input setting-input-wide" autocomplete="off" placeholder="/home" />
                             </p>
                         </div>
                     </div>
