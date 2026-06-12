@@ -1,6 +1,6 @@
 {
   "name": "keray_shell_rust",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": false,
   "description": "A Tauri SSH and SFTP desktop client.",
   "author": "Keray",
