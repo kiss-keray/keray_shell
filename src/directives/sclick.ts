@@ -1,3 +1,4 @@
+/** 鼠标点击事件， 但是会忽略点击后鼠标移动的点击事件 */
 export default {
     mounted(el: HTMLElement, binding: DirectiveBinding) {
         let startX = 0;

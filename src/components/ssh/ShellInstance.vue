@@ -4,6 +4,7 @@ import { emitTo, listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { storeToRefs } from "pinia";
 import { openOrFocusChildWindow } from "@/utils/window";
 import { isChannelInstance, isChannelInstanceGroup, type ChannelData, type ChannelInstance } from "@/stores/channelInstances";
+import Draggable from "vuedraggable";
 const appWindow = getCurrentWindow();
 export type DragStartPayload = {
     window: string;
@@ -66,7 +67,7 @@ const selectInstance = async (item: ChannelData) => {
     channelInstancesStore.select(item);
 };
 
-const dragstart = async (e: MouseEvent, item: ChannelData) => {
+const dragstart = async (e: DragEvent, item: ChannelData) => {
     if (!isChannelInstance(item)) return;
     // 计算新窗口位置
     dragsPosition.x = e.screenX;
@@ -89,7 +90,7 @@ const dragstart = async (e: MouseEvent, item: ChannelData) => {
     emitTo<DragStartPayload>({ kind: "Any" }, "sid_new_window_dragstart", dragsPosition.data);
 };
 
-const dragend = async (e: MouseEvent, item: ChannelData) => {
+const dragend = async (e: DragEvent, item: ChannelData) => {
     if (!isChannelInstance(item)) return;
     emitTo<string>({ kind: "Any" }, "sid_new_window_dragend", getCurrentWindow().label);
     if (dragsPosition.x < 0) return;
@@ -101,6 +102,16 @@ const dragend = async (e: MouseEvent, item: ChannelData) => {
     const rect = root.value.getBoundingClientRect();
     const endx = screenX - appStore.safeLeft - rect.x - 20; // 20px误差
     const endy = screenY - appStore.safeTop;
+    // end时判断鼠标是否在root范围内，不在时才表示新开窗口
+    {
+        const win = getCurrentWindow();
+        const { x, y } = await win.outerPosition();
+        const left = x / appStore.scaleFactor + rect.left;
+        const top = y / appStore.scaleFactor + rect.top;
+        if (screenX > left && screenX < left + rect.width && screenY > top && screenY < top + rect.height) {
+            return;
+        }
+    }
     // 只有一个的拖动  只改变窗口位置
     if (channelInstancesStore.instances.length === 1) {
         await getCurrentWindow().setPosition(new LogicalPosition(endx, endy));
@@ -210,6 +221,11 @@ appWindow
         closeFuns.push(unlisten);
     });
 
+dragListener(() => {
+    return Array.from(root.value?.querySelectorAll(".item") ?? []);
+}).then((unlisten) => {
+    closeFuns.push(unlisten);
+});
 // 将窗口拖回来
 getCurrentWindow()
     .onDragDropEvent((event) => {
@@ -267,30 +283,32 @@ getCurrentWindow()
 <template>
     <div ref="root" class="module servers" data-tauri-drag-region>
         <div :style="{ width: left + 'px' }"></div>
-        <div
-            class="item"
-            v-for="item in instances"
-            :key="item.sessionId"
-            draggable="true"
-            v-sclick="() => selectInstance(item)"
-            :class="{ active: item.sessionId === selectUid }"
-            @dragstart="(e) => dragstart(e, item)"
-            @dragend="(e) => dragend(e, item)"
-        >
-            <p v-if="isChannelInstance(item)">{{ item.server.name }}</p>
-            <p v-else>融合终端(+{{ item.instances.length }})</p>
-            <div
-                class="status xy-center"
-                :class="{
-                    dis: isChannelInstance(item) && item.status === 'disconnected',
-                    connect: isChannelInstanceGroup(item) || item.status === 'connected',
-                    active: item.sessionId === selectUid,
-                }"
-                @click.stop="closeInstance(item)"
-            >
-                <Icon icon="si:close-duotone" class="pointer icon hidden" />
-            </div>
-        </div>
+        <Draggable :list="channelInstancesStore.instances" item-key="sessionId" tag="div" class="tab-list" :animation="150">
+            <template #item="{ element: item }: { element: ChannelData }">
+                <div
+                    class="item"
+                    draggable="true"
+                    v-sclick="() => selectInstance(item)"
+                    :class="{ active: item.sessionId === selectUid }"
+                    @dragstart="(e) => dragstart(e, item)"
+                    @dragend="(e) => dragend(e, item)"
+                >
+                    <p v-if="isChannelInstance(item)">{{ item.server.name }}</p>
+                    <p v-else>融合终端(+{{ item.instances.length }})</p>
+                    <div
+                        class="status xy-center"
+                        :class="{
+                            dis: isChannelInstance(item) && item.status === 'disconnected',
+                            connect: isChannelInstanceGroup(item) || item.status === 'connected',
+                            active: item.sessionId === selectUid,
+                        }"
+                        @click.stop="closeInstance(item)"
+                    >
+                        <Icon icon="si:close-duotone" class="pointer icon hidden" />
+                    </div>
+                </div>
+            </template>
+        </Draggable>
     </div>
 </template>
 
@@ -298,6 +316,14 @@ getCurrentWindow()
 .servers {
     display: flex;
     flex-wrap: wrap;
+
+    .tab-list {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        min-width: 0;
+        pointer-events: none;
+    }
 
     .item {
         display: flex;
@@ -308,6 +334,7 @@ getCurrentWindow()
         margin: 4px;
         padding: 0 8px;
         border-radius: 20px;
+        pointer-events: auto;
 
         .status {
             width: 12px;

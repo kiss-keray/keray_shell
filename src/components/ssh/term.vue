@@ -126,6 +126,7 @@ function termServerEventListen() {
         emit(DirectRemotePathEventKey, { sid: props.server.sessionId, path });
     });
     termServer.onData((command) => {
+        if (!props.groupId) return;
         emit(TermGroupCommandEventKey, { groupId: props.groupId!, command, sessionId: props.server.sessionId });
     });
     termServer.onSearchChange((count, index) => {
