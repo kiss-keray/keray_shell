@@ -682,11 +682,10 @@ function dragEnd() {
                     <span class="server-tree-indent" aria-hidden="true"></span>
                     <Icon :icon="!groupEmpty ? 'lucide:chevron-right' : 'lucide:minus'" class="server-tree-toggle" aria-hidden="true" @click.stop="openGroup()" />
                     <Icon icon="flat-color-icons:folder" class="server-tree-folder-icon" aria-hidden="true" />
-                    <input
+                    <SystemInput
                         v-if="editName !== null"
                         ref="editNameInputRef"
                         v-model="editName"
-                        type="text"
                         class="server-tree-name-input"
                         @blur="confirmName(true)"
                         @keydown.enter.stop="confirmName"
@@ -750,11 +749,10 @@ function dragEnd() {
                 <span class="server-tree-indent" aria-hidden="true"></span>
                 <span class="server-tree-toggle" aria-hidden="true"></span>
                 <Icon icon="lucide:server" class="server-tree-server-icon" aria-hidden="true" />
-                <input
+                <SystemInput
                     v-if="editName !== null"
                     ref="editNameInputRef"
                     v-model="editName"
-                    type="text"
                     class="server-tree-name-input"
                     @blur="confirmName(true)"
                     @keydown.enter.stop="confirmName"
