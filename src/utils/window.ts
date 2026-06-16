@@ -145,6 +145,7 @@ export async function openOrFocusMonacoEditorWindow(payload: MonacoEditorWindowP
             height: 680,
         },
         payload,
+        false,
     );
 }
 
@@ -235,6 +236,7 @@ export async function openOrFocusChildWindow(item: ChannelInstance, payload: Chi
             instance: payload.instance,
             snapshot: payload.snapshot,
         } as DragStartPayload,
+        false,
     );
 }
 
@@ -246,7 +248,14 @@ function platformWindowChrome(): Pick<WindowOptions, "decorations" | "titleBarSt
 }
 
 /** 创建新窗口 */
-async function createNewWindow(label: string, tp: AppType, queryStr: string, params: Omit<WebviewOptions, "x" | "y" | "width" | "height"> & WindowOptions, data: unknown): Promise<WebviewWindow> {
+async function createNewWindow(
+    label: string,
+    tp: AppType,
+    queryStr: string,
+    params: Omit<WebviewOptions, "x" | "y" | "width" | "height"> & WindowOptions,
+    data: unknown,
+    disable_native_fullscreen: boolean = true,
+): Promise<WebviewWindow> {
     once<AppStartOkPayload>(APP_START_OK_EVENT, (e) => {
         const okLabel = e.payload.label;
         if (okLabel !== label) return;
@@ -263,7 +272,7 @@ async function createNewWindow(label: string, tp: AppType, queryStr: string, par
         ...platformWindowChrome(),
         ...params,
     });
-    if (type() === "macos") {
+    if (type() === "macos" && disable_native_fullscreen) {
         win.once("tauri://created", () => {
             invoke("disable_native_fullscreen", { label }).catch(console.error);
         });

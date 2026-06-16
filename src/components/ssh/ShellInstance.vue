@@ -67,8 +67,17 @@ const selectInstance = async (item: ChannelData) => {
     channelInstancesStore.select(item);
 };
 
+const setDragData = (dataTransfer: DataTransfer) => {
+    dataTransfer.clearData();
+    dataTransfer.effectAllowed = "move";
+    dataTransfer.setData("application/x-keray-shell-tab", "");
+};
+
 const dragstart = async (e: DragEvent, item: ChannelData) => {
     if (!isChannelInstance(item)) return;
+    e.dataTransfer?.clearData();
+    if (e.dataTransfer) e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer?.setData("application/x-keray-shell-tab", item.sessionId);
     // 计算新窗口位置
     dragsPosition.x = e.screenX;
     dragsPosition.y = e.screenY;
@@ -283,7 +292,7 @@ getCurrentWindow()
 <template>
     <div ref="root" class="module servers" data-tauri-drag-region>
         <div :style="{ width: left + 'px' }"></div>
-        <Draggable :list="channelInstancesStore.instances" item-key="sessionId" tag="div" class="tab-list" :animation="150">
+        <Draggable :list="channelInstancesStore.instances" item-key="sessionId" tag="div" class="tab-list" :animation="150" :set-data="setDragData">
             <template #item="{ element: item }: { element: ChannelData }">
                 <div
                     class="item"
@@ -335,6 +344,8 @@ getCurrentWindow()
         padding: 0 8px;
         border-radius: 20px;
         pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
 
         .status {
             width: 12px;
