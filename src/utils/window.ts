@@ -5,9 +5,8 @@ import { getCurrentWindow, type WindowOptions } from "@tauri-apps/api/window";
 import { emitTo, listen, once, type UnlistenFn } from "@tauri-apps/api/event";
 import { type } from "@tauri-apps/plugin-os";
 import { APP_START_OK_EVENT, type AppStartOkPayload } from "@/stores/app";
-import type { DragStartPayload } from "@/components/ssh/ShellInstance.vue";
 
-export type AppType = "main" | "child" | "settings" | "server-tree" | "edit-server" | "monaco-editor" | "upload-conflict";
+export type AppType = "main" | "settings" | "server-tree" | "edit-server" | "monaco-editor" | "upload-conflict";
 
 /** 窗口初始化数据事件 */
 export const WEBVIEW_INIT_DATA_EVENT = "tauri://webview-init-data";
@@ -216,13 +215,14 @@ export type ChildWindowPayload = {
     width: number;
     height: number;
     fullscreen: boolean;
-} & DragStartPayload;
+} & ChannelInstanceMoveToWindowPayload;
 
 /** 打开或复用子窗口；窗口 label 固定为 child-${item.id}。 */
 export async function openOrFocusChildWindow(item: ChannelInstance, payload: ChildWindowPayload) {
+    const time = Date.now();
     createNewWindow(
-        `child-${item.sessionId}`,
-        "child",
+        `main-${time}`,
+        "main",
         "",
         {
             x: payload.x,
@@ -235,7 +235,7 @@ export async function openOrFocusChildWindow(item: ChannelInstance, payload: Chi
             window: payload.window,
             instance: payload.instance,
             snapshot: payload.snapshot,
-        } as DragStartPayload,
+        } as ChannelInstanceMoveToWindowPayload,
         false,
     );
 }
@@ -280,41 +280,8 @@ async function createNewWindow(
     return win;
 }
 
-export function getMainWinLabel() {
-    return mainWinLabel;
-}
-
-/** 获取所有能够最晚主窗口的label */
+/** 获取所有能够成为主窗口的label */
 export async function mainLabels(): Promise<string[]> {
     const labels = await WebviewWindow.getAll();
-    return labels.filter((win) => win.label.startsWith("main") || win.label.startsWith("child-")).map((win) => win.label);
+    return labels.filter((win) => win.label.startsWith("main")).map((win) => win.label);
 }
-
-let mainWinLabel: string | null = "main";
-
-async function __getMainWinLabel() {
-    const labels = await WebviewWindow.getAll();
-    const main = labels.find((win) => win.label.startsWith("main"));
-    if (main) {
-        return main.label;
-    }
-    const minChild = labels.filter((win) => win.label.startsWith("child-")).sort()[0];
-    if (minChild) {
-        return minChild.label;
-    }
-    return null;
-}
-
-listen<{ label: string }>("tauri://window-created", async ({ payload }) => {
-    // 获取主窗口 label
-    // hild-开头的是子窗口 也可以作为主窗口存在
-    mainWinLabel = await __getMainWinLabel();
-});
-
-listen<string>("tauri://window-destroyed", async ({ payload }) => {
-    if ((await mainLabels()).length === 0) {
-        // 没有主窗口了 关闭当前窗口
-        getCurrentWindow().destroy();
-    }
-    mainWinLabel = await __getMainWinLabel();
-});

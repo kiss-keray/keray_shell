@@ -143,13 +143,17 @@ export async function writeLocalFileToRemote(serverId: string, remotePath: strin
     // 创建一个临时文件
     const tempPath = `${remotePath}_bak`;
     try {
+        // 上传会生成一个新临时文件，先记录原文件权限，后面覆盖前还原到临时文件上。
+        const remoteItem = await oneFileRemoteItem(serverId, remotePath).catch(() => null);
         const stream = new Channel<number>();
         stream.onmessage = (process) => {
             callback?.(process);
         };
         await invoke("sftp_upload_local_file", { serverId, remotePath: tempPath, localPath, stream });
-        // 重命名临时文件为原文件
-        await remoteRename(serverId, tempPath, remotePath);
+        // 将临时文件的内容写到源文件中
+        await execRemote(serverId, `cat ${tempPath} > ${remotePath}`);
+        // 删除临时文件
+        await remoteRemove(serverId, tempPath);
     } catch (error) {
         throw error;
     }

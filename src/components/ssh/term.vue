@@ -1,4 +1,7 @@
 <script setup lang="ts">
+defineOptions({
+    name: "TermComponent",
+});
 import { ChannelInstanceProvideKey, CustomMenusEventKey, DEFAULT_FONT_FAMILY } from "@/utils/constant";
 import TermServer, { type TerminalSnapshot } from "./term_server";
 import "@xterm/xterm/css/xterm.css";
@@ -22,7 +25,7 @@ const appStore = useAppStore();
 const configStore = useConfigStore();
 const serverDataStore = useServerDataStore();
 const keyEventStore = useKeyEventStore();
-const { emit, on, off } = useBus();
+const { emit, on } = useBus();
 const { showSftpPanel, showTermPanel } = storeToRefs(appStore);
 const { termFontSize, termLineHeight, termFontFamily, termScrollback, sftpPanelHeightPx } = storeToRefs(configStore);
 const { serverDataChange } = serverDataStore;
@@ -226,7 +229,7 @@ function termKeydown(e: KeyboardEvent): boolean {
 
 async function ctrlV() {
     const text = await readClipboardText();
-    termServer.write(text);
+    termServer._onData(text);
 }
 
 async function ctrlC() {

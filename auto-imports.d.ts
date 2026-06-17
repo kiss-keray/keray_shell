@@ -8,6 +8,7 @@ export {}
 declare global {
   const APP_START_OK_EVENT: typeof import('./src/stores/app').APP_START_OK_EVENT
   const CHANNEL_INSTANCE_GROUP_CREATE_EVENT: typeof import('./src/stores/channelInstances').CHANNEL_INSTANCE_GROUP_CREATE_EVENT
+  const CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT: typeof import('./src/stores/channelInstances').CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT
   const CONCURRENCY_MAX: typeof import('./src/stores/downloadStore').CONCURRENCY_MAX
   const CONCURRENCY_MIN: typeof import('./src/stores/downloadStore').CONCURRENCY_MIN
   const ChannelInstanceProvideKey: typeof import('./src/utils/constant').ChannelInstanceProvideKey
@@ -237,7 +238,7 @@ declare global {
   export type { AppStartOkPayload } from './src/stores/app'
   import('./src/stores/app')
   // @ts-ignore
-  export type { ServerTreeClickServerPayload, ChannelInstanceGroupCreatePayload, ChannelInstance, ChannelInstanceGroup, ChannelData } from './src/stores/channelInstances'
+  export type { ServerTreeClickServerPayload, ChannelInstanceGroupCreatePayload, ChannelInstanceMoveToWindowPayload, ChannelInstance, ChannelInstanceGroup, ChannelData } from './src/stores/channelInstances'
   import('./src/stores/channelInstances')
   // @ts-ignore
   export type { Theme, ThemeMode, ServerSyncType, ServerRemoteData, ConfigModel } from './src/stores/config'

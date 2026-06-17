@@ -209,6 +209,8 @@ const props = defineProps<{
 const appStore = useAppStore();
 const localStore = useLocalStore();
 const keyEventStore = useKeyEventStore();
+const channelInstancesStore = useChannelInstancesStore();
+const { selectSessionId } = storeToRefs(channelInstancesStore);
 const { isMultiSelectKey, isShiftKey } = storeToRefs(keyEventStore);
 const { loadingText } = storeToRefs(appStore);
 const { addDownloadTask, addUploadTask } = useDownloadStore();
@@ -405,7 +407,9 @@ async function handleOpen(items: FileStoreItem[]) {
             return;
         }
     }
-    items = items.filter((item) => item.size);
+    // size 为 0 是合法空文件，不能用 truthy 判断过滤；只有目录或未知大小才不进入编辑器。
+    items = items.filter((item) => !item.isDir && item.size !== null);
+    if (!items.length) return;
     if (items.some((item) => item.size! > MAX_OPEN_SIZE)) {
         showToast("文件大小超过1MB，无法打开", "warning");
         return;
@@ -539,7 +543,8 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
 
     async function openFileByLocal(appPath?: string) {
         const item = selectedItems[0]!;
-        if (!item.size) return;
+        // null 表示没有拿到文件大小，0 表示真实空文件；空文件也允许用系统应用打开。
+        if (item.size === null) return;
         if (item.size > MAX_OPEN_SIZE) {
             showToast("文件大小超过1MB，无法打开", "warning");
             return;
@@ -548,6 +553,42 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
         const dir = await join(await localStore.tempRootDir, uid);
         const file = await join(dir, baseName(item.id));
         await mkdir(dir, { recursive: true });
+        async function openAndWatchLocalFile() {
+            // 系统应用编辑是通过临时文件中转，轮询 mtime 后再上传回远端。
+            const statInfo = await stat(file);
+            let mtime = statInfo.mtime;
+            let count = 0;
+
+            const task = async () => {
+                // 只监听10分钟 或者 UI不激活
+                if (count++ > 2 * 60 * 10 || !uiActive.value) return;
+                const statInfo = await stat(file);
+                if (mtime?.getTime() !== statInfo.mtime?.getTime()) {
+                    await writeLocalFileToRemote(serverId.value, item.id, file, (process) => {
+                        emit(SftpProcessEventKey, process);
+                    });
+                    fileChange(item.id);
+                    mtime = statInfo.mtime;
+                }
+                setTimeout(() => {
+                    task();
+                }, 500);
+            };
+            openFileWithSystem(file, appPath ?? (await selectLocalApp()))
+                .then(() => {
+                    task();
+                })
+                .catch((e) => {
+                    console.error(e);
+                });
+        }
+        if (item.size === 0) {
+            // 空文件没有下载 chunk，先创建本地空文件，再进入和普通文件一致的打开/监听流程。
+            await writeFile(file, new Uint8Array(), { create: true });
+            await openAndWatchLocalFile();
+            loadingText.value = "";
+            return;
+        }
         let getSize = 0;
         sftpReadFileStream(serverId.value, item.id, 0, (chunk) => {
             writeFile(file, chunk, { append: true, create: true });
@@ -556,32 +597,7 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
             emit(SftpProcessEventKey, process);
         })
             .then(async () => {
-                const statInfo = await stat(file);
-                let mtime = statInfo.mtime;
-                let count = 0;
-
-                const task = async () => {
-                    // 只监听10分钟 或者 UI不激活
-                    if (count++ > 2 * 60 * 10 || !uiActive.value) return;
-                    const statInfo = await stat(file);
-                    if (mtime?.getTime() !== statInfo.mtime?.getTime()) {
-                        await writeLocalFileToRemote(serverId.value, item.id, file, (process) => {
-                            emit(SftpProcessEventKey, process);
-                        });
-                        fileChange(item.id);
-                        mtime = statInfo.mtime;
-                    }
-                    setTimeout(() => {
-                        task();
-                    }, 500);
-                };
-                openFileWithSystem(file, appPath ?? (await selectLocalApp()))
-                    .then(() => {
-                        task();
-                    })
-                    .catch((e) => {
-                        console.error(e);
-                    });
+                await openAndWatchLocalFile();
             })
             .finally(() => {
                 loadingText.value = "";
@@ -1154,6 +1170,8 @@ function dragLocalFile(payload: DragDropEvent) {
 
 getCurrentWindow()
     .onDragDropEvent(({ payload }) => {
+        // 不是当前激活的sessionId 不处理拖拽
+        if (selectSessionId.value !== server.sessionId) return;
         if (payload.type !== "drop" || payload.paths.length === 0) return;
         dragLocalFile(payload);
     })
@@ -1213,10 +1231,6 @@ async function drop(event: DragEvent) {
         .map((v) => fileList.value.find((item) => item.id === v))
         .filter((v) => v) as FileStoreItem[];
     moveFiles(selectedItems, dirItem, true);
-}
-function checkMove() {
-    // 不允许直接改变位置  只允许文件移动到文件夹中
-    return false;
 }
 </script>
 

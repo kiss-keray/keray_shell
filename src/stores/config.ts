@@ -1,4 +1,3 @@
-import { getMainWinLabel } from "@/utils/window";
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { defineStore } from "pinia";
@@ -102,7 +101,7 @@ export const useConfigStore = defineStore("config", () => {
             ...payload,
         });
         applyUiFontSize(data.fontSize);
-        const mainLabel = getMainWinLabel();
+        const mainLabel = appStore.mainLabel;
         // main窗口保存配置
         if (mainLabel === getCurrentWindow().label) {
             localStore.writeCache("CONFIG", data, CONFIG_CACHE_FILE);

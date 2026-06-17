@@ -1,20 +1,16 @@
 <script setup lang="ts">
 import { getCurrentWindow, LogicalPosition } from "@tauri-apps/api/window";
-import { emitTo, listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { emitTo, type UnlistenFn } from "@tauri-apps/api/event";
 import { storeToRefs } from "pinia";
+import type { MenuItem } from "@/components/DefaultMenuItems.vue";
+import { CustomMenusEventKey } from "@/utils/constant";
 import { openOrFocusChildWindow } from "@/utils/window";
-import { isChannelInstance, isChannelInstanceGroup, type ChannelData, type ChannelInstance } from "@/stores/channelInstances";
+import { CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT, isChannelInstance, isChannelInstanceGroup, type ChannelData, type ChannelInstance } from "@/stores/channelInstances";
 import Draggable from "vuedraggable";
 const appWindow = getCurrentWindow();
-export type DragStartPayload = {
-    window: string;
-    instance: ChannelInstance;
-    snapshot: Record<string, unknown>;
-};
-
 const appStore = useAppStore();
-const { appType } = appStore;
-const { windowInitData } = toRefs(appStore) as { windowInitData: Ref<DragStartPayload> };
+const { windowInitData } = toRefs(appStore) as { windowInitData: Ref<ChannelInstanceMoveToWindowPayload>; mainLabel: Ref<string | null> };
+const { mainLabel, isMainWin } = toRefs(appStore);
 
 const root = ref();
 const left = ref(0);
@@ -22,7 +18,7 @@ const left = ref(0);
 const dragsPosition: {
     x: number;
     y: number;
-    data: DragStartPayload | null;
+    data: ChannelInstanceMoveToWindowPayload | null;
 } = {
     x: -1,
     y: -1,
@@ -34,11 +30,63 @@ const { isFullScreenWindow } = storeToRefs(appStore);
 
 const instances = computed(() => channelInstancesStore.instances);
 const selectUid = computed(() => channelInstancesStore.selectSessionId);
-let dragPayload: DragStartPayload | null = null; // 当前拖动tab的数据
+let dragPayload: ChannelInstanceMoveToWindowPayload | null = null; // 当前拖动tab的数据
 let dragOverOtherWindow = false; // 是否拖动到其他窗口 在其他窗口时释放时不创建新窗口
 
+/** 子窗口移走/关闭最后一个 tab 后自动关闭；主窗口即使空了也要留下来显示服务器列表。 */
+async function closeWindowIfEmpty() {
+    if (channelInstancesStore.instances.length > 0) return;
+    if (isMainWin.value) return;
+    // 非主窗口关闭时 销毁当前窗口
+    void appWindow.destroy();
+}
+
+function createMovePayload(item: ChannelInstance): ChannelInstanceMoveToWindowPayload {
+    // 移动 tab 前采集 Term/SFTP 等子模块快照；目标窗口收到后写回 instance.snapshot 恢复 UI 状态。
+    const snapshot = Object.entries(item.snapshotFn).reduce(
+        (acc, [key, fn]) => {
+            acc[key] = fn();
+            return acc;
+        },
+        {} as Record<string, unknown>,
+    );
+    return {
+        instance: { ...item, snapshotFn: {} },
+        snapshot,
+        window: appWindow.label,
+    };
+}
+
+async function moveToNewWindow(item: ChannelData) {
+    // 新窗口只支持单个普通终端 tab；当前窗口只有一个 tab 时保持原有行为，不再拆出新窗口。
+    if (!isChannelInstance(item) || channelInstancesStore.instances.length <= 1) return;
+    const payload = createMovePayload(item);
+    const position = await appWindow.outerPosition();
+    // 先从当前窗口移除，再创建子窗口，避免同一个 session 同时出现在两个窗口里。
+    channelInstancesStore.del(item);
+    openOrFocusChildWindow(item, {
+        x: position.x / appStore.scaleFactor + 32,
+        y: position.y / appStore.scaleFactor + 32,
+        width: document.body.clientWidth,
+        height: document.body.clientHeight,
+        fullscreen: isFullScreenWindow.value,
+        ...payload,
+    });
+    closeWindowIfEmpty();
+}
+
+async function mergeToMainWindow(item: ChannelData) {
+    // 已经在主窗口时不需要融合；融合终端组暂不拆组移动，避免组内布局和 session 关系丢失。
+    if (!mainLabel.value || mainLabel.value === appWindow.label || !isChannelInstance(item)) return;
+    const payload = createMovePayload(item);
+    await emitTo<ChannelInstanceMoveToWindowPayload>({ kind: "Window", label: mainLabel.value }, CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT, payload);
+    // 主窗口确认接收事件后，再从当前窗口删除 tab。
+    channelInstancesStore.del(item);
+    closeWindowIfEmpty();
+}
+
 watch(windowInitData, (initData) => {
-    if (appType !== "child") return;
+    if (isMainWin.value) return;
     if (!initData) return;
     dragOk(initData);
 });
@@ -52,16 +100,21 @@ watch(isFullScreenWindow, (val) => {
     }
 });
 
-const closeInstance = (item: ChannelData) => {
-    if (isChannelInstance(item)) {
-        invoke("close_term", { sid: item.sessionId });
-    } else {
+/** 批量关闭 tab，并在子窗口被清空时同步销毁窗口。 */
+function closeInstances(items: ChannelData[]) {
+    items.forEach((item) => {
+        channelInstancesStore.del(item);
+        /** 关闭 tab 对应的后端终端；融合终端需要逐个关闭组内 session。 */
+        if (isChannelInstance(item)) {
+            void invoke("close_term", { sid: item.sessionId });
+            return;
+        }
         item.instances.forEach((instance) => {
-            invoke("close_term", { sid: instance.sessionId });
+            void invoke("close_term", { sid: instance.sessionId });
         });
-    }
-    channelInstancesStore.del(item);
-};
+    });
+    closeWindowIfEmpty();
+}
 
 const selectInstance = async (item: ChannelData) => {
     channelInstancesStore.select(item);
@@ -82,26 +135,14 @@ const dragstart = async (e: DragEvent, item: ChannelData) => {
     dragsPosition.x = e.screenX;
     dragsPosition.y = e.screenY;
     dragOverOtherWindow = false;
-    const fnMap = item.snapshotFn;
-    const snapshot = Object.entries(fnMap).reduce(
-        (acc, [key, fn]) => {
-            acc[key] = fn();
-            return acc;
-        },
-        {} as Record<string, unknown>,
-    );
-    dragsPosition.data = {
-        instance: { ...item, snapshotFn: {} },
-        snapshot: snapshot,
-        window: getCurrentWindow().label,
-    };
+    dragsPosition.data = createMovePayload(item);
     // 开始拖动时向所有窗口通知拖动开始的事件
-    emitTo<DragStartPayload>({ kind: "Any" }, "sid_new_window_dragstart", dragsPosition.data);
+    emitTo<ChannelInstanceMoveToWindowPayload>({ kind: "Any" }, "sid_new_window_dragstart", dragsPosition.data);
 };
 
 const dragend = async (e: DragEvent, item: ChannelData) => {
     if (!isChannelInstance(item)) return;
-    emitTo<string>({ kind: "Any" }, "sid_new_window_dragend", getCurrentWindow().label);
+    emitTo<string>({ kind: "Any" }, "sid_new_window_dragend", appWindow.label);
     if (dragsPosition.x < 0) return;
     const { screenX, screenY } = e;
     if (Math.abs(dragsPosition.x - screenX) < 50 && Math.abs(dragsPosition.y - screenY) < 50) {
@@ -113,8 +154,7 @@ const dragend = async (e: DragEvent, item: ChannelData) => {
     const endy = screenY - appStore.safeTop;
     // end时判断鼠标是否在root范围内，不在时才表示新开窗口
     {
-        const win = getCurrentWindow();
-        const { x, y } = await win.outerPosition();
+        const { x, y } = await appWindow.outerPosition();
         const left = x / appStore.scaleFactor + rect.left;
         const top = y / appStore.scaleFactor + rect.top;
         if (screenX > left && screenX < left + rect.width && screenY > top && screenY < top + rect.height) {
@@ -123,7 +163,7 @@ const dragend = async (e: DragEvent, item: ChannelData) => {
     }
     // 只有一个的拖动  只改变窗口位置
     if (channelInstancesStore.instances.length === 1) {
-        await getCurrentWindow().setPosition(new LogicalPosition(endx, endy));
+        await appWindow.setPosition(new LogicalPosition(endx, endy));
         return;
     }
     if (dragOverOtherWindow) return;
@@ -137,17 +177,53 @@ const dragend = async (e: DragEvent, item: ChannelData) => {
         fullscreen: isFullScreenWindow.value,
         ...payload!,
     });
-    // 移动后本窗口没得数据就关闭窗口  如果是主窗口
-    if (!channelInstancesStore.instances.length) {
-        await getCurrentWindow().destroy();
-    }
+    closeWindowIfEmpty();
 };
 
-const dragOk = (payload: DragStartPayload) => {
+const dragOk = (payload: ChannelInstanceMoveToWindowPayload) => {
     const server = payload.instance;
     server.snapshot = payload.snapshot;
     channelInstancesStore.add(server);
 };
+
+function openContextMenu(e: MouseEvent, item: ChannelData) {
+    e.preventDefault();
+    e.stopPropagation();
+    // 右键菜单沿用全局 CustomMenusEventKey，由 App.vue 统一渲染，风格与服务器树/SFTP 一致。
+    const menus: MenuItem[] = [
+        {
+            label: "关闭",
+            handler: () => closeInstances([item]),
+        },
+        {
+            label: "关闭其他",
+            disabled: instances.value.length <= 1,
+            handler: () => closeInstances(instances.value.filter((v) => v !== item)),
+        },
+        {
+            label: "关闭全部",
+            handler: () => closeInstances([...instances.value]),
+        },
+        "---",
+        {
+            label: "新窗口",
+            // 按需求：当前窗口必须至少还有其他 tab，才允许把当前 tab 拆到新窗口。
+            disabled: !isChannelInstance(item) || instances.value.length <= 1,
+            handler: () => {
+                void moveToNewWindow(item);
+            },
+        },
+        {
+            label: "融合到主窗口",
+            // 按需求：当前窗口不是主窗口时才显示为可操作，避免主窗口融合到自己。
+            disabled: !isChannelInstance(item) || isMainWin.value,
+            handler: () => {
+                void mergeToMainWindow(item);
+            },
+        },
+    ];
+    document.body.dispatchEvent(new CustomEvent(CustomMenusEventKey, { bubbles: true, detail: { menus, target: e } }));
+}
 
 const closeFuns: UnlistenFn[] = [];
 
@@ -165,7 +241,7 @@ onMounted(async () => {
         }
     });
     observer.observe(root.value);
-    if (appType === "child" && windowInitData.value) {
+    if (!isMainWin.value && windowInitData.value) {
         dragOk(windowInitData.value);
     }
 });
@@ -176,8 +252,8 @@ onUnmounted(() => {
 
 // 拖动开始时将数据保存
 appWindow
-    .listen<DragStartPayload>("sid_new_window_dragstart", ({ payload }) => {
-        if (payload.window === getCurrentWindow().label) return;
+    .listen<ChannelInstanceMoveToWindowPayload>("sid_new_window_dragstart", ({ payload }) => {
+        if (payload.window === appWindow.label) return;
         dragPayload = payload;
     })
     .then((unlisten) => {
@@ -217,14 +293,11 @@ appWindow
     });
 
 appWindow
-    .listen<DragStartPayload>("sid_new_window_ok", ({ payload }) => {
+    .listen<ChannelInstanceMoveToWindowPayload>("sid_new_window_ok", ({ payload }) => {
         const instance = payload.instance;
         const item = instances.value.find((v) => v.sessionId === instance.sessionId);
         channelInstancesStore.del(item!);
-        // 移动后本窗口没得数据就关闭窗口  如果是主窗口
-        if (!channelInstancesStore.instances.length) {
-            getCurrentWindow().destroy();
-        }
+        closeWindowIfEmpty();
     })
     .then((unlisten) => {
         closeFuns.push(unlisten);
@@ -236,7 +309,7 @@ dragListener(() => {
     closeFuns.push(unlisten);
 });
 // 将窗口拖回来
-getCurrentWindow()
+appWindow
     .onDragDropEvent((event) => {
         if (!dragPayload) return;
         // 拖动到当前窗口上方
@@ -301,6 +374,7 @@ getCurrentWindow()
                     :class="{ active: item.sessionId === selectUid }"
                     @dragstart="(e) => dragstart(e, item)"
                     @dragend="(e) => dragend(e, item)"
+                    @contextmenu="(e) => openContextMenu(e, item)"
                 >
                     <p v-if="isChannelInstance(item)">{{ item.server.name }}</p>
                     <p v-else>融合终端(+{{ item.instances.length }})</p>
@@ -311,7 +385,7 @@ getCurrentWindow()
                             connect: isChannelInstanceGroup(item) || item.status === 'connected',
                             active: item.sessionId === selectUid,
                         }"
-                        @click.stop="closeInstance(item)"
+                        @click.stop="closeInstances([item])"
                     >
                         <Icon icon="si:close-duotone" class="pointer icon hidden" />
                     </div>

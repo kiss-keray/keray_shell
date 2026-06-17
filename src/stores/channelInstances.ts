@@ -11,9 +11,17 @@ export type ServerTreeClickServerPayload = {
 };
 
 export const CHANNEL_INSTANCE_GROUP_CREATE_EVENT = "channel_instance_group_create";
+export const CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT = "channel_instance_move_to_window";
 
 export type ChannelInstanceGroupCreatePayload = {
     ids: string[];
+};
+
+/** 跨窗口移动单个终端 tab 时传递的 payload，包含原窗口 label 和各模块快照。 */
+export type ChannelInstanceMoveToWindowPayload = {
+    window: string;
+    instance: ChannelInstance;
+    snapshot: Record<string, unknown>;
 };
 
 /**
@@ -77,6 +85,7 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
 
     function del(instance: ChannelData) {
         const index = instances.value.indexOf(instance);
+        if (index < 0) return;
         instances.value.splice(index, 1);
         if (instance.sessionId === selectSessionId.value && instances.value.length > 0) {
             const newIndex = Math.min(instances.value.length - 1, index);
@@ -127,6 +136,16 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
                 zindex: 0,
             };
             add(group);
+        })
+        .then((unlisten) => {
+            closeFuns.push(unlisten);
+        });
+    getCurrentWindow()
+        .listen<ChannelInstanceMoveToWindowPayload>(CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT, ({ payload }) => {
+            // 主窗口可能处在服务器列表页，tab 组件尚未挂载，因此移动接收必须放在 store 层。
+            // 收到后先恢复 snapshot，再 add 到 store，Term 组件挂载时会消费这些快照。
+            payload.instance.snapshot = payload.snapshot;
+            add(payload.instance);
         })
         .then((unlisten) => {
             closeFuns.push(unlisten);

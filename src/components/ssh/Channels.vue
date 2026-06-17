@@ -1,4 +1,7 @@
 <script setup lang="ts">
+defineOptions({
+    name: "TermChannels",
+});
 const channelInstancesStore = useChannelInstancesStore();
 const { instances, selectSessionId } = toRefs(channelInstancesStore);
 

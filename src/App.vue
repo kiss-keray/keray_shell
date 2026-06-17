@@ -9,7 +9,6 @@ import type { MenuItem } from "./components/DefaultMenuItems.vue";
 
 /** 按窗口类型分包，子窗口只加载对应 chunk */
 const SettingWin = defineAsyncComponent(() => import("@/components/window/SettingWin.vue"));
-const ChildWin = defineAsyncComponent(() => import("@/components/window/ChildWin.vue"));
 const ServerTreeWin = defineAsyncComponent(() => import("@/components/window/ServerTreeWin.vue"));
 const EditServerWin = defineAsyncComponent(() => import("@/components/window/EditServerWin.vue"));
 const MonacoWin = defineAsyncComponent(() => import("@/components/window/MonacoWin.vue"));
@@ -142,7 +141,6 @@ onMounted(async () => {
     <DefaultMenus v-if="menuData.show" :menus="menuData.menus || []" :pos="menuData.pos" @close="menuData.show = false" />
     <Suspense>
         <SettingWin v-if="appType === 'settings'" />
-        <ChildWin v-else-if="appType === 'child'" />
         <ServerTreeWin v-else-if="appType === 'server-tree'" />
         <EditServerWin v-else-if="appType === 'edit-server'" />
         <MonacoWin v-else-if="appType === 'monaco-editor'" />
