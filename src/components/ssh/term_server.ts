@@ -124,6 +124,7 @@ export default class TermServer {
         const terminal = new Terminal({
             ...this.termConfig,
             ...options,
+            scrollOnUserInput: false,
         });
         this.terminal = terminal;
         terminal.loadAddon(this.fitAddon);
@@ -132,6 +133,11 @@ export default class TermServer {
         terminal.open(dom);
         terminal.onData(this._onData.bind(this));
         terminal.onKey(({ domEvent }) => {
+            // 如果连接已经端口 自动重连
+            if (this.server.status === "disconnected") {
+                this.connect();
+                return;
+            }
             if (this.keyEventFun(domEvent)) {
                 domEvent.stopPropagation();
                 domEvent.preventDefault();
@@ -172,6 +178,7 @@ export default class TermServer {
         if (noSnapshot) this.terminal!.write("连接中...\r\n");
         readerChannel.onmessage = (message) => {
             if (message.length === 1 && message[0] === 0) {
+                this.terminal!.write("连接断开\r\n");
                 // 连接断开
                 this.server.status = "disconnected";
                 return;
