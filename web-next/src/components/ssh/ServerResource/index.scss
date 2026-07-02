@@ -1,0 +1,196 @@
+.ServerResource {
+    &.resource {
+        padding: 10px 12px;
+        line-height: 1.35;
+        border-radius: 8px;
+    }
+
+    .proc-toolbar,
+    .net-toolbar,
+    .net-footer {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .proc-toolbar {
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .proc-toolbar-label {
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        opacity: 0.9;
+    }
+
+    .proc-toolbar-hint {
+        margin-left: auto;
+        font-size: var(--font-size-2xs);
+        opacity: 0.65;
+    }
+
+    .tbl {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0 0 10px;
+        table-layout: fixed;
+
+        td,
+        th {
+            padding: 5px 6px;
+            font-size: var(--font-size-xs);
+            text-align: left;
+        }
+
+        .cmd {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    /* 与 Vue 资源面板保持列宽和表头细节一致，避免 TOP5 命令列被内存/CPU 列挤压。 */
+    .tbl.proc {
+        col.col-mem {
+            width: 6em;
+        }
+
+        col.col-cpu {
+            width: 5em;
+        }
+
+        col.col-cmd {
+            width: auto;
+        }
+
+        th:not(.proc-th-sort):not(.proc-th-plain) {
+            font-weight: 600;
+            padding: 5px 6px;
+            text-align: left;
+            font-size: var(--font-size-xs);
+        }
+
+        th:nth-child(1),
+        th:nth-child(2),
+        td:nth-child(1),
+        td:nth-child(2) {
+            white-space: nowrap;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+
+        td {
+            padding: 4px 6px;
+            font-size: var(--font-size-xs);
+        }
+    }
+
+    .proc-th-sort {
+        padding: 0;
+        vertical-align: bottom;
+    }
+
+    .proc-th-sort--active .proc-sort-label {
+        font-weight: 700;
+    }
+
+    .proc-sort-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        width: 100%;
+        margin: 0;
+        padding: 5px 6px;
+        border: none;
+        background: transparent;
+        font: inherit;
+        color: inherit;
+        text-align: left;
+        cursor: pointer;
+        border-radius: 4px;
+        line-height: 1.2;
+    }
+
+    .proc-sort-mark {
+        font-size: var(--font-size-2xs);
+        opacity: 0.95;
+        font-weight: 700;
+    }
+
+    .proc-th-plain {
+        font-weight: 600;
+        padding: 5px 6px;
+        text-align: left;
+        font-size: var(--font-size-xs);
+    }
+
+    .net-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .net-up,
+    .net-down {
+        font-weight: 600;
+    }
+
+    .iface-select {
+        margin-left: auto;
+        font-size: var(--font-size-xs);
+        padding: 4px 8px;
+        border-radius: 6px;
+        max-width: 130px;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .chart-wrap {
+        display: flex;
+        margin-top: 8px;
+        gap: 6px;
+        height: 72px;
+        min-width: 0;
+    }
+
+    .chart-y {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        font-size: var(--font-size-2xs);
+        text-align: right;
+        min-width: 3.2em;
+        flex-shrink: 0;
+        padding: 2px 0;
+    }
+
+    .chart {
+        flex: 1;
+        height: 100%;
+        width: 100%;
+        min-height: 64px;
+    }
+
+    .chart-line {
+        fill: none;
+        stroke-width: 1;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .chart-grid {
+        fill: none;
+        stroke-width: 0.28;
+        opacity: 0.45;
+    }
+
+    .net-footer {
+        justify-content: space-between;
+        font-size: var(--font-size-xs);
+        margin-top: 6px;
+        padding: 0 2px;
+    }
+}

@@ -1,0 +1,19 @@
+.SftpToolbar {
+    .path-input {
+        color: inherit;
+    }
+
+    .tb-btn {
+        padding: 4px 10px;
+        border-radius: 4px;
+    }
+
+    .icon-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 4px;
+    }
+}

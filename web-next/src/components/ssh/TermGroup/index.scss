@@ -1,0 +1,71 @@
+.TermGroup {
+    &.term-group {
+        width: 100vw;
+        height: 100vh;
+        position: relative;
+    }
+
+    .child-box {
+        position: absolute;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        transition:
+            left 0.35s ease,
+            top 0.35s ease,
+            width 0.35s ease,
+            height 0.35s ease,
+            box-shadow 0.35s ease,
+            transform 0.35s ease;
+        overflow: hidden;
+
+        .child-box-header {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 6px 6px;
+
+            > div {
+                margin: 0 10px;
+            }
+
+            .child-box-name,
+            .child-box-meta {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .child-box-meta {
+                font-size: 10px;
+                font-weight: 400;
+            }
+
+            .child-box-status {
+                display: inline-flex;
+                align-items: center;
+                gap: 4px;
+                font-size: 10px;
+                font-weight: 500;
+            }
+
+            .child-box-status-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: currentColor;
+            }
+        }
+
+        .term-module {
+            border-radius: 0;
+
+            /* Vue 融合终端组会给头部留出空间，组内终端正文保持 95% 高度。 */
+            .term {
+                height: 95%;
+            }
+        }
+    }
+}

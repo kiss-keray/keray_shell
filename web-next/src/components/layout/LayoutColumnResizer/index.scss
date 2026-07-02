@@ -1,0 +1,7 @@
+.LayoutColumnResizer {
+    &.layout-column-resizer {
+        width: 6px;
+        cursor: col-resize;
+        flex: 0 0 6px;
+    }
+}

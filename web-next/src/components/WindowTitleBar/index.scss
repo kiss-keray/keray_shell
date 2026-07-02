@@ -1,0 +1,94 @@
+.WindowTitleBar {
+    &.window-title-bar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 30px;
+        z-index: 99999999;
+        display: flex;
+        align-items: center;
+        user-select: none;
+        pointer-events: none;
+    }
+
+    .traffic-lights {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 0 12px;
+        flex-shrink: 0;
+        pointer-events: auto;
+    }
+
+    .traffic {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 0.5px solid rgba(0, 0, 0, 0.12);
+        padding: 0;
+        cursor: default;
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: filter 0.15s ease;
+
+        &::before {
+            content: "";
+            position: absolute;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            color: rgba(0, 0, 0, 0.55);
+            font-size: 9px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        &.close {
+            background: #ff5f57;
+
+            &::before {
+                content: "×";
+                font-size: 11px;
+                margin-top: -1px;
+            }
+        }
+
+        &.minimize {
+            background: #febc2e;
+
+            &::before {
+                content: "−";
+            }
+        }
+
+        &.maximize {
+            background: #28c840;
+
+            &::before {
+                content: "+";
+                font-size: 10px;
+            }
+        }
+
+        &:hover {
+            filter: brightness(0.95);
+
+            &::before {
+                opacity: 1;
+            }
+        }
+
+        &:active {
+            filter: brightness(0.88);
+        }
+    }
+
+    .title-bar-drag {
+        flex: 1;
+        height: 100%;
+        min-width: 0;
+        pointer-events: auto;
+    }
+}

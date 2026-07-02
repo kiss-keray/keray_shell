@@ -1,0 +1,12 @@
+.DefaultMenus {
+    .menu-module {
+        min-width: 160px;
+        max-width: min(360px, calc(100vw - 16px));
+        position: fixed;
+        z-index: 2100;
+        padding: 4px 0;
+        font-size: var(--font-size-md);
+        line-height: 1.35;
+        border-radius: 6px;
+    }
+}

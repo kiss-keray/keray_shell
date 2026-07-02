@@ -1,0 +1,48 @@
+.Sftp {
+    &.sftp-panel {
+        overflow: hidden;
+    }
+
+    .tabs {
+        padding: 2px 4px;
+        width: min-content;
+        border-radius: 8px;
+        overflow: hidden;
+
+        .tab {
+            padding: 4px 10px;
+            font-size: var(--font-size-md);
+            white-space: nowrap;
+
+            &.on {
+                border-radius: 6px;
+            }
+        }
+    }
+
+    .tab-badge {
+        margin-left: 6px;
+        padding: 0 6px;
+        border-radius: 999px;
+        font-size: var(--font-size-xs);
+    }
+
+    .sftp-process {
+        display: flex;
+        flex-grow: 1;
+        justify-content: flex-end;
+
+        .process-container {
+            width: 100px;
+            height: 10px;
+            text-align: -webkit-right;
+            overflow: hidden;
+            border-radius: 2px;
+
+            .process-bar {
+                height: 100%;
+                border-radius: 2px 0 0 2px;
+            }
+        }
+    }
+}

@@ -1,0 +1,105 @@
+.Confirm {
+    &.confirm-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+    }
+
+    .confirm-dialog {
+        width: min(420px, calc(100vw - 32px));
+        padding: 16px;
+        border-radius: 10px;
+    }
+
+    .confirm-title {
+        margin: 0;
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+    }
+
+    .confirm-message {
+        margin: 8px 0 0;
+        font-size: var(--font-size-md);
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-break: break-word;
+
+        .confirm-danger-body {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            white-space: normal;
+        }
+
+        .confirm-intro,
+        .confirm-target,
+        .confirm-danger-note {
+            margin: 0;
+        }
+
+        .confirm-target code {
+            display: block;
+            margin-top: 4px;
+            padding: 6px 8px;
+            border-radius: 6px;
+            font-size: var(--font-size-sm);
+            line-height: 1.4;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .confirm-file-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            max-height: 168px;
+            overflow-y: auto;
+            border-radius: 6px;
+        }
+
+        .confirm-file-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            padding: 6px 10px;
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+
+        .confirm-file-path {
+            font-size: var(--font-size-sm);
+            word-break: break-all;
+        }
+
+        .confirm-danger-note {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+        }
+    }
+
+    .confirm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 14px;
+    }
+
+    .confirm-btn {
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 5px 12px;
+        cursor: pointer;
+
+        &.secondary {
+        }
+
+        &.danger {
+        }
+    }
+}

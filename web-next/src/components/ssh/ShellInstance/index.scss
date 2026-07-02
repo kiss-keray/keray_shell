@@ -1,0 +1,41 @@
+.ShellInstance {
+    &.servers {
+        display: flex;
+        flex-wrap: wrap;
+    }
+
+    .tab-list {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+        min-width: 0;
+        pointer-events: none;
+    }
+
+    .item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: default;
+        height: 20px;
+        margin: 4px;
+        padding: 0 8px;
+        border-radius: 20px;
+        pointer-events: auto;
+        user-select: none;
+        -webkit-user-select: none;
+
+        .status {
+            width: 12px;
+            height: 12px;
+            border-radius: 100%;
+            margin-left: 10px;
+
+            &:hover {
+                .icon {
+                    display: block;
+                }
+            }
+        }
+    }
+}

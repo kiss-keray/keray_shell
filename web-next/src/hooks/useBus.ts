@@ -1,0 +1,56 @@
+import { useEffect, useMemo, useRef } from "react";
+import mitt, { type Emitter } from "mitt";
+import type { RemoteFileItem } from "@/utils/fsUtil";
+
+export const DirectRemotePathEventKey = "DirectRemotePathEventKey"; // 直接打开远程路径事件
+export const RefreshFileListEventKey = "RefreshFileListEventKey"; // 刷新文件列表事件
+export const DownloadMenuOpenEventKey = "DownloadMenuOpenEventKey"; // 下载菜单打开事件
+export const UploadFileEventKey = "UploadFileEventKey"; // 上传菜单打开事件
+export const ActiveFileEventKey = "ActiveFileEventKey"; // 选择目录事件
+export const FileDragStartEventKey = "FileDragStartEventKey"; // 文件拖拽开始事件
+export const FileDragEndEventKey = "FileDragEndEventKey"; // 文件拖拽结束事件
+export const SftpProcessEventKey = "SftpProcessEventKey"; // sftp非上传下载时的传输进度事件
+export const TermGroupCommandEventKey = "TermGroupCommandEventKey"; // 终端组命令事件
+
+export type BusEvents = {
+    [DirectRemotePathEventKey]: { sid: string; path: string };
+    [RefreshFileListEventKey]: void;
+    [DownloadMenuOpenEventKey]: void;
+    [UploadFileEventKey]: void;
+    [ActiveFileEventKey]: { sid: string; path: string };
+    [FileDragStartEventKey]: RemoteFileItem[];
+    [FileDragEndEventKey]: void;
+    [SftpProcessEventKey]: number;
+    [TermGroupCommandEventKey]: { groupId: string; command: string; sessionId: string };
+};
+
+const emitter: Emitter<BusEvents> = mitt<BusEvents>();
+
+export function useBus() {
+    const cleanupTasks = useRef<Array<() => void>>([]);
+
+    useEffect(() => {
+        const tasks = cleanupTasks.current;
+        return () => {
+            tasks.forEach((cleanup) => cleanup());
+            tasks.length = 0;
+        };
+    }, []);
+
+    return useMemo(
+        () => ({
+            on<K extends keyof BusEvents>(type: K, handler: (event: BusEvents[K]) => void) {
+                emitter.on(type, handler as (event: unknown) => void);
+                const cleanup = () => emitter.off(type, handler as (event: unknown) => void);
+                cleanupTasks.current.push(cleanup);
+                return cleanup;
+            },
+            off: emitter.off,
+            emit: emitter.emit,
+            all: emitter.all,
+        }),
+        [],
+    );
+}
+
+export default useBus;

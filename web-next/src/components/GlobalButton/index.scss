@@ -1,0 +1,42 @@
+.GlobalButton {
+    &.global-button {
+        // 主窗口空间紧张，控制组压缩到标题栏内，避免向下侵占终端可视区域。
+        gap: 1px;
+        padding: 3px;
+        border-radius: 11px;
+        width: min-content;
+        height: 22px;
+        overflow: hidden;
+    }
+
+    .btn {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 16px;
+        border: 0;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+        opacity: 0.72;
+        transition:
+            color 0.16s ease,
+            background-color 0.16s ease,
+            box-shadow 0.16s ease,
+            opacity 0.16s ease;
+
+        &:hover {
+            opacity: 1;
+        }
+
+        &.active {
+            opacity: 1;
+        }
+
+        svg {
+            width: 12px;
+            height: 12px;
+        }
+    }
+}

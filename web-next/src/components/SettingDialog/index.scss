@@ -1,0 +1,240 @@
+.SettingDialog {
+    &.setting-dialog {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+    }
+
+    .setting-dialog-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 14px;
+        flex-shrink: 0;
+    }
+
+    .setting-dialog-title {
+        margin: 0;
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+    }
+
+    .setting-dialog-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+    }
+
+    .setting-dialog-body {
+        display: flex;
+        min-height: 0;
+        flex: 1;
+        overflow: hidden;
+    }
+
+    .setting-dialog-tabs {
+        padding-top: 30px;
+        flex-shrink: 0;
+        width: 112px;
+        padding: 30px 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .setting-dialog-tab {
+        text-align: left;
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid transparent;
+        font-size: var(--font-size-md);
+        cursor: pointer;
+    }
+
+    .setting-dialog-panels {
+        flex: 1;
+        min-width: 0;
+        padding: 12px 14px;
+        overflow: auto;
+    }
+
+    .setting-panel {
+        font-size: var(--font-size-md);
+    }
+
+    .setting-field {
+        margin: 0 0 12px;
+    }
+
+    .setting-label {
+        display: block;
+        margin-bottom: 4px;
+        font-weight: 600;
+    }
+
+    .setting-hint {
+        display: block;
+        margin-top: 2px;
+        font-size: var(--font-size-xs);
+        font-weight: 400;
+    }
+
+    .setting-inline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 16px;
+        margin-top: 4px;
+
+        label {
+            cursor: pointer;
+        }
+    }
+
+    .setting-check {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+    }
+
+    .setting-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .setting-input,
+    .setting-select {
+        border-radius: 8px;
+        padding: 8px 10px;
+        font-size: var(--font-size-md);
+        outline: none;
+        min-width: 0;
+    }
+
+    .setting-input-narrow {
+        width: 120px;
+        max-width: 100%;
+    }
+
+    .setting-select {
+        cursor: pointer;
+        appearance: auto;
+    }
+
+    .term-font-preview {
+        margin-bottom: 12px;
+        padding: 10px;
+        text-align: center;
+        border-radius: 8px;
+    }
+
+    .term-font-pickers {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 12px;
+    }
+
+    .term-font-picker {
+        display: block;
+        min-width: 0;
+    }
+
+    .term-font-list {
+        width: 100%;
+        min-height: 180px;
+        padding: 4px;
+    }
+
+    .setting-dialog-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 10px 14px;
+        flex-shrink: 0;
+    }
+
+    .setting-btn {
+        padding: 7px 14px;
+        border-radius: 8px;
+        font-size: var(--font-size-md);
+        cursor: pointer;
+    }
+
+    .setting-actions {
+        margin-top: 8px;
+    }
+
+    .setting-about {
+        padding: 8px 0;
+    }
+
+    .setting-about-name {
+        margin: 0 0 6px;
+        font-size: var(--font-size-2xl);
+        font-weight: 600;
+    }
+
+    .setting-about-line {
+        margin: 0 0 6px;
+
+        &.muted {
+        }
+    }
+
+    @layer layout {
+        .setting-input-wide {
+            width: 100%;
+            max-width: 420px;
+            box-sizing: border-box;
+        }
+
+        .setting-sync-panel {
+            margin-bottom: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border-width: 1px;
+            border-style: solid;
+        }
+
+        .setting-sync-remote-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            column-gap: 12px;
+
+            .setting-field:nth-child(3),
+            .setting-field:nth-child(4) {
+                grid-column: 1 / -1;
+            }
+        }
+    }
+
+    @layer components {
+        .setting-server-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 4px;
+
+            .setting-btn {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                min-width: 108px;
+                padding-inline: 16px;
+            }
+        }
+    }
+}

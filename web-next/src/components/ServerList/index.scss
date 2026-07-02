@@ -1,0 +1,213 @@
+.ServerList {
+    &.server-list-root {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /* ---------- 布局：整页 + 居中壳层 ---------- */
+    .server-list-page {
+        width: 100%;
+        height: 100%;
+        padding: 48px 56px 40px;
+        overflow: hidden;
+    }
+
+    /* min-height: 0 让 flex 子项在纵向可收缩，配合列表 overflow:auto 避免撑破父级 */
+    .server-list-shell {
+        width: min(1080px, 100%);
+        height: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        min-height: 0;
+    }
+
+    .server-list-header,
+    .server-list-toolbar,
+    .server-list-main,
+    .server-list-search {
+        display: flex;
+        align-items: center;
+    }
+
+    .server-list-header {
+        justify-content: space-between;
+        gap: 16px;
+    }
+
+    .server-list-kicker,
+    .server-list-title,
+    .server-list-empty-title {
+        margin: 0;
+    }
+
+    .server-list-kicker {
+        font-size: var(--font-size-xs);
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .server-list-title {
+        margin-top: 4px;
+        font-size: var(--font-size-icon-lg);
+        line-height: 1.15;
+        font-weight: 700;
+    }
+
+    .server-list-clear {
+        height: 32px;
+        min-width: 78px;
+        padding: 0 16px;
+        border-radius: 8px;
+        font-size: var(--font-size-md);
+        cursor: pointer;
+
+        &:disabled {
+            cursor: not-allowed;
+        }
+    }
+
+    .server-list-toolbar {
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .server-list-search {
+        flex: 1;
+        min-width: 0;
+        height: 36px;
+        gap: 8px;
+        padding: 0 12px;
+        border-radius: 10px;
+
+        input {
+            width: 100%;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            font: inherit;
+        }
+    }
+
+    .server-list-search-icon {
+        width: 16px;
+        height: 16px;
+        flex: 0 0 auto;
+    }
+
+    .server-list-count {
+        flex: 0 0 auto;
+    }
+
+    /* 列表卡片：唯一纵向滚动区域 */
+    .server-list-card {
+        min-height: 0;
+        overflow: auto;
+        border-radius: 14px;
+    }
+
+    .server-list-head,
+    .server-list-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(220px, 1.3fr) minmax(180px, 0.9fr) minmax(120px, 0.45fr) minmax(160px, 0.7fr) minmax(160px, 0.7fr);
+        gap: 16px;
+        align-items: center;
+    }
+
+    /* 表头吸顶，滚动长列表时仍能看到列名 */
+    .server-list-head {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        min-height: 34px;
+        padding: 0 16px;
+    }
+
+    .server-list-row {
+        min-height: 46px;
+        padding: 0 16px;
+        border: 0;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+    }
+
+    .server-list-main {
+        gap: 9px;
+        min-width: 0;
+    }
+
+    .server-list-name,
+    .server-list-path,
+    .server-list-user,
+    .server-list-host {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .server-list-name {
+        font-weight: 650;
+    }
+
+    .server-list-empty {
+        flex: 1;
+        min-height: 220px;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 8px;
+    }
+
+    .server-list-empty-icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+    }
+
+    .server-list-empty-title {
+        font-size: var(--font-size-xl);
+        font-weight: 650;
+    }
+
+    /* 窄屏：压缩边距、工具栏纵向堆叠、隐藏表头、行改为单列信息块 */
+    @media (max-width: 760px) {
+        .server-list-page {
+            padding: 40px 18px 24px;
+        }
+
+        .server-list-header,
+        .server-list-toolbar {
+            align-items: stretch;
+            flex-direction: column;
+        }
+
+        .server-list-clear {
+            width: 100%;
+        }
+
+        .server-list-head {
+            display: none;
+        }
+
+        .server-list-row {
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding: 10px 12px;
+        }
+
+        .server-list-main {
+            align-items: flex-start;
+            flex-direction: column;
+            gap: 2px;
+        }
+    }
+}

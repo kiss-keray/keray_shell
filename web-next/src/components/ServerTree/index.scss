@@ -1,0 +1,152 @@
+.ServerTree {
+    &.server-tree-root {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /*
+     * 布局要点：
+     * - 页面为纵向 flex，卡片 flex:1 + min-height:0 才能在固定高度父级内正确出现内部滚动条。
+     * - 窄屏：表头隐藏；行布局见 ServerTreeRow。
+     */
+    .server-tree-page {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        padding: 42px 46px 34px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        overflow: hidden;
+
+        .server-tree-header,
+        .server-tree-actions,
+        .server-tree-toolbar,
+        .server-tree-search {
+            display: flex;
+            align-items: center;
+        }
+
+        .server-tree-header {
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .server-tree-title-block {
+            min-width: 0;
+        }
+
+        .server-tree-kicker,
+        .server-tree-title,
+        .server-tree-empty-title {
+            margin: 0;
+        }
+
+        .server-tree-kicker {
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .server-tree-title {
+            margin-top: 4px;
+            font-size: var(--font-size-icon);
+            line-height: 1.15;
+            font-weight: 700;
+        }
+
+        .server-tree-actions {
+            gap: 8px;
+            flex: 0 0 auto;
+        }
+
+        .server-tree-action {
+            height: 30px;
+            padding: 0 12px;
+            border-radius: 8px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .server-tree-toolbar {
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .server-tree-search {
+            flex: 1;
+            min-width: 0;
+            height: 36px;
+            gap: 8px;
+            padding: 0 12px;
+            border-radius: 10px;
+
+            input {
+                width: 100%;
+                min-width: 0;
+                border: 0;
+                outline: 0;
+                background: transparent;
+                font: inherit;
+            }
+        }
+
+        .server-tree-search-icon {
+            width: 16px;
+            height: 16px;
+            flex: 0 0 auto;
+        }
+
+        .server-tree-count {
+            flex: 0 0 auto;
+        }
+
+        .server-tree-card {
+            min-height: 0;
+            flex: 1;
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .server-tree-head {
+            width: 100%;
+            display: grid;
+            grid-template-columns: minmax(260px, 1.25fr) minmax(150px, 0.75fr) minmax(72px, 0.28fr) minmax(110px, 0.48fr) minmax(160px, 0.7fr);
+            gap: 16px;
+            align-items: center;
+            min-height: 34px;
+            padding: 0 16px;
+            flex: 0 0 auto;
+        }
+
+        .server-tree-body {
+            min-height: 0;
+            flex: 1;
+            overflow: auto;
+            padding-bottom: 4px;
+        }
+
+        @media (max-width: 760px) {
+            padding: 38px 16px 22px;
+
+            .server-tree-header,
+            .server-tree-toolbar {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .server-tree-actions {
+                .server-tree-action {
+                    flex: 1;
+                }
+            }
+
+            .server-tree-head {
+                display: none;
+            }
+        }
+    }
+}

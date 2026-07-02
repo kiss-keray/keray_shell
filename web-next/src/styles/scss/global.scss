@@ -1,0 +1,39 @@
+.drag-region {
+    width: 100%;
+    height: 30px;
+    position: fixed;
+    user-select: none;
+    top: 0;
+    left: 0;
+    background-color: transparent;
+}
+html.theme.glass.native-window-glass,
+html.theme.glass.native-window-glass body,
+html.theme.glass.native-window-glass #app {
+    background: transparent;
+}
+
+body {
+    font-size: var(--font-size-base);
+}
+
+.global-button {
+    position: fixed;
+    // 收进标题栏右上角，保留少量边距防止外阴影被裁切。
+    top: 3px;
+    right: 6px;
+    left: unset;
+    z-index: 3001;
+}
+
+body {
+    user-select: none;
+    -webkit-user-select: none;
+}
+input,
+textarea,
+[contenteditable="true"],
+.monaco-editor {
+    user-select: text;
+    -webkit-user-select: text;
+}

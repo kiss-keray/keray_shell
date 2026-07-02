@@ -1,0 +1,394 @@
+.EditServerWin {
+    &.edit-server-page {
+        width: 100%;
+        min-height: 100vh;
+        padding: 38px 34px 28px;
+        overflow: auto;
+
+        .edit-server-header,
+        .edit-server-grid,
+        .edit-server-actions,
+        .edit-server-auth-tabs,
+        .edit-server-key-dialog-head,
+        .edit-server-key-dialog-body,
+        .edit-server-key-sidebar-head,
+        .edit-server-key-editor-head,
+        .edit-server-key-content-head,
+        .edit-server-key-actions {
+            display: flex;
+        }
+
+        .edit-server-header {
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+
+        .edit-server-title-block {
+            min-width: 0;
+        }
+
+        .edit-server-kicker,
+        .edit-server-title,
+        .edit-server-dialog-title,
+        .edit-server-dialog-subtitle,
+        .edit-server-empty-text {
+            margin: 0;
+        }
+
+        .edit-server-kicker {
+            font-size: var(--font-size-xs);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .edit-server-title {
+            margin-top: 4px;
+            font-size: var(--font-size-icon);
+            line-height: 1.15;
+            font-weight: 700;
+        }
+
+        .edit-server-dialog-title {
+            margin-top: 4px;
+            font-size: var(--font-size-3xl);
+            line-height: 1.2;
+            font-weight: 700;
+        }
+
+        .edit-server-dialog-subtitle {
+            margin-top: 6px;
+            line-height: 1.45;
+        }
+
+        .edit-server-card {
+            width: min(620px, 100%);
+            border-radius: 14px;
+            padding: 16px;
+        }
+
+        .edit-server-form {
+            margin: 0 auto;
+        }
+
+        .edit-server-section-title {
+            margin: 2px 0 12px;
+            font-size: var(--font-size-md);
+            font-weight: 700;
+        }
+
+        .edit-server-group-text {
+            margin: -4px 0 12px;
+        }
+
+        .edit-server-grid {
+            gap: 10px;
+
+            .edit-server-field {
+                flex: 1;
+            }
+        }
+
+        .edit-server-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 12px;
+
+            input,
+            select,
+            textarea {
+                width: 100%;
+                border-radius: 9px;
+                padding: 8px 10px;
+                outline: none;
+                font: inherit;
+            }
+
+            textarea {
+                min-height: 128px;
+                resize: vertical;
+                line-height: 1.45;
+            }
+
+            small {
+                font-size: var(--font-size-xs);
+                line-height: 1.35;
+            }
+        }
+
+        .edit-server-auth-tabs {
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .edit-server-auth-tab,
+        .edit-server-ghost-btn,
+        .edit-server-primary-btn,
+        .edit-server-danger-btn,
+        .edit-server-link-btn,
+        .edit-server-icon-btn,
+        .edit-server-key-item {
+            border-radius: 9px;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .edit-server-auth-tab,
+        .edit-server-ghost-btn,
+        .edit-server-primary-btn,
+        .edit-server-danger-btn {
+            min-height: 32px;
+            padding: 0 12px;
+        }
+
+        .edit-server-icon-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+
+            svg {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        .edit-server-password-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+
+            input {
+                padding-right: 40px;
+            }
+        }
+
+        .edit-server-password-toggle {
+            position: absolute;
+            right: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            font: inherit;
+            cursor: pointer;
+
+            svg {
+                width: 15px;
+                height: 15px;
+            }
+        }
+
+        .edit-server-actions,
+        .edit-server-key-actions {
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .edit-server-key-mask {
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 22px;
+        }
+
+        .edit-server-key-dialog {
+            width: min(920px, 100%);
+            max-height: min(760px, calc(100vh - 44px));
+            border-radius: 18px;
+            padding: 0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .edit-server-key-dialog-head {
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px 16px;
+            flex: 0 0 auto;
+        }
+
+        .edit-server-key-dialog-title-block {
+            min-width: 0;
+        }
+
+        .edit-server-key-dialog-body {
+            min-height: 0;
+            flex: 1;
+            padding: 0 20px 20px;
+            overflow: hidden;
+        }
+
+        .edit-server-key-sidebar {
+            display: flex;
+            flex: 0 0 260px;
+            flex-direction: column;
+            min-height: 0;
+            border-radius: 14px;
+            padding: 12px;
+        }
+
+        .edit-server-key-sidebar-head {
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 10px;
+
+            div {
+                min-width: 0;
+            }
+
+            small {
+                display: block;
+                margin-top: 2px;
+                font-size: var(--font-size-xs);
+            }
+        }
+
+        .edit-server-key-sidebar-title {
+            display: block;
+            font-size: var(--font-size-md);
+            font-weight: 700;
+        }
+
+        .edit-server-key-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+            overflow: auto;
+        }
+
+        .edit-server-key-item {
+            min-height: 44px;
+            padding: 0 10px 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            text-align: left;
+
+            .edit-server-key-item-name {
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .edit-server-key-item-action {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                width: 24px;
+                height: 24px;
+                border-radius: 7px;
+                flex: 0 0 auto;
+            }
+
+            svg {
+                width: 14px;
+                height: 14px;
+                flex: 0 0 auto;
+            }
+        }
+
+        .edit-server-key-empty {
+            display: grid;
+            place-items: center;
+            min-height: 190px;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+
+            svg {
+                width: 28px;
+                height: 28px;
+                margin-bottom: 10px;
+            }
+
+            small {
+                margin-top: 6px;
+                font-size: var(--font-size-xs);
+                line-height: 1.45;
+            }
+        }
+
+        .edit-server-key-editor {
+            display: flex;
+            flex: 1;
+            flex-direction: column;
+            min-width: 0;
+            min-height: 0;
+            margin-left: 14px;
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .edit-server-key-editor-head {
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+            font-size: var(--font-size-md);
+            font-weight: 700;
+
+            div {
+                min-width: 0;
+            }
+
+            small {
+                display: block;
+                margin-top: 3px;
+                font-size: var(--font-size-xs);
+                font-weight: 400;
+            }
+        }
+
+        .edit-server-link-btn {
+            padding: 0;
+        }
+
+        .edit-server-key-new-btn {
+            flex: 0 0 auto;
+        }
+
+        .edit-server-key-meta-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        .edit-server-key-content-head {
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .edit-server-key-content-field {
+            flex: 1;
+            min-height: 0;
+
+            textarea {
+                flex: 1;
+                min-height: 220px;
+            }
+        }
+
+        .edit-server-key-actions {
+            padding-top: 12px;
+            margin-top: auto;
+        }
+    }
+}

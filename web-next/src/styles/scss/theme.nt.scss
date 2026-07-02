@@ -1,0 +1,1538 @@
+.theme.nt {
+    &.dark {
+        color-scheme: dark;
+        --nt-surface: #262c35;
+        --nt-surface-raised: linear-gradient(145deg, #2b323d, #222831);
+        --nt-ink: #eef4ff;
+        --nt-shadow: #0d1117;
+        --nt-highlight: #91a0b5;
+        --nt-accent: #73a7ff;
+        --nt-success: #4ade80;
+        --nt-warning: #f6ad55;
+        --nt-danger: #ff9b9b;
+        --nt-danger-solid: #ff5d68;
+        --nt-overlay-base: #090c11;
+        --nt-shadow-deep: #080b10;
+        --nt-shadow-highlight: #728399;
+        --nt-line-highlight: #becde0;
+
+        // 深色拟态不能依赖纯白高光，否则边缘会像描边；改用低饱和蓝灰模拟柔和环境光。
+        --nt-bg-well: #222831;
+        --nt-bg-frost: rgba(from var(--nt-surface) r g b / 0.94);
+        --nt-bg-overlay: rgba(from var(--nt-overlay-base) r g b / 0.62);
+        --nt-bg-row-dark: rgba(from var(--nt-shadow) r g b / 0.13);
+        --nt-shadow-out-dark: rgba(from var(--nt-shadow-deep) r g b / 0.58);
+        --nt-shadow-out-light: rgba(from var(--nt-shadow-highlight) r g b / 0.16);
+        --nt-shadow-in-dark: rgba(from var(--nt-shadow-deep) r g b / 0.68);
+        --nt-shadow-in-light: rgba(from var(--nt-shadow-highlight) r g b / 0.12);
+        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow-deep) r g b / 0.48), -4px -4px 14px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow-deep) r g b / 0.5), -6px -6px 20px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-line-highlight) r g b / 0.1);
+        --nt-border: rgba(from var(--nt-line-highlight) r g b / 0.1);
+        --nt-divider: rgba(from var(--nt-line-highlight) r g b / 0.08);
+        --nt-track-bg: rgba(from var(--nt-shadow) r g b / 0.28);
+        --nt-bg-hover: rgba(from var(--nt-line-highlight) r g b / 0.055);
+        --nt-bg-hover-strong: rgba(from var(--nt-line-highlight) r g b / 0.09);
+    }
+    &.light {
+        color-scheme: light;
+        --nt-surface: #e7ecf3;
+        --nt-surface-raised: linear-gradient(145deg, #edf2f8, #dfe5ed);
+        --nt-ink: #263247;
+        --nt-shadow: #8e9cad;
+        --nt-highlight: #ffffff;
+        --nt-accent: #4f7fff;
+        --nt-success: #16a34a;
+        --nt-warning: #ea580c;
+        --nt-danger: #d83b48;
+        --nt-danger-solid: #ef4444;
+
+        // 浅色模式按参考图采用冷蓝灰底，左上高光、右下阴影形成稳定且干净的凸起层级。
+        --nt-bg-well: #e2e8f0;
+        --nt-bg-frost: rgba(from var(--nt-surface) r g b / 0.95);
+        --nt-bg-overlay: rgba(from var(--nt-ink) r g b / 0.28);
+        --nt-bg-row-dark: rgba(from var(--nt-shadow) r g b / 0.08);
+        --nt-shadow-out-dark: rgba(from var(--nt-shadow) r g b / 0.34);
+        --nt-shadow-out-light: rgba(from var(--nt-highlight) r g b / 0.92);
+        --nt-shadow-in-dark: rgba(from var(--nt-shadow) r g b / 0.38);
+        --nt-shadow-in-light: rgba(from var(--nt-highlight) r g b / 0.86);
+        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow) r g b / 0.34), -5px -5px 16px rgba(from var(--nt-highlight) r g b / 0.82);
+        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow) r g b / 0.34), -7px -7px 22px rgba(from var(--nt-highlight) r g b / 0.88);
+        --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-highlight) r g b / 0.82);
+        --nt-border: rgba(from var(--nt-shadow) r g b / 0.16);
+        --nt-divider: rgba(from var(--nt-shadow) r g b / 0.14);
+        --nt-track-bg: rgba(from var(--nt-shadow) r g b / 0.18);
+        --nt-bg-hover: rgba(from var(--nt-highlight) r g b / 0.42);
+        --nt-bg-hover-strong: rgba(from var(--nt-highlight) r g b / 0.62);
+    }
+
+    --nt-shadow-dot: inset 1px 1px 2px rgba(from var(--nt-shadow) r g b / 0.4); // 状态点内阴影
+    --nt-focus-glow-dark: drop-shadow(1px 1px 2px rgba(from var(--nt-shadow) r g b / 0.15)); // 图标暗部光晕
+    --nt-shadow-out-soft: 4px 4px 10px var(--nt-shadow-out-dark), -4px -4px 10px var(--nt-shadow-out-light); // 小控件外凸阴影
+    --nt-shadow-in: inset 3px 3px 8px var(--nt-shadow-in-dark), inset -3px -3px 8px var(--nt-shadow-in-light); // 统一内凹阴影
+    --nt-shadow-in-soft: inset 2px 2px 5px var(--nt-shadow-in-dark), inset -2px -2px 5px var(--nt-shadow-in-light); // 小控件内凹阴影
+    --nt-focus-glow-light: drop-shadow(-1px -1px 2px rgba(from var(--nt-highlight) r g b / 0.8)); // 图标亮部光晕
+    --nt-focus-glow-strong: drop-shadow(2px 2px 2px rgba(from var(--nt-highlight) r g b / 0.6)); // 激活图标暗部高光
+
+    --nt-text: rgba(from var(--nt-ink) r g b / 0.88); // 主文字颜色
+    --nt-text-strong: rgba(from var(--nt-ink) r g b / 0.96); // 强调文字颜色
+    --nt-text-muted: rgba(from var(--nt-ink) r g b / 0.62); // 次级文字
+    --nt-text-dim: rgba(from var(--nt-ink) r g b / 0.42); // 弱化文字/占位
+    --nt-text-disabled: rgba(from var(--nt-ink) r g b / 0.35); // 禁用态文字
+    --nt-text-fade: rgba(from var(--nt-ink) r g b / 0.55); // 浮层辅助文字
+    --nt-text-dialog: rgba(from var(--nt-ink) r g b / 0.84); // 对话框默认文字
+    --nt-table-header-text: rgba(from var(--nt-ink) r g b / 0.65); // 表头文字色
+
+    --nt-bg-selected: rgba(from var(--nt-accent) r g b / 0.2); // 列表选中背景
+    --nt-accent-soft: rgba(from var(--nt-accent) r g b / 0.25); // 强调色弱背景
+    --nt-accent-soft-hover: rgba(from var(--nt-accent) r g b / 0.35); // 强调色弱背景悬浮
+    --nt-accent-border: rgba(from var(--nt-accent) r g b / 0.55); // 强调色边框
+    --nt-btn-primary-bg: rgba(from var(--nt-accent) r g b / 0.85); // 主按钮背景
+    --nt-btn-primary-border: var(--nt-accent-border); // 主按钮边框
+
+    --nt-success-bg: rgba(from var(--nt-success) r g b / 0.28); // 成功按钮背景
+    --nt-success-bg-hover: rgba(from var(--nt-success) r g b / 0.38); // 成功按钮悬浮背景
+    --nt-success-border: rgba(from var(--nt-success) r g b / 0.4); // 成功按钮边框
+    --nt-success-glow: rgba(from var(--nt-success) r g b / 0.45); // 成功状态外发光
+
+    --nt-danger-bg: rgba(from var(--nt-danger) r g b / 0.22); // 危险按钮背景
+    --nt-danger-bg-hover: rgba(from var(--nt-danger) r g b / 0.32); // 危险按钮悬浮背景
+    --nt-danger-border: rgba(from var(--nt-danger) r g b / 0.4); // 危险按钮边框
+    --nt-btn-danger-border: rgba(from var(--nt-danger) r g b / 0.6); // 危险按钮边框
+
+    --nt-danger-glow: rgba(from var(--nt-danger-solid) r g b / 0.4); // 危险状态外发光
+    --nt-btn-danger-bg: rgba(from var(--nt-danger-solid) r g b / 0.9); // 危险按钮背景
+
+    @mixin nt-in-fun($bg: var(--nt-bg-well), $shadowa: var(--nt-shadow-in-dark), $shadowb: var(--nt-shadow-in-light)) {
+        background: $bg;
+        box-shadow:
+            inset 3px 3px 8px $shadowa,
+            inset -3px -3px 8px $shadowb;
+    }
+    @mixin nt-out-fun($bg: var(--nt-surface-raised), $shadowa: var(--nt-shadow-out-dark), $shadowb: var(--nt-shadow-out-light)) {
+        background: $bg;
+        box-shadow:
+            7px 7px 16px $shadowa,
+            -7px -7px 16px $shadowb;
+    }
+
+    @mixin nt-in {
+        @include nt-in-fun(var(--nt-bg-well), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
+    }
+
+    @mixin nt-in-b {
+        @include nt-in-fun(var(--nt-bg-well), var(--nt-shadow-in-dark), var(--nt-shadow-in-light));
+    }
+
+    @mixin nt-out {
+        @include nt-out-fun(var(--nt-surface-raised), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
+    }
+
+    @mixin nt-out-b {
+        @include nt-out-fun(var(--nt-surface-raised), var(--nt-shadow-out-dark), var(--nt-shadow-out-light));
+    }
+
+    // 小按钮统一保持“凸起 -> 悬浮抬高 -> 按下内凹”的交互，避免各业务模块手感不一致。
+    @mixin nt-control-out {
+        box-shadow: var(--nt-shadow-out-soft);
+        transition:
+            transform 0.16s ease,
+            box-shadow 0.16s ease,
+            background-color 0.16s ease,
+            border-color 0.16s ease;
+
+        &:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+
+        &:active:not(:disabled),
+        &.active {
+            transform: translateY(0);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        &:disabled {
+            box-shadow: none;
+        }
+    }
+
+    // 页面本身是承载所有拟态组件的同色背景，不应做成一个巨大的内凹面。
+    background: var(--nt-surface);
+    color: var(--nt-text);
+
+    &.ui-compact {
+        font-size: var(--font-size-xs);
+        .setting-dialog-panels {
+            padding: 10px 12px;
+        }
+    }
+
+    /* LayoutColumnResizer.vue */
+    .layout-column-resizer {
+        flex: 0 0 6px;
+        width: 6px;
+        min-width: 6px;
+        margin-top: 28px;
+        cursor: col-resize;
+        z-index: 2;
+        align-self: stretch;
+        border-radius: 3px;
+        background: transparent;
+        transition: background 0.15s ease;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--nt-bg-hover);
+            outline: none;
+        }
+    }
+
+    /* LayoutRowResizer.vue */
+    .layout-row-resizer {
+        flex: 0 0 6px;
+        height: 6px;
+        min-height: 6px;
+        width: 100%;
+        cursor: ns-resize;
+        z-index: 2;
+        flex-shrink: 0;
+        border-radius: 3px;
+        background: transparent;
+        transition: background 0.15s ease;
+
+        &:hover,
+        &:focus-visible {
+            background: var(--nt-bg-hover);
+            outline: none;
+        }
+    }
+
+    /* Term.vue / term.vue */
+    .term-module {
+        color: var(--nt-ink);
+        @include nt-in;
+        .term {
+            .xterm-rows {
+                color: var(--nt-ink);
+            }
+        }
+        .line-number {
+            color: var(--nt-text-muted);
+        }
+
+        .search {
+            @include nt-out;
+
+            .left {
+                .icon {
+                    filter: unset;
+
+                    &.active {
+                        filter: var(--nt-focus-glow-strong) var(--nt-highlight);
+                    }
+                }
+            }
+
+            .icon {
+                filter: var(--nt-focus-glow-dark) var(--nt-focus-glow-light);
+            }
+        }
+
+        .select-prompt {
+            @include nt-out;
+            backdrop-filter: blur(2px);
+            background: var(--nt-bg-frost);
+        }
+    }
+
+    /* ShellInstance.vue */
+    .servers {
+        color: var(--nt-ink);
+
+        .item {
+            @include nt-out;
+
+            &.active {
+                background: var(--nt-bg-well);
+                box-shadow: var(--nt-shadow-in);
+            }
+            .status {
+                @include nt-in;
+                &.dis {
+                    @include nt-in-fun(linear-gradient(145deg, var(--nt-danger), var(--nt-danger-bg-hover)), var(--nt-danger), var(--nt-danger-bg-hover));
+                }
+
+                &.connect {
+                    @include nt-in-fun(linear-gradient(145deg, var(--nt-success), var(--nt-success-bg-hover)), var(--nt-success), var(--nt-success-bg-hover));
+                }
+
+                &.active {
+                    @include nt-in-fun(linear-gradient(145deg, var(--nt-accent), var(--nt-success-bg-hover)), var(--nt-accent), var(--nt-success-bg-hover));
+                }
+            }
+        }
+    }
+
+    /* TermGroup.vue */
+    .term-group {
+        .child-box {
+            @include nt-out;
+            &.active {
+                @include nt-in;
+            }
+            .child-box-header {
+                .child-box-meta {
+                    color: var(--nt-text-muted);
+                }
+
+                .child-box-status {
+                    &.connected {
+                        color: var(--nt-success);
+                    }
+
+                    &.connecting {
+                        color: var(--nt-warning);
+                    }
+
+                    &.disconnected {
+                        color: var(--nt-danger-solid);
+                    }
+                }
+            }
+            .term-module {
+                box-shadow: none;
+                background: transparent;
+            }
+        }
+    }
+
+    .server-list-page {
+        color: var(--nt-text);
+        .server-list-kicker,
+        .server-list-count,
+        .server-list-path,
+        .server-list-host {
+            color: var(--nt-text-muted);
+        }
+
+        .server-list-title,
+        .server-list-name,
+        .server-list-user,
+        .server-list-empty-title {
+            color: var(--nt-text-strong);
+        }
+
+        .server-list-clear,
+        .server-list-search,
+        .server-list-card,
+        .server-list-empty {
+            border: 1px solid var(--nt-border);
+            @include nt-out;
+        }
+
+        .server-list-clear {
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+
+            &:hover:not(:disabled) {
+                background: var(--nt-accent-soft-hover);
+                border-color: var(--nt-accent-border);
+            }
+
+            &:disabled {
+                color: var(--nt-text-disabled);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .server-list-search {
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            input {
+                color: var(--nt-text-strong);
+
+                &::placeholder {
+                    color: var(--nt-text-dim);
+                }
+            }
+        }
+
+        .server-list-search-icon,
+        .server-list-empty-icon {
+            color: var(--nt-accent);
+        }
+
+        .server-list-empty-icon {
+            background: var(--nt-accent-soft);
+            border: 1px solid var(--nt-accent-border);
+            box-shadow: var(--nt-shadow-topline);
+        }
+
+        .server-list-head {
+            color: var(--nt-table-header-text);
+            @include nt-in;
+            border-bottom: 1px solid var(--nt-divider);
+        }
+
+        .server-list-row {
+            color: var(--nt-text);
+            background: transparent;
+            border-bottom: 1px solid var(--nt-divider);
+
+            &.server-list-row-selected {
+                background: var(--nt-accent-soft);
+            }
+
+            &:hover {
+                background: var(--nt-accent-soft);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--nt-accent-border);
+                outline-offset: -2px;
+            }
+        }
+    }
+
+    .server-tree-page {
+        color: var(--nt-text);
+
+        .server-tree-kicker,
+        .server-tree-count,
+        .server-tree-muted {
+            color: var(--nt-text-muted);
+        }
+
+        .server-tree-title,
+        .server-tree-name,
+        .server-tree-value {
+            color: var(--nt-text-strong);
+        }
+
+        .server-tree-name-input {
+            color: var(--nt-text-strong);
+            border: 1px solid var(--nt-border);
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &:focus {
+                border-color: var(--nt-accent-border);
+            }
+        }
+
+        .server-tree-action,
+        .server-tree-search,
+        .server-tree-card {
+            border: 1px solid var(--nt-border);
+            @include nt-out;
+        }
+
+        .server-tree-action {
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-accent-soft-hover);
+                border-color: var(--nt-accent-border);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--nt-accent-border);
+                outline-offset: 2px;
+            }
+        }
+
+        .server-tree-search {
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            input {
+                color: var(--nt-text-strong);
+
+                &::placeholder {
+                    color: var(--nt-text-dim);
+                }
+            }
+        }
+
+        .server-tree-search-icon,
+        .server-tree-server-icon {
+            color: var(--nt-accent);
+        }
+
+        .server-tree-head {
+            color: var(--nt-table-header-text);
+            @include nt-in;
+            border-bottom: 1px solid var(--nt-divider);
+        }
+
+        .server-tree-row {
+            color: var(--nt-text);
+            background: transparent;
+            border-bottom: 1px solid var(--nt-divider);
+
+            &:hover {
+                background: var(--nt-bg-hover);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--nt-accent-border);
+                outline-offset: -2px;
+            }
+            &.server-tree-row-drag-target {
+                &.server-tree-server-row {
+                    border-bottom: 2px solid var(--nt-accent-border) !important;
+                }
+                &.server-tree-group-row {
+                    background: var(--nt-accent-soft-hover) !important;
+                }
+            }
+        }
+
+        .server-tree-group-row {
+            &.server-tree-row-open {
+                background: var(--nt-bg-row-dark);
+            }
+
+            .server-tree-toggle {
+                color: var(--nt-text-fade);
+            }
+        }
+
+        .server-tree-server-row,
+        .server-tree-group-row {
+            &.server-tree-row-selected {
+                background: var(--nt-accent-soft);
+            }
+        }
+
+        .server-tree-badge {
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+            border: 1px solid var(--nt-accent-border);
+            box-shadow: var(--nt-shadow-topline);
+        }
+    }
+
+    .edit-server-page {
+        color: var(--nt-text);
+
+        .edit-server-kicker,
+        .edit-server-group-text,
+        .edit-server-dialog-subtitle,
+        .edit-server-field,
+        .edit-server-field small,
+        .edit-server-key-sidebar-head small,
+        .edit-server-key-editor-head small,
+        .edit-server-key-empty small,
+        .edit-server-empty-text {
+            color: var(--nt-text-muted);
+        }
+
+        .edit-server-title,
+        .edit-server-dialog-title,
+        .edit-server-section-title,
+        .edit-server-key-sidebar-title,
+        .edit-server-key-editor-head {
+            color: var(--nt-text-strong);
+        }
+
+        .edit-server-card,
+        .edit-server-key-dialog,
+        .edit-server-key-sidebar,
+        .edit-server-key-editor {
+            border: 1px solid var(--nt-border);
+            @include nt-out;
+        }
+
+        .edit-server-key-empty,
+        .edit-server-key-item-action {
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-topline);
+        }
+
+        .edit-server-key-mask {
+            background: var(--nt-bg-overlay);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+        }
+
+        .edit-server-field {
+            input,
+            select,
+            textarea {
+                color: var(--nt-text-strong);
+                border: 1px solid var(--nt-border);
+                @include nt-in;
+                box-shadow: var(--nt-shadow-in-soft);
+
+                &::placeholder {
+                    color: var(--nt-text-dim);
+                }
+
+                &:focus {
+                    border-color: var(--nt-accent-border);
+                }
+            }
+        }
+
+        .edit-server-auth-tab,
+        .edit-server-ghost-btn,
+        .edit-server-primary-btn,
+        .edit-server-danger-btn,
+        .edit-server-link-btn,
+        .edit-server-icon-btn,
+        .edit-server-key-item {
+            color: var(--nt-text-strong);
+            border: 1px solid var(--nt-border);
+            background: var(--nt-bg-well);
+            @include nt-out;
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-accent-soft-hover);
+                border-color: var(--nt-accent-border);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--nt-accent-border);
+                outline-offset: 2px;
+            }
+        }
+
+        .edit-server-auth-tab,
+        .edit-server-key-item {
+            &.active {
+                background: var(--nt-accent-soft);
+                border-color: var(--nt-accent-border);
+            }
+        }
+
+        .edit-server-primary-btn {
+            background: var(--nt-accent-soft);
+            border-color: var(--nt-accent-border);
+        }
+
+        .edit-server-danger-btn {
+            color: #8f1d1d;
+            background: rgba(from var(--nt-danger-solid) r g b / 0.12);
+            border-color: rgba(from var(--nt-danger-solid) r g b / 0.32);
+        }
+
+        .edit-server-link-btn {
+            color: var(--nt-accent);
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+        }
+    }
+
+    /* DefaultMenus.vue */
+    /* DefaultMenuItems.vue（嵌套菜单项） */
+    .menu-box {
+        .menu-module {
+            color: var(--nt-ink);
+            @include nt-out;
+        }
+        .submenu {
+            @include nt-out;
+        }
+        .menu-module,
+        .submenu {
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-popup);
+            .menu-divider {
+                background: var(--nt-divider);
+            }
+
+            .item {
+                &:hover:not(.disabled) {
+                    background: var(--nt-accent-soft-hover);
+                }
+
+                &.disabled {
+                    color: var(--nt-text-disabled);
+                }
+            }
+
+            .submenu-arrow {
+                color: var(--nt-text-fade);
+            }
+        }
+    }
+
+    /* ServerOverviewPanel.vue */
+    .overview-root {
+        .ov-err,
+        .empty {
+            @include nt-out;
+        }
+
+        .empty {
+            color: var(--nt-text-muted);
+        }
+
+        .ov-err {
+            color: var(--nt-danger);
+        }
+    }
+
+    /* ServerMessage.vue */
+    .message {
+        @include nt-out;
+
+        .sync-txt,
+        .banner,
+        .metric-line,
+        .bar-label {
+            color: var(--nt-text-muted);
+        }
+
+        .sync-dot {
+            background: var(--nt-text-dim);
+            box-shadow: var(--nt-shadow-dot);
+
+            &.ok {
+                background: var(--nt-success);
+                box-shadow: 0 0 6px var(--nt-success-glow);
+            }
+
+            &.bad {
+                background: var(--nt-danger-solid);
+                box-shadow: 0 0 6px var(--nt-danger-glow);
+            }
+        }
+
+        .banner,
+        .bar-track {
+            @include nt-in;
+            border-radius: 6px;
+        }
+
+        .btn-copy {
+            @include nt-in;
+            border: none;
+        }
+
+        .bar-fill {
+            &.cpu {
+                background: linear-gradient(90deg, var(--nt-accent), var(--nt-accent));
+                box-shadow: var(--nt-shadow-topline);
+            }
+
+            &.mem {
+                background: linear-gradient(90deg, rgba(from var(--nt-danger-solid) r g b / 0.5), var(--nt-danger-solid));
+                box-shadow: var(--nt-shadow-topline);
+            }
+
+            &.swap {
+                background: linear-gradient(90deg, rgba(from var(--nt-warning) r g b / 0.5), var(--nt-warning));
+                box-shadow: var(--nt-shadow-topline);
+            }
+        }
+    }
+
+    /* ServerResource.vue */
+    .resource {
+        @include nt-out;
+
+        .tbl.proc thead {
+            color: var(--nt-text-muted);
+            @include nt-in;
+            border-radius: 6px;
+        }
+
+        .tbl.proc td {
+            border-bottom: 1px solid var(--nt-divider);
+        }
+
+        .tbl.proc .cmd,
+        .chart-y,
+        .net-footer {
+            color: var(--nt-text-muted);
+        }
+
+        .tbl.proc tbody tr {
+            background: var(--nt-bg-row-dark);
+        }
+
+        .tbl.proc tbody tr.alt {
+            background: var(--nt-bg-row-dark);
+        }
+
+        .iface-select,
+        .chart {
+            @include nt-in;
+            border-radius: 6px;
+        }
+
+        .proc-sort-btn:hover {
+            background: var(--nt-bg-hover);
+        }
+
+        .proc-sort-btn:focus-visible {
+            outline: 2px solid var(--nt-accent-border);
+            outline-offset: 1px;
+        }
+
+        .proc-th-sort--active .proc-sort-btn {
+            background: var(--nt-accent-soft);
+        }
+
+        .chart-grid {
+            stroke: var(--nt-divider);
+        }
+
+        .chart-line-up {
+            stroke: var(--nt-success);
+        }
+
+        .chart-line-down {
+            stroke: var(--nt-warning);
+        }
+
+        .net-up {
+            color: var(--nt-success);
+            text-shadow: 0 0 8px var(--nt-success-glow);
+        }
+
+        .net-down {
+            color: var(--nt-warning);
+            text-shadow: 0 0 8px color-mix(in srgb, var(--nt-warning) 35%, transparent);
+        }
+    }
+
+    /* ServerDisk.vue */
+    .disk {
+        @include nt-out;
+
+        .tbl.disk thead {
+            color: var(--nt-text-muted);
+            @include nt-in;
+            border-radius: 6px;
+        }
+        .tbl.disk .path {
+            color: var(--nt-text-muted);
+        }
+
+        .tbl.disk tbody tr {
+            background: var(--nt-bg-row-dark);
+        }
+
+        .tbl.disk tbody tr.root {
+            background: rgba(from var(--nt-success) r g b / 0.1);
+            box-shadow: inset 0 0 0 1px var(--nt-success-border);
+        }
+
+        .disk-bar {
+            background: var(--nt-success-bg-hover);
+            box-shadow: var(--nt-shadow-topline);
+        }
+    }
+
+    /* Sftp.vue */
+    .sftp-panel {
+        .tabs {
+            @include nt-in-b;
+            .tab {
+                &.on {
+                    @include nt-control-out;
+                }
+            }
+            .tab-badge {
+                background: var(--nt-accent-soft);
+                color: var(--nt-text-strong);
+            }
+        }
+        .files-view {
+            .main {
+                margin: 0 6px 6px;
+                border-radius: 10px;
+            }
+        }
+
+        .process-container {
+            border: 1px solid var(--nt-accent-border);
+            background: var(--nt-track-bg);
+        }
+
+        .process-bar {
+            background: linear-gradient(90deg, rgba(from var(--nt-accent) r g b / 0.78), var(--nt-accent));
+        }
+    }
+
+    /* SftpToolbar.vue */
+    .toolbar {
+        .path-input {
+            @include nt-in-b;
+            color: inherit;
+        }
+
+        .tb-btn {
+            background: var(--nt-bg-hover);
+            color: var(--nt-text-muted);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-bg-hover-strong);
+            }
+        }
+
+        .icon-btn {
+            color: var(--nt-text-muted);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-bg-hover-strong);
+                color: var(--nt-ink);
+            }
+        }
+
+        .hist-pop {
+            border: 1px solid var(--nt-border);
+            @include nt-out;
+            box-shadow: var(--nt-shadow-popup);
+        }
+
+        .hist-item:hover {
+            background: var(--nt-bg-hover-strong);
+        }
+
+        .hist-empty {
+            color: var(--nt-text-fade);
+        }
+    }
+
+    /* SftpDirTree.vue */
+    .tree-root {
+        border-radius: 8px;
+        @include nt-in;
+    }
+
+    /* SftpDirTreeItem.vue */
+    .tree-row {
+        color: var(--nt-text-muted);
+
+        .tree-toggle {
+            color: var(--nt-text-fade);
+        }
+
+        .tree-inline-input {
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+            border: 1px solid var(--nt-border);
+            color: inherit;
+        }
+
+        .folder-ic,
+        .lnk-corner-ic {
+            color: var(--nt-accent);
+        }
+
+        &:hover {
+            background: var(--nt-bg-hover);
+        }
+
+        &.active {
+            background: var(--nt-accent-soft);
+            color: var(--nt-ink);
+            &:hover {
+                background: rgba(from var(--nt-accent) r g b / 0.15);
+            }
+        }
+
+        &.drag-over {
+            background: var(--nt-warning);
+        }
+    }
+
+    /* SftpFileTable.vue */
+    .table-wrap {
+        border-radius: 8px;
+        @include nt-in-b;
+
+        .file-table {
+            th {
+                color: var(--nt-table-header-text);
+            }
+
+            .data-row {
+                &.sel {
+                    background: var(--nt-bg-selected);
+                    &:hover {
+                        background: rgba(from var(--nt-accent) r g b / 0.15);
+                    }
+                }
+                &.drag-over {
+                    background: var(--nt-warning);
+                    &:hover {
+                        background: rgba(from var(--nt-warning) r g b / 0.5);
+                    }
+                }
+                &:hover {
+                    background: var(--nt-bg-hover);
+                }
+            }
+
+            .icon-stack-main {
+                color: var(--nt-accent);
+                &.icon-file-icon {
+                    color: var(--nt-success-glow);
+                }
+            }
+
+            .th-sort-ind {
+                color: var(--nt-text-fade);
+
+                &.active {
+                    color: var(--nt-accent);
+                }
+            }
+
+            .col-resize-handle {
+                &::after {
+                    background: var(--nt-border);
+                }
+                &:hover::after {
+                    background: var(--nt-accent-border);
+                }
+            }
+
+            .table-inline-input {
+                @include nt-in;
+                box-shadow: var(--nt-shadow-in-soft);
+                border: 1px solid var(--nt-border);
+                color: inherit;
+            }
+        }
+    }
+
+    /* SftpTransfersTab.vue */
+    .transfers-panel {
+        border-radius: 10px;
+
+        .transfers-head {
+            color: var(--nt-text-fade);
+        }
+
+        .concurrency-label,
+        .empty-tip {
+            color: var(--nt-text-fade);
+        }
+
+        .concurrency-slider {
+            accent-color: var(--nt-accent);
+        }
+
+        .clean-btn {
+            background: var(--nt-bg-hover-strong);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-bg-hover-strong);
+            }
+        }
+
+        .tx-btn {
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+            border: 1px solid var(--nt-accent-border);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-accent-soft-hover);
+            }
+        }
+
+        .tx-btn--danger {
+            color: var(--nt-danger);
+            background: var(--nt-danger-bg);
+            border-color: var(--nt-danger-border);
+
+            &:hover {
+                background: var(--nt-danger-bg-hover);
+            }
+        }
+
+        .tx-btn--accent {
+            color: var(--nt-success);
+            background: var(--nt-success-bg);
+            border-color: var(--nt-success-border);
+
+            &:hover {
+                background: var(--nt-success-bg-hover);
+            }
+        }
+    }
+
+    /* SftpTransferItem.vue */
+    .transfer-item {
+        @include nt-out;
+
+        .download-track {
+            background: var(--nt-track-bg);
+        }
+
+        .download-bar {
+            background: linear-gradient(90deg, rgba(from var(--nt-danger) r g b / 0.78), var(--nt-success));
+        }
+
+        .group-ic {
+            color: var(--nt-accent);
+        }
+
+        .item-state {
+            color: var(--nt-text-fade);
+
+            &.running,
+            &.queued {
+                color: var(--nt-accent);
+            }
+            &.success {
+                color: var(--nt-success);
+            }
+            &.error {
+                color: var(--nt-danger);
+            }
+            &.paused {
+                color: var(--nt-warning);
+            }
+            &.cancelled {
+                color: var(--nt-text-fade);
+            }
+        }
+
+        .tx-btn {
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+            border: 1px solid var(--nt-accent-border);
+            @include nt-control-out;
+
+            &:hover {
+                background: var(--nt-accent-soft-hover);
+            }
+        }
+
+        .tx-btn--danger {
+            color: var(--nt-danger);
+            background: var(--nt-danger-bg);
+            border-color: var(--nt-danger-border);
+
+            &:hover {
+                background: var(--nt-danger-bg-hover);
+            }
+        }
+
+        .tx-btn--accent {
+            color: var(--nt-success);
+            background: var(--nt-success-bg);
+            border-color: var(--nt-success-border);
+
+            &:hover {
+                background: var(--nt-success-bg-hover);
+            }
+        }
+    }
+
+    /* Setting.vue */
+    .global-button {
+        background: var(--nt-surface-raised);
+        border: 1px solid var(--nt-border);
+        box-shadow:
+            2px 2px 6px var(--nt-shadow-out-dark),
+            -2px -2px 6px var(--nt-shadow-out-light);
+
+        .btn {
+            color: var(--nt-text-muted);
+            box-shadow: none;
+
+            &:hover:not(:disabled) {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+
+            &.active {
+                color: var(--nt-accent);
+                background: var(--nt-bg-well);
+                box-shadow: var(--nt-shadow-in-soft);
+            }
+        }
+    }
+
+    /* Confirm.vue / Prompt.vue / PermissionEditor.vue */
+    .confirm-mask,
+    .prompt-mask,
+    .perm-mask {
+        background: var(--nt-bg-overlay);
+
+        .confirm-dialog,
+        .prompt-dialog,
+        .perm-dialog {
+            border: 1px solid var(--nt-border);
+            @include nt-out;
+            color: var(--nt-text-dialog);
+            box-shadow: var(--nt-shadow-dialog);
+            .confirm-title,
+            .prompt-title,
+            .perm-title {
+                color: var(--nt-text-strong);
+            }
+
+            .confirm-message,
+            .prompt-message {
+                color: var(--nt-text-dialog);
+            }
+
+            .perm-path {
+                color: var(--nt-text-dialog);
+            }
+            .perm-table {
+                thead th {
+                    color: var(--nt-text-dialog);
+                }
+
+                tbody th {
+                    color: var(--nt-text-strong);
+                }
+
+                input[type="checkbox"] {
+                    accent-color: var(--nt-accent);
+                }
+            }
+
+            .prompt-input {
+                color: var(--nt-text-strong);
+                @include nt-in;
+                box-shadow: var(--nt-shadow-in-soft);
+                border-color: var(--nt-accent-border);
+            }
+
+            .confirm-btn,
+            .prompt-btn,
+            .perm-btn {
+                border-color: var(--nt-btn-primary-border);
+                color: var(--nt-text-strong);
+                background: var(--nt-btn-primary-bg);
+                @include nt-control-out;
+            }
+
+            .confirm-btn.secondary,
+            .prompt-btn.secondary,
+            .perm-btn.secondary {
+                color: var(--nt-text-muted);
+                border-color: var(--nt-border);
+                background: var(--nt-bg-hover);
+            }
+
+            .confirm-btn.danger {
+                border-color: var(--nt-btn-danger-border);
+                background: var(--nt-btn-danger-bg);
+            }
+
+            .confirm-message {
+                .confirm-target code {
+                    color: var(--nt-text-strong);
+                    @include nt-in;
+                    border: 1px solid var(--nt-border);
+                }
+
+                .confirm-file-list {
+                    @include nt-in;
+                    border: 1px solid var(--nt-border);
+                }
+
+                .confirm-file-item {
+                    border-bottom: 1px solid var(--nt-border);
+                }
+
+                .confirm-file-path {
+                    color: var(--nt-text-muted);
+                }
+
+                .confirm-danger-note {
+                    color: var(--nt-danger-solid);
+                }
+            }
+        }
+    }
+
+    /* UploadConflictWin.vue */
+    .upload-conflict-page {
+        .upload-conflict-icon {
+            color: var(--nt-warning, var(--nt-text-strong));
+            @include nt-out;
+        }
+
+        .upload-conflict-title {
+            color: var(--nt-text-strong);
+        }
+
+        .upload-conflict-subtitle {
+            color: var(--nt-text-muted);
+        }
+
+        .upload-conflict-path {
+            @include nt-in;
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        .upload-conflict-path-label {
+            color: var(--nt-text-dim);
+        }
+
+        .upload-conflict-path-value {
+            color: var(--nt-text-strong);
+        }
+
+        .upload-conflict-apply {
+            color: var(--nt-text-muted);
+
+            input {
+                accent-color: var(--nt-accent);
+            }
+        }
+
+        .upload-conflict-btn {
+            border-color: var(--nt-btn-primary-border);
+            color: var(--nt-text-strong);
+            background: var(--nt-btn-primary-bg);
+            @include nt-control-out;
+
+            &.secondary {
+                color: var(--nt-text-muted);
+                border-color: var(--nt-border);
+                background: var(--nt-bg-hover);
+            }
+
+            &.primary {
+                border-color: var(--nt-accent-border);
+                color: var(--nt-accent);
+                background: var(--nt-accent-soft);
+            }
+        }
+    }
+
+    /* SettingsDialog.vue */
+
+    .setting-dialog {
+        border: 1px solid var(--nt-border);
+        @include nt-out;
+        color: var(--nt-text-dialog);
+        box-shadow: var(--nt-shadow-dialog);
+
+        .setting-dialog-header {
+            border-bottom: 1px solid var(--nt-divider);
+        }
+
+        .setting-dialog-title {
+            color: var(--nt-text-strong);
+        }
+
+        .setting-dialog-close {
+            color: var(--nt-text-muted);
+            background: transparent;
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+                border-color: var(--nt-border);
+            }
+        }
+
+        .setting-dialog-tabs {
+            border-right: 1px solid var(--nt-divider);
+        }
+
+        .setting-dialog-tab {
+            color: var(--nt-text-muted);
+            background: transparent;
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+
+            &.active {
+                color: var(--nt-text-strong);
+                border-color: var(--nt-accent-border);
+                background: var(--nt-accent-soft);
+                box-shadow: var(--nt-shadow-in-soft);
+            }
+        }
+
+        .setting-label {
+            color: var(--nt-text-strong);
+        }
+
+        .setting-hint {
+            color: var(--nt-text-dim);
+        }
+
+        .setting-sync-panel {
+            border-color: var(--nt-border);
+            background: var(--nt-bg-well);
+        }
+
+        .setting-inline label {
+            color: var(--nt-text-dialog);
+        }
+
+        .setting-check {
+            color: var(--nt-text-dialog);
+        }
+        .term-font-preview {
+            @include nt-out;
+        }
+
+        .setting-input,
+        .setting-select {
+            color: var(--nt-text-strong);
+            border: 1px solid var(--nt-border);
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &:focus {
+                border-color: var(--nt-accent-border);
+            }
+        }
+
+        .setting-dialog-footer {
+            border-top: 1px solid var(--nt-divider);
+        }
+
+        .setting-btn {
+            border: 1px solid var(--nt-btn-primary-border);
+            color: var(--nt-text-strong);
+            background: var(--nt-btn-primary-bg);
+            @include nt-control-out;
+
+            &:hover {
+                filter: brightness(1.05);
+            }
+
+            &.secondary {
+                border-color: var(--nt-border);
+                color: var(--nt-text-muted);
+                background: var(--nt-bg-hover);
+            }
+
+            &.primary {
+                border-color: var(--nt-btn-primary-border);
+            }
+        }
+
+        .setting-server-actions {
+            .upload-btn {
+                color: var(--nt-success);
+                background: var(--nt-success-bg);
+                border-color: var(--nt-success-border);
+
+                &:hover {
+                    background: var(--nt-success-bg-hover);
+                }
+            }
+
+            .download-btn {
+                color: var(--nt-accent);
+                background: var(--nt-accent-soft);
+                border-color: var(--nt-accent-border);
+
+                &:hover {
+                    background: var(--nt-accent-soft-hover);
+                }
+            }
+        }
+
+        .setting-about-name {
+            color: var(--nt-text-strong);
+        }
+
+        .setting-about-line {
+            color: var(--nt-text-dialog);
+
+            &.muted {
+                color: var(--nt-text-muted);
+            }
+        }
+    }
+
+    /* MonacoWin.vue / MonacoEditorTabs.vue */
+    .monaco-editor-win {
+        --monaco-bg: var(--nt-bg-well);
+        --monaco-fg: var(--nt-text-strong);
+        --monaco-line-number: var(--nt-text-dim);
+        --monaco-line-number-active: var(--nt-text-muted);
+        --monaco-selection: var(--nt-accent-soft);
+        --monaco-selection-inactive: var(--nt-bg-hover);
+        --monaco-cursor: var(--nt-accent);
+        --monaco-line-highlight: var(--nt-bg-hover);
+        --monaco-indent-guide: var(--nt-border);
+        --monaco-widget-bg: var(--nt-bg-frost);
+        --monaco-widget-border: var(--nt-border);
+        --monaco-suggest-selected: var(--nt-accent-soft-hover);
+        --monaco-scrollbar: rgba(from var(--nt-shadow) r g b / 0.22);
+        --monaco-scrollbar-hover: rgba(from var(--nt-shadow) r g b / 0.36);
+        --monaco-minimap-bg: var(--nt-bg-well);
+
+        @include nt-in-b;
+
+        .monaco-tabs {
+            border-bottom: 1px solid var(--nt-divider);
+
+            .monaco-tab {
+                color: var(--nt-text-muted);
+                background: var(--nt-bg-row-dark);
+
+                &:hover {
+                    background: var(--nt-bg-hover);
+                    color: var(--nt-text-strong);
+                }
+
+                &.active {
+                    background: var(--nt-accent-soft);
+                    color: var(--nt-text-strong);
+                    box-shadow: inset 0 2px 0 var(--nt-accent-border);
+                }
+
+                &.dirty .monaco-tab-dot {
+                    color: var(--nt-warning);
+                }
+
+                &.loading .monaco-tab-badge,
+                &.saving .monaco-tab-badge {
+                    color: var(--nt-accent);
+                }
+
+                .monaco-tab-close {
+                    color: var(--nt-text-fade);
+
+                    &:hover {
+                        color: var(--nt-text-strong);
+                        background: var(--nt-bg-hover-strong);
+                    }
+                }
+            }
+        }
+
+        .monaco-empty {
+            color: var(--nt-text-muted);
+        }
+
+        .monaco-status {
+            border-top: 1px solid var(--nt-divider);
+            background: var(--nt-bg-row-dark);
+            color: var(--nt-text-muted);
+
+            .monaco-status-lang {
+                color: var(--nt-accent);
+            }
+
+            .monaco-status-hint {
+                color: var(--nt-text-dim);
+            }
+        }
+    }
+}

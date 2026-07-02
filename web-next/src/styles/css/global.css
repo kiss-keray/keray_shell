@@ -1,0 +1,100 @@
+@import "tailwindcss";
+@import "./font-size.css";
+*:focus-visible {
+    outline: none;
+}
+/* 隐藏滚动条，保留滚动能力 */
+*,
+*::before,
+*::after {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+.monaco-editor .scrollbar,
+.xterm .scrollbar {
+    display: none !important;
+    width: 0 !important;
+}
+
+body {
+    margin: 0px;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+
+#app {
+    width: 100%;
+    height: 100%;
+    -webkit-overflow-scrolling: auto;
+}
+
+.one-wrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.two-wrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.three-wrap {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+.pointer {
+    cursor: pointer;
+}
+
+
+.xy-center,
+.yx-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.xy-between,
+.yx-between {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.xy-start,
+.yx-start {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+
+.yx-center {
+    flex-direction: column;
+}
+
+.yx-between {
+    flex-direction: column;
+}
+
+.yx-start {
+    flex-direction: column;
+}

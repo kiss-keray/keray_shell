@@ -1,0 +1,77 @@
+.PermissionEditor {
+    &.perm-mask {
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(2px);
+    }
+
+    .perm-dialog {
+        width: min(420px, calc(100vw - 32px));
+        padding: 14px 16px;
+        border-radius: 10px;
+    }
+
+    .perm-title {
+        margin: 0;
+        font-size: var(--font-size-xl);
+        font-weight: 600;
+    }
+
+    .perm-path {
+        margin: 6px 0 0;
+        word-break: break-all;
+    }
+
+    .perm-table {
+        width: 100%;
+        margin-top: 10px;
+        border-collapse: collapse;
+
+        th,
+        td {
+            text-align: center;
+            padding: 6px 8px;
+        }
+
+        thead th {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+        }
+
+        tbody th {
+            text-align: left;
+            font-size: var(--font-size-md);
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        input[type="checkbox"] {
+            width: 15px;
+            height: 15px;
+        }
+    }
+
+    .perm-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .perm-btn {
+        border: 1px solid transparent;
+        border-radius: 6px;
+        padding: 4px 12px;
+        cursor: pointer;
+
+        &.secondary {
+        }
+    }
+}

@@ -1,0 +1,62 @@
+.DefaultMenuItems {
+    .menu-divider {
+        height: 1px;
+        margin: 4px 8px;
+    }
+
+    .item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px;
+        padding: 6px 14px;
+        cursor: pointer;
+        justify-content: flex-start;
+        white-space: nowrap;
+
+        &:hover:not(.disabled) {
+        }
+
+        &.disabled {
+            cursor: default;
+        }
+
+        .item-img,
+        .item-icon {
+            font-size: var(--font-size-2xl);
+            width: var(--font-size-2xl);
+            height: var(--font-size-2xl);
+            border-radius: 4px;
+            object-fit: cover;
+        }
+
+        &.has-submenu:hover:not(.disabled) > .submenu {
+            display: block;
+        }
+    }
+
+    .item-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .submenu-arrow {
+        font-size: var(--font-size-lg);
+        line-height: 1;
+        margin-left: 6px;
+        flex-shrink: 0;
+    }
+
+    .submenu {
+        display: none;
+        position: absolute;
+        top: -5px;
+        left: calc(100% - 2px);
+        min-width: 150px;
+        max-width: min(320px, calc(100vw - 16px));
+        padding: 4px 0;
+        border-radius: 6px;
+        z-index: 1;
+    }
+}

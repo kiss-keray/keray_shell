@@ -12,6 +12,8 @@ node_modules
 dist
 dist-ssr
 coverage
+web-next/.next
+web-next/out
 *.local
 
 /cypress/videos/

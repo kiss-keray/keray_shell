@@ -1,0 +1,126 @@
+.SftpTransferItem {
+    margin: 8px 0;
+    border-radius: 8px;
+    padding: 8px 0 8px 10px;
+
+    .title-line {
+        width: 98%;
+    }
+
+    .line1 {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .line2 {
+        margin-top: 8px;
+    }
+
+    .progress {
+        display: flex;
+        align-items: center;
+
+        .download-track {
+            height: 4px;
+            border-radius: 999px;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+
+        .bfb {
+            text-align: center;
+            width: 6em;
+        }
+
+        .size-name {
+            width: 12em;
+        }
+
+        .bps {
+            width: 8em;
+        }
+
+        .item-state {
+            width: 6rem;
+            text-align: right;
+            flex-shrink: 0;
+        }
+    }
+
+    .group-ic {
+        font-size: var(--font-size-2xl);
+        flex-shrink: 0;
+    }
+
+    .download-bar {
+        height: 100%;
+        transition: width 0.2s ease;
+    }
+
+    .item-actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        max-width: 100%;
+    }
+
+    .tx-btn--inline-loading {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .tx-btn-load-ic {
+        flex-shrink: 0;
+        opacity: 0.9;
+        animation: sftp-tx-spin 0.85s linear infinite;
+    }
+
+    @keyframes sftp-tx-spin {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .tx-btn {
+        font-size: var(--font-size-2xs);
+        line-height: 1.2;
+        padding: 2px 6px;
+        border-radius: 4px;
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+    }
+
+    .children {
+        overflow: hidden;
+        transition:
+            max-height 0.25s ease,
+            opacity 0.22s ease,
+            margin-top 0.25s ease;
+    }
+
+    .children--open {
+        max-height: 1200px;
+        opacity: 1;
+        margin-top: 4px;
+    }
+
+    .children--closed {
+        max-height: 0;
+        opacity: 0;
+        margin-top: 0;
+    }
+}

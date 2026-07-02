@@ -1,0 +1,63 @@
+.MonacoWin {
+    flex: 1;
+    min-height: 0;
+
+    .monaco-editor-win {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100vh;
+        min-height: 0;
+        overflow: hidden;
+        padding-top: 27px;
+
+        .monaco-body {
+            position: relative;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+
+            .monaco-editor-layer {
+                position: absolute;
+                inset: 0;
+                transition: opacity 0.12s ease;
+            }
+        }
+
+        .monaco-empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            font-size: var(--font-size-md);
+        }
+
+        .monaco-status {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 26px;
+            padding: 0 10px;
+            font-size: var(--font-size-xs);
+
+            .monaco-status-path {
+                flex: 1;
+                min-width: 0;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .monaco-status-lang {
+                flex-shrink: 0;
+                text-transform: uppercase;
+                letter-spacing: 0.04em;
+            }
+
+            .monaco-status-hint {
+                flex-shrink: 0;
+            }
+        }
+    }
+}

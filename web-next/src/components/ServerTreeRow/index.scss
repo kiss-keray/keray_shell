@@ -1,0 +1,119 @@
+.ServerTreeRow {
+    &.server-tree-row,
+    .server-tree-row {
+        width: 100%;
+        display: grid;
+        grid-template-columns: minmax(260px, 1.25fr) minmax(150px, 0.75fr) minmax(72px, 0.28fr) minmax(110px, 0.48fr) minmax(160px, 0.7fr);
+        gap: 16px;
+        align-items: center;
+        min-height: 33px;
+        padding: 0 16px;
+        border: 0;
+        text-align: left;
+        font: inherit;
+        cursor: pointer;
+
+        &.row-is-cut {
+            opacity: 0.3;
+        }
+
+        &.server-tree-row-drag-target-not-allow {
+            opacity: 0.3;
+        }
+    }
+
+    .server-tree-name-cell,
+    &.server-tree-row .server-tree-name-cell {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        gap: 8px;
+    }
+
+    .server-tree-indent {
+        width: 0;
+        height: 1px;
+        flex: 0 0 auto;
+    }
+
+    .server-tree-toggle {
+        width: 14px;
+        height: 14px;
+        flex: 0 0 14px;
+        transition: transform 0.16s ease;
+    }
+
+    .server-tree-row-open {
+        .server-tree-toggle {
+            transform: rotate(90deg);
+        }
+    }
+
+    .server-tree-row-empty {
+        .server-tree-toggle {
+            transform: none;
+        }
+    }
+
+    .server-tree-folder-icon,
+    .server-tree-server-icon {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 auto;
+    }
+
+    .server-tree-server-icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .server-tree-name,
+    .server-tree-value,
+    .server-tree-muted {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .server-tree-name {
+        font-weight: 650;
+    }
+
+    .server-tree-name-input {
+        flex: 1;
+        min-width: 0;
+        border-radius: 6px;
+        padding: 2px 8px;
+        outline: none;
+        line-height: 1.2;
+        font: inherit;
+        font-weight: 650;
+    }
+
+    .server-tree-badge {
+        min-width: 22px;
+        height: 18px;
+        padding: 0 7px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-xs);
+        line-height: 1;
+        flex: 0 0 auto;
+    }
+
+    @media (max-width: 760px) {
+        &.server-tree-row,
+        .server-tree-row {
+            grid-template-columns: 1fr;
+            gap: 4px;
+            padding: 8px 12px;
+        }
+
+        .server-tree-muted {
+            display: none;
+        }
+    }
+}
