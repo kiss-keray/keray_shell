@@ -1047,6 +1047,68 @@
         }
     }
 
+    /* CheckVersion.vue 版本更新提醒弹窗 */
+    .check-version {
+        &.check-version-mask {
+            background: var(--glass-overlay);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .check-version-dialog {
+            @include glass-popup;
+            color: var(--glass-text);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow);
+        }
+
+        .check-version-icon-wrap {
+            color: var(--glass-warning);
+            background: rgba(from var(--glass-warning) r g b / 0.14);
+            border: 1px solid rgba(from var(--glass-warning) r g b / 0.28);
+        }
+
+        .check-version-title,
+        .check-version-meta-row dd {
+            color: var(--glass-text-strong);
+        }
+
+        .check-version-desc,
+        .check-version-meta-row dt {
+            color: var(--glass-text-muted);
+        }
+
+        .check-version-meta {
+            @include glass-well;
+            border: 1px solid var(--glass-border);
+        }
+
+        .check-version-meta-row {
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .check-version-btn {
+            border: 1px solid var(--glass-border);
+
+            &.ghost {
+                color: var(--glass-warning);
+                background: rgba(from var(--glass-warning) r g b / 0.12);
+                border-color: rgba(from var(--glass-warning) r g b / 0.32);
+            }
+
+            &.secondary {
+                color: var(--glass-text-muted);
+                background: var(--glass-hover);
+            }
+
+            &.primary {
+                color: #fff;
+                background: var(--glass-accent);
+                border-color: var(--glass-accent-border);
+            }
+        }
+    }
+
     /* UploadConflictWin.vue */
     .upload-conflict-page {
         .upload-conflict-icon {

@@ -3,6 +3,7 @@ import { defineAsyncComponent } from "vue";
 import { TauriEvent } from "@tauri-apps/api/event";
 import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 import { storeToRefs } from "pinia";
+import CheckVersion from "./components/CheckVersion.vue";
 import { mainLabels } from "./utils/window";
 import { syncWindowGlass, syncWindowTransparent } from "./utils/windowGlass";
 import type { MenuItem } from "./components/DefaultMenuItems.vue";
@@ -150,6 +151,7 @@ onMounted(async () => {
             <div class="window-chunk-loading" aria-busy="true" />
         </template>
     </Suspense>
+    <CheckVersion v-if="appType === 'main'" />
     <GlobalLoadingText />
 </template>
 

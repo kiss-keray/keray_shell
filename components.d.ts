@@ -13,7 +13,7 @@ export {}
 declare module 'vue' {
   export interface GlobalComponents {
     Channels: typeof import('./src/components/ssh/Channels.vue')['default']
-    ChildWin: typeof import('./src/components/window/ChildWin.vue')['default']
+    CheckVersion: typeof import('./src/components/CheckVersion.vue')['default']
     Confirm: typeof import('./src/components/Confirm.vue')['default']
     DefaultLayout: typeof import('./src/layout/DefaultLayout.vue')['default']
     DefaultMenuItems: typeof import('./src/components/DefaultMenuItems.vue')['default']
@@ -61,7 +61,7 @@ declare module 'vue' {
 // For TSX support
 declare global {
   const Channels: typeof import('./src/components/ssh/Channels.vue')['default']
-  const ChildWin: typeof import('./src/components/window/ChildWin.vue')['default']
+  const CheckVersion: typeof import('./src/components/CheckVersion.vue')['default']
   const Confirm: typeof import('./src/components/Confirm.vue')['default']
   const DefaultLayout: typeof import('./src/layout/DefaultLayout.vue')['default']
   const DefaultMenuItems: typeof import('./src/components/DefaultMenuItems.vue')['default']
