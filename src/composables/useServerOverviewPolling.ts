@@ -2,8 +2,16 @@ import { onUnmounted, watch } from "vue";
 import { formatAdaptiveBytes, invoke } from "@/utils/project";
 import { useChannelInstancesStore } from "@/stores/channelInstances";
 import type { ChannelInstance } from "@/stores/channelInstances";
-import { useServerOverviewStore } from "@/stores/serverOverview";
-import type { ServerOverviewState } from "@/stores/serverOverview";
+import {
+    createOverview,
+    getOverview,
+    ingestRemoteOverviewCore,
+    ingestRemoteOverviewDisks,
+    ingestRemoteOverviewNet,
+    ingestRemoteOverviewProcesses,
+    setOverviewError,
+} from "@/utils/serverOverviewPolling";
+import type { ServerOverviewState } from "@/utils/serverOverviewPolling";
 
 /** 核心指标（CPU/内存/网速）轮询间隔（毫秒） */
 const FAST_INTERVAL_MS = 1000;
@@ -325,18 +333,10 @@ function getDiskRemoteCmd(): string {
  *
  * 使用序号（seq*）丢弃过期异步结果，避免切换会话后旧请求覆盖新会话数据。
  */
-export function useServerOverviewPolling() {
-    const store = useServerOverviewStore();
-    const instancesStore = useChannelInstancesStore();
+export function useServerOverviewPolling(instance: ChannelInstance) {
     let timerFast: ReturnType<typeof setInterval> | undefined;
     let timerProc: ReturnType<typeof setInterval> | undefined;
     let timerDisk: ReturnType<typeof setInterval> | undefined;
-    /** 各路轮询独立序号，仅当回包时仍与当前序号相等且会话仍选中时才 ingest */
-    const pollSeq: Record<OverviewPollKind, number> = {
-        fast: 0,
-        proc: 0,
-        disk: 0,
-    };
 
     function clearTimers() {
         clearInterval(timerFast);
@@ -344,61 +344,45 @@ export function useServerOverviewPolling() {
         clearInterval(timerDisk);
     }
 
-    function getActiveOverviewInstance(): ActiveOverviewInstance | undefined {
-        const id = instancesStore.selectSessionId;
-        const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
-        if (!inst?.overview || inst.status !== "connected") return undefined;
-        return { id, inst: inst as ActiveOverviewInstance["inst"] };
-    }
-
-    function isCurrentPoll(kind: OverviewPollKind, seq: number, id: string): boolean {
-        return seq === pollSeq[kind] && instancesStore.selectSessionId === id;
-    }
-
-    async function runOverviewPoll(kind: OverviewPollKind, id: string, inst: ChannelInstance, label: string, remoteCmd: string, onRaw: (raw: string) => void, onError?: () => void) {
-        const seq = ++pollSeq[kind];
+    async function runOverviewPoll(label: string, remoteCmd: string, onRaw: (raw: string) => void, onError?: () => void) {
         let raw = "";
         try {
-            raw = await execRemote(inst.server.id, remoteCmd);
-            if (!isCurrentPoll(kind, seq, id)) return;
+            raw = await execRemote(instance.server.id, remoteCmd);
             onRaw(raw.trim());
         } catch (e) {
-            if (!isCurrentPoll(kind, seq, id)) return;
             console.warn(`[overview] ${label} 采集失败`, e, "原始输出:", raw);
             onError?.();
         }
     }
 
     /** 核心 + 网速合并：1 次 RTT 拿到两块数据，并附带 RTT 文案给面板 latency */
-    async function pollFast(id: string, inst: ChannelInstance) {
+    async function pollFast() {
         const t0 = Date.now();
-        const cmd = getFastRemoteCmd(inst.overview?.iface ?? "");
+        const overview = getOverview(instance);
+        const cmd = getFastRemoteCmd(overview?.iface ?? "");
         await runOverviewPoll(
-            "fast",
-            id,
-            inst,
             "核心+网速",
             cmd,
             (raw) => {
                 const latency = `${Date.now() - t0} ms`;
                 try {
                     const { core, net } = parseFastOverviewText(raw);
-                    store.ingestRemoteOverviewCore(id, core, latency);
-                    store.ingestRemoteOverviewNet(id, net);
+                    ingestRemoteOverviewCore(instance, core, latency);
+                    ingestRemoteOverviewNet(instance, net);
                 } catch (e) {
                     console.warn("[overview] 核心+网速解析失败", e, raw);
-                    store.setOverviewError(id, "采集失败（需已连接 SSH，远端为 Linux 且可用 sh/awk）");
+                    setOverviewError(instance, "采集失败（需已连接 SSH，远端为 Linux 且可用 sh/awk）");
                 }
             },
-            () => store.setOverviewError(id, "采集失败（需已连接 SSH，远端为 Linux 且可用 sh/awk）"),
+            () => setOverviewError(instance, "采集失败（需已连接 SSH，远端为 Linux 且可用 sh/awk）"),
         );
     }
 
     /** 进程 TOP5：远端已按当前维度排序截断；前端再做内存 human 与展示序稳定化 */
-    async function pollProc(id: string, inst: ChannelInstance, procSort: "mem" | "cpu") {
-        await runOverviewPoll("proc", id, inst, "进程", getProcRemoteCmd(procSort), (raw) => {
+    async function pollProc(procSort: "mem" | "cpu") {
+        await runOverviewPoll("进程", getProcRemoteCmd(procSort), (raw) => {
             try {
-                store.ingestRemoteOverviewProcesses(id, parseProcessesText(raw, procSort));
+                ingestRemoteOverviewProcesses(instance, parseProcessesText(raw, procSort));
             } catch (e) {
                 console.warn("[overview] 进程解析失败", e, raw);
             }
@@ -406,80 +390,49 @@ export function useServerOverviewPolling() {
     }
 
     /** 磁盘列表：远端 TSV，human 与 Use% 在前端计算 */
-    async function pollDisk(id: string, inst: ChannelInstance) {
-        await runOverviewPoll("disk", id, inst, "磁盘", getDiskRemoteCmd(), (raw) => {
+    async function pollDisk() {
+        await runOverviewPoll("磁盘", getDiskRemoteCmd(), (raw) => {
             try {
-                store.ingestRemoteOverviewDisks(id, parseDiskOverviewText(raw));
+                ingestRemoteOverviewDisks(instance, parseDiskOverviewText(raw));
             } catch (e) {
                 console.warn("[overview] 磁盘解析失败", e, raw);
             }
         });
     }
 
-    /**
-     * 根据当前选中会话启动/重置定时器：仅当已连接且存在 overview 时生效。
-     * 立即执行三轮各一次，再按 FAST/SLOW 间隔重复。
-     */
-    function arm() {
-        clearTimers();
-        const active = getActiveOverviewInstance();
-        if (!active) return;
-        const { id, inst } = active;
-        const procSort = inst.overview.processSort === "cpu" ? "cpu" : "mem";
-        void pollFast(id, inst);
-        void pollProc(id, inst, procSort);
-        void pollDisk(id, inst);
-        timerFast = setInterval(() => {
-            const current = getActiveOverviewInstance();
-            if (!current) return;
-            void pollFast(current.id, current.inst);
-        }, FAST_INTERVAL_MS);
-        timerProc = setInterval(() => {
-            const current = getActiveOverviewInstance();
-            if (!current) return;
-            const sort = current.inst.overview.processSort === "cpu" ? "cpu" : "mem";
-            void pollProc(current.id, current.inst, sort);
-        }, SLOW_INTERVAL_MS);
-        timerDisk = setInterval(() => {
-            const current = getActiveOverviewInstance();
-            if (!current) return;
-            void pollDisk(current.id, current.inst);
-        }, SLOW_INTERVAL_MS);
-    }
-
-    watch(
-        () => {
-            const id = instancesStore.selectSessionId;
-            const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
-            return { id, status: inst?.status ?? 0 };
-        },
-        (cur, prev) => {
-            void prev;
-            arm();
-        },
-        { immediate: true },
-    );
-
     /** 切换「按内存 / 按 CPU」：两套远端排序不同，立即再采一轮进程列表 */
     watch(
         () => {
-            const id = instancesStore.selectSessionId;
-            const inst = instancesStore.instances.find((i) => i.sessionId === id) as ChannelInstance | undefined;
-            return {
-                id,
-                sort: inst?.overview?.processSort === "cpu" ? ("cpu" as const) : ("mem" as const),
-            };
+            const overview = getOverview(instance);
+            return overview?.processSort === "cpu" ? ("cpu" as const) : ("mem" as const);
         },
-        (cur, prev) => {
-            if (!cur.id || cur.sort === prev?.sort) return;
-            if (instancesStore.selectSessionId !== cur.id) return;
-            const inst = instancesStore.instances.find((i) => i.sessionId === cur.id) as ChannelInstance | undefined;
-            if (!inst?.overview || inst.status !== "connected") return;
-            void pollProc(cur.id, inst, cur.sort);
+        (sort) => {
+            void pollProc(sort);
         },
     );
 
+    onMounted(() => {
+        console.log("onMounted", instance);
+        let overview = getOverview(instance);
+        if (!overview) {
+            overview = createOverview(instance);
+        }
+        void pollFast();
+        void pollProc(overview.processSort === "cpu" ? "cpu" : "mem");
+        void pollDisk();
+        timerFast = setInterval(() => {
+            void pollFast();
+        }, FAST_INTERVAL_MS);
+        timerProc = setInterval(() => {
+            void pollProc(overview.processSort === "cpu" ? "cpu" : "mem");
+        }, SLOW_INTERVAL_MS);
+        timerDisk = setInterval(() => {
+            void pollDisk();
+        }, SLOW_INTERVAL_MS);
+    });
+
     onUnmounted(() => {
+        console.log("onUnmounted", instance);
         clearTimers();
     });
 }

@@ -377,7 +377,8 @@ appWindow
                     @contextmenu="(e) => openContextMenu(e, item)"
                 >
                     <p v-if="isChannelInstance(item)">{{ item.server.name }}</p>
-                    <p v-else>融合终端(+{{ item.instances.length }})</p>
+                    <p v-else-if="item.type === 'terminal'">融合终端(+{{ item.instances.length }})</p>
+                    <p v-else>融合监控(+{{ item.instances.length }})</p>
                     <div
                         class="status xy-center"
                         :class="{

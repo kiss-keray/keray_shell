@@ -138,20 +138,11 @@ function match(row: RowData) {
 }
 
 /** 批量打开：先清空再逐个 add，保证用户明确从当前列表发起一批新会话。 */
-async function openServers(servers: ServerDataModel[], isGroup: boolean = false) {
+async function openServers(servers: ServerDataModel[], type: "terminal" | "group" | "monitor" = "terminal") {
     if (!servers.length) return;
     const from = new URLSearchParams(location.search).get("from");
     if (!from) return;
-    if (isGroup) {
-        emitTo<ChannelInstanceGroupCreatePayload>(
-            {
-                kind: "Window",
-                label: from,
-            },
-            CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
-            { ids: servers.map((item) => item.id) },
-        );
-    } else {
+    if (type === "terminal") {
         servers.map((server) => {
             emitTo<ServerTreeClickServerPayload>(
                 {
@@ -162,6 +153,15 @@ async function openServers(servers: ServerDataModel[], isGroup: boolean = false)
                 { id: server.id },
             );
         });
+    } else {
+        emitTo<ChannelInstanceGroupCreatePayload>(
+            {
+                kind: "Window",
+                label: from,
+            },
+            CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
+            { ids: servers.map((item) => item.id), type: type === "group" ? "terminal" : "monitor" },
+        );
     }
     getCurrentWindow().destroy();
 }
@@ -392,7 +392,14 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
         {
             label: `融合终端(+${sl})`,
             handler: () => {
-                openServers(selectedServers.value, true);
+                openServers(selectedServers.value, "group");
+            },
+            disabled: sl < 2,
+        },
+        {
+            label: `融合监控(+${sl})`,
+            handler: () => {
+                openServers(selectedServers.value, "monitor");
             },
             disabled: sl < 2,
         },

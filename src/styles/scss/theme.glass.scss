@@ -686,6 +686,68 @@
         }
     }
 
+    /* MonitorGroup.vue */
+    .monitor-group {
+        .child-box {
+            @include glass-card;
+        }
+        .tags {
+            @include glass-well;
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--glass-shadow-soft);
+        }
+
+        .tag-check,
+        .tag-field,
+        .tag-btn {
+            border: 1px solid var(--glass-border);
+            color: var(--glass-text);
+            background: var(--glass-surface-soft);
+        }
+
+        .tag-check:hover,
+        .tag-btn:hover {
+            background: var(--glass-hover);
+            border-color: var(--glass-border-strong);
+        }
+
+        .tag-check.active {
+            color: var(--glass-text-strong);
+            background: var(--glass-accent-soft);
+            border-color: var(--glass-accent-border);
+        }
+
+        .tag-field span {
+            color: var(--glass-text-muted);
+        }
+
+        .tag-field input {
+            color: var(--glass-text);
+            background: var(--glass-surface-well);
+        }
+
+        .tag-field input:focus {
+            // 输入框聚焦时沿用字段容器样式，不额外显示描边。
+            outline: none;
+            box-shadow: none;
+        }
+
+        .tag-btn:focus-visible {
+            outline: 2px solid var(--glass-accent-border);
+            outline-offset: 1px;
+        }
+
+        .tag-btn-primary {
+            color: var(--glass-text-strong);
+            background: var(--glass-accent-soft);
+            border-color: var(--glass-accent-border);
+        }
+
+        .tag-btn-primary:hover {
+            background: var(--glass-accent-hover);
+        }
+    }
+
     .sftp-panel {
         @include glass-well;
 

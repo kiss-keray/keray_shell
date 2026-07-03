@@ -832,6 +832,69 @@
         }
     }
 
+    /* MonitorGroup.vue */
+    .monitor-group {
+        .child-box {
+            @include nt-out;
+        }
+        .tags {
+            @include nt-out;
+            border: 1px solid var(--nt-border);
+        }
+
+        .tag-check,
+        .tag-btn {
+            @include nt-control-out;
+            border: 1px solid var(--nt-border);
+            color: var(--nt-text);
+            background: var(--nt-surface-raised);
+        }
+
+        .tag-check:hover,
+        .tag-btn:hover {
+            color: var(--nt-text-strong);
+            background: var(--nt-bg-hover);
+        }
+
+        .tag-check.active,
+        .tag-btn-primary {
+            color: var(--nt-text-strong);
+            border-color: var(--nt-accent-border);
+            background: var(--nt-accent-soft);
+        }
+
+        .tag-field {
+            border: 1px solid var(--nt-border);
+            color: var(--nt-text);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        .tag-field span {
+            color: var(--nt-text-muted);
+        }
+
+        .tag-field input {
+            color: var(--nt-text);
+            background: transparent;
+        }
+
+        .tag-field input:focus {
+            // 输入框聚焦时沿用字段容器样式，不额外显示描边。
+            outline: none;
+            box-shadow: none;
+        }
+
+        .tag-btn:focus-visible {
+            outline: 2px solid var(--nt-accent-border);
+            outline-offset: 1px;
+        }
+
+        .tag-btn-primary:hover {
+            background: var(--nt-accent-soft-hover);
+        }
+    }
+
     /* Sftp.vue */
     .sftp-panel {
         .tabs {

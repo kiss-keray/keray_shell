@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { ActiveFileEventKey, DirectRemotePathEventKey, useBus } from "@/composables/useBus";
+const props = defineProps<{
+    instance: ChannelInstance;
+    onlyMount?: boolean;
+    diskHeight?: number;
+    diskFilter?: string;
+}>();
 
-const channelInstancesStore = useChannelInstancesStore();
-const { selectSession } = toRefs(channelInstancesStore) as { selectSession: Ref<ChannelInstance> };
 const { emit, on, off } = useBus();
 
-const overview = computed(() => selectSession.value?.overview);
+const overview = computed(() => props.instance?.overview);
 
 const activePath = ref("/");
 
@@ -19,13 +23,35 @@ const activeDisk = computed(() => {
     return matchDisks.sort((a, b) => b.path.length - a.path.length)[0];
 });
 
+const showDisk = computed(() => {
+    /**
+     * 将简单通配表达式转成 RegExp。
+     * 规则：
+     * - "*" 匹配任意字符串，包括空字符串
+     * - 其它字符都按字面量匹配，避免被正则特殊字符影响
+     */
+    function patternToRegExp(pattern: string): RegExp {
+        const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
+        // 将通配符 * 转成正则的任意字符匹配
+        const regex = escaped.replace(/\*/g, ".*");
+        // ^ 和 $ 保证整个字符串完整匹配，而不是局部命中
+        return new RegExp(`^${regex}$`);
+    }
+    return (overview.value?.disks || [])
+        .filter((d) => {
+            if (!props.diskFilter) return true;
+            return patternToRegExp(props.diskFilter).test(d.path);
+        })
+        .sort((a, b) => a.path.length - b.path.length);
+});
+
 function onActiveDisk(path: string) {
     activePath.value = path;
-    emit(DirectRemotePathEventKey, { sid: selectSession.value.sessionId, path: activePath.value });
+    emit(DirectRemotePathEventKey, { sid: props.instance.sessionId, path: activePath.value });
 }
 
 function handleActiveFile(event: { sid: string; path: string }) {
-    if (event.sid !== selectSession.value?.sessionId) return;
+    if (event.sid !== props.instance?.sessionId) return;
     activePath.value = event.path;
 }
 
@@ -39,7 +65,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <div class="module disk">
+    <div class="module disk" :style="{ height: diskHeight + 'px' }">
         <table class="tbl disk">
             <thead>
                 <tr>
@@ -48,7 +74,7 @@ onUnmounted(() => {
                 </tr>
             </thead>
             <tbody>
-                <tr v-for="(d, i) in overview?.disks" :key="i" :class="{ root: d === activeDisk }" @click="onActiveDisk(d.path)">
+                <tr v-for="(d, i) in showDisk" :key="i" :class="{ root: d === activeDisk }" @click="onActiveDisk(d.path)">
                     <td class="path">{{ d.path }}</td>
                     <td class="disk-cell">
                         <div class="disk-bar" :style="{ width: d.pct + '%' }" />
@@ -65,6 +91,7 @@ onUnmounted(() => {
     padding: 10px 12px;
     line-height: 1.35;
     border-radius: 8px;
+    overflow: auto;
 }
 
 .tbl {

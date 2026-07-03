@@ -13,8 +13,11 @@ export type ServerTreeClickServerPayload = {
 export const CHANNEL_INSTANCE_GROUP_CREATE_EVENT = "channel_instance_group_create";
 export const CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT = "channel_instance_move_to_window";
 
+export type ChannelInstanceGroupType = "terminal" | "monitor";
+
 export type ChannelInstanceGroupCreatePayload = {
     ids: string[];
+    type: ChannelInstanceGroupType;
 };
 
 /** 跨窗口移动单个终端 tab 时传递的 payload，包含原窗口 label 和各模块快照。 */
@@ -40,6 +43,7 @@ export interface ChannelInstance {
 
 export interface ChannelInstanceGroup {
     sessionId: string; // 分组ID
+    type: ChannelInstanceGroupType; // 分组类型
     instances: ChannelInstance[]; // 分组内的实例列表
     zindex: number; // 分组叠放层级（最近操作的分组更大）
 }
@@ -75,9 +79,6 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
     /** 添加实例并选中新会话；若无 overview 则挂一份默认状态 */
     function add(instance: ChannelData) {
         if (instances.value.includes(instance)) return;
-        if (isChannelInstance(instance) && !instance.overview) {
-            instance.overview = createDefaultServerOverview();
-        }
         instances.value.push(instance);
         selectSessionId.value = instance.sessionId;
         instance.zindex = zindex.value++;
@@ -134,6 +135,7 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
                 sessionId: uuid(),
                 instances,
                 zindex: 0,
+                type: payload.type,
             };
             add(group);
         })

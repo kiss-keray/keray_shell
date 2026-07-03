@@ -1,23 +1,34 @@
 <script setup lang="ts">
 import { useServerOverviewPolling } from "@/composables/useServerOverviewPolling";
 
-useServerOverviewPolling();
+export type Tag = "system" | "process" | "net" | "disk"; // 面板标签
 
-const channelInstancesStore = useChannelInstancesStore();
-const { selectSession } = toRefs(channelInstancesStore) as { selectSession: Ref<ChannelInstance> };
+const props = withDefaults(
+    defineProps<{
+        instance: ChannelInstance;
+        tags?: Tag[];
+        onlyMount?: boolean;
+        diskHeight?: number;
+        diskFilter?: string;
+    }>(),
+    {
+        tags: () => ["system", "process", "net", "disk"],
+    },
+);
 
-const overview = computed(() => selectSession.value?.overview);
+const overview = computed(() => props.instance.overview);
+
+useServerOverviewPolling(props.instance);
 </script>
 
 <template>
     <div class="overview-root">
-        <template v-if="selectSession && overview">
+        <template v-if="overview">
             <div v-if="overview.error" class="ov-err">{{ overview.error }}</div>
-            <ServerMessage />
-            <ServerResource />
-            <div class="disk-scroll-region">
-                <ServerDisk />
-            </div>
+            <ServerMessage v-if="tags.includes('system')" :instance="instance" :only-mount="onlyMount" />
+            <ServerProcess v-if="tags.includes('process')" :instance="instance" :only-mount="onlyMount" />
+            <ServerNet v-if="tags.includes('net')" :instance="instance" :only-mount="onlyMount" />
+            <ServerDisk v-if="tags.includes('disk')" :instance="instance" :only-mount="onlyMount" :disk-filter="diskFilter" :disk-height="diskHeight" />
         </template>
         <div v-else class="empty">暂无连接的服务器</div>
     </div>

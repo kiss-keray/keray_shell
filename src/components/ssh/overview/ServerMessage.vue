@@ -1,9 +1,11 @@
 <script setup lang="ts">
-const channelInstancesStore = useChannelInstancesStore();
-const { selectSession } = toRefs(channelInstancesStore) as { selectSession: Ref<ChannelInstance> };
+const props = defineProps<{
+    instance: ChannelInstance;
+    onlyMount?: boolean;
+}>();
 
 const metrics = computed(() => {
-    const o = selectSession.value?.overview;
+    const o = props.instance?.overview;
     if (!o) {
         return {
             uptimeDays: 0,
@@ -23,21 +25,21 @@ const metrics = computed(() => {
 });
 
 const syncLabel = computed(() => {
-    const s = selectSession.value?.status;
+    const s = props.instance?.status;
     if (s === "connected") return "已连接";
     if (s === "disconnected") return "已断开";
     return "未连接";
 });
 
 const syncClass = computed(() => {
-    const s = selectSession.value?.status;
+    const s = props.instance?.status;
     if (s === "connected") return "ok";
     if (s === "disconnected") return "bad";
     return "idle";
 });
 
 async function copyIp() {
-    const ip = selectSession.value?.server.ip;
+    const ip = props.instance?.server.ip;
     if (!ip) return;
     try {
         await navigator.clipboard.writeText(ip);
@@ -50,12 +52,13 @@ async function copyIp() {
 
 <template>
     <div class="module message">
-        <div data-tauri-drag-region="" class="row sync">
+        <div v-if="!onlyMount" data-tauri-drag-region="" class="row sync">
             <span class="sync-txt">同步状态</span>
             <span class="sync-dot" :class="syncClass" :title="syncLabel" />
         </div>
+        <div v-else style="height: 5px"></div>
         <div class="row ip-row">
-            <span class="ip-label">IP {{ selectSession?.server.ip }}</span>
+            <span class="ip-label">IP {{ instance?.server.ip }}</span>
             <button type="button" class="btn-copy" @click="copyIp">复制</button>
         </div>
 

@@ -19,7 +19,7 @@ declare global {
   const EffectScope: typeof import('vue').EffectScope
   const MONACO_EDITOR_ADD_ITEM: typeof import('./src/utils/window').MONACO_EDITOR_ADD_ITEM
   const MONACO_EDITOR_SAVED_EVENT: typeof import('./src/utils/window').MONACO_EDITOR_SAVED_EVENT
-  const Monaco: typeof import('./src/utils/constant').Monaco
+  const Monaco: typeof import("./src/utils/constant").Monaco
   const PRIORITY_HIGH: typeof import('./src/stores/keyEvent').PRIORITY_HIGH
   const PRIORITY_HIGHEST: typeof import('./src/stores/keyEvent').PRIORITY_HIGHEST
   const PRIORITY_LOW: typeof import('./src/stores/keyEvent').PRIORITY_LOW
@@ -54,10 +54,11 @@ declare global {
   const countdownText: typeof import('./src/utils/index').countdownText
   const countdownTextDay: typeof import("./src/utils/index").countdownTextDay
   const createApp: typeof import('vue').createApp
-  const createDefaultServerOverview: typeof import('./src/stores/serverOverview').createDefaultServerOverview
+  const createDefaultServerOverview: typeof import('./src/utils/serverOverviewPolling').createDefaultServerOverview
   const createNewWindow: typeof import("./src/utils/window").createNewWindow
+  const createOverview: typeof import('./src/utils/serverOverviewPolling').createOverview
   const customRef: typeof import('vue').customRef
-  const decodePathCmd: typeof import('./src/utils/fsUtil').decodePathCmd
+  const decodePathCmd: typeof import("./src/utils/fsUtil").decodePathCmd
   const deepClone: typeof import('./src/utils/index').deepClone
   const defineAsyncComponent: typeof import('vue').defineAsyncComponent
   const defineComponent: typeof import('vue').defineComponent
@@ -66,7 +67,7 @@ declare global {
   const effectScope: typeof import('vue').effectScope
   const eventHave: typeof import('./src/utils/project').eventHave
   const execRemote: typeof import('./src/utils/project').execRemote
-  const extractCdTargets: typeof import('./src/utils/termCwd').extractCdTargets
+  const extractCdTargets: typeof import("./src/utils/termCwd").extractCdTargets
   const formatAdaptiveBytes: typeof import('./src/utils/project').formatAdaptiveBytes
   const formatSpeedBps: typeof import('./src/utils/project').formatSpeedBps
   const getCurrentInstance: typeof import('vue').getCurrentInstance
@@ -74,9 +75,14 @@ declare global {
   const getCurrentWatcher: typeof import('vue').getCurrentWatcher
   const getCurrentWindowScaleFactor: typeof import('./src/utils/project').getCurrentWindowScaleFactor
   const getFileDirPath: typeof import('./src/utils/localFsUtils').getFileDirPath
-  const getMainWinLabel: typeof import('./src/utils/window').getMainWinLabel
+  const getMainWinLabel: typeof import("./src/utils/window").getMainWinLabel
+  const getOverview: typeof import('./src/utils/serverOverviewPolling').getOverview
   const getUiFontSizeCss: typeof import('./src/utils/fontSize').getUiFontSizeCss
   const h: typeof import('vue').h
+  const ingestRemoteOverviewCore: typeof import('./src/utils/serverOverviewPolling').ingestRemoteOverviewCore
+  const ingestRemoteOverviewDisks: typeof import('./src/utils/serverOverviewPolling').ingestRemoteOverviewDisks
+  const ingestRemoteOverviewNet: typeof import('./src/utils/serverOverviewPolling').ingestRemoteOverviewNet
+  const ingestRemoteOverviewProcesses: typeof import('./src/utils/serverOverviewPolling').ingestRemoteOverviewProcesses
   const initialState: typeof import('./src/stores/config').initialState
   const inject: typeof import('vue').inject
   const invoke: typeof import('./src/utils/project').invoke
@@ -87,7 +93,7 @@ declare global {
   const isReadonly: typeof import('vue').isReadonly
   const isRef: typeof import('vue').isRef
   const isShallow: typeof import('vue').isShallow
-  const joinSlash: typeof import('./src/utils/fsUtil').joinSlash
+  const joinSlash: typeof import("./src/utils/fsUtil").joinSlash
   const linuxPathToLocalPath: typeof import('./src/utils/localFsUtils').linuxPathToLocalPath
   const listRemoteDir: typeof import("./src/utils/fsUtil").listRemoteDir
   const listRemoteSubDirs: typeof import("./src/utils/fsUtil").listRemoteSubDirs
@@ -95,14 +101,14 @@ declare global {
   const localFileByteSize: typeof import('./src/utils/localFsUtils').localFileByteSize
   const localPathToLinuxPath: typeof import('./src/utils/localFsUtils').localPathToLinuxPath
   const mainLabels: typeof import('./src/utils/window').mainLabels
-  const mainWinLabel: typeof import('./src/utils/window').mainWinLabel
+  const mainWinLabel: typeof import("./src/utils/window").mainWinLabel
   const mapGet: typeof import('./src/utils/index').mapGet
   const markRaw: typeof import('vue').markRaw
   const moduleBoxInit: typeof import("./src/utils/layout").moduleBoxInit
-  const monospace: typeof import('./src/utils/constant').monospace
+  const monospace: typeof import("./src/utils/constant").monospace
   const nextTick: typeof import('vue').nextTick
   const normalizePosixPath: typeof import('./src/utils/termCwd').normalizePosixPath
-  const normalizeTreePath: typeof import('./src/utils/fsUtil').normalizeTreePath
+  const normalizeTreePath: typeof import("./src/utils/fsUtil").normalizeTreePath
   const onActivated: typeof import('vue').onActivated
   const onBeforeMount: typeof import('vue').onBeforeMount
   const onBeforeRouteLeave: typeof import('vue-router').onBeforeRouteLeave
@@ -120,7 +126,7 @@ declare global {
   const onUpdated: typeof import('vue').onUpdated
   const onWatcherCleanup: typeof import('vue').onWatcherCleanup
   const oneFileRemoteItem: typeof import('./src/utils/fsUtil').oneFileRemoteItem
-  const openFileWithSystem: typeof import('./src/utils/localFsUtils').openFileWithSystem
+  const openFileWithSystem: typeof import("./src/utils/localFsUtils").openFileWithSystem
   const openOrFocusChildWindow: typeof import('./src/utils/window').openOrFocusChildWindow
   const openOrFocusEditServerWindow: typeof import('./src/utils/window').openOrFocusEditServerWindow
   const openOrFocusMonacoEditorWindow: typeof import('./src/utils/window').openOrFocusMonacoEditorWindow
@@ -129,9 +135,9 @@ declare global {
   const openUploadConflictWindow: typeof import('./src/utils/window').openUploadConflictWindow
   const padZero: typeof import('./src/utils/index').padZero
   const parentDirSlash: typeof import('./src/utils/fsUtil').parentDirSlash
-  const parseCdArg: typeof import('./src/utils/termCwd').parseCdArg
+  const parseCdArg: typeof import("./src/utils/termCwd").parseCdArg
   const parseOsc7Cwd: typeof import('./src/utils/termCwd').parseOsc7Cwd
-  const parseRemoteSubFile: typeof import('./src/utils/fsUtil').parseRemoteSubFile
+  const parseRemoteSubFile: typeof import("./src/utils/fsUtil").parseRemoteSubFile
   const pathAllParentPaths: typeof import('./src/utils/fsUtil').pathAllParentPaths
   const provide: typeof import('vue').provide
   const reactive: typeof import('vue').reactive
@@ -148,19 +154,21 @@ declare global {
   const removeArrayItem: typeof import('./src/utils/index').removeArrayItem
   const removeLocalIfAny: typeof import('./src/utils/localFsUtils').removeLocalIfAny
   const resolveComponent: typeof import('vue').resolveComponent
-  const resolveRemoteCdPath: typeof import('./src/utils/termCwd').resolveRemoteCdPath
+  const resolveRemoteCdPath: typeof import("./src/utils/termCwd").resolveRemoteCdPath
   const resolveRemoteHome: typeof import('./src/utils/fsUtil').resolveRemoteHome
-  const sans: typeof import('./src/utils/constant').sans
+  const sans: typeof import("./src/utils/constant").sans
   const scanRemoteTree: typeof import('./src/utils/fsUtil').scanRemoteTree
+  const setOverviewError: typeof import('./src/utils/serverOverviewPolling').setOverviewError
+  const setOverviewIface: typeof import('./src/utils/serverOverviewPolling').setOverviewIface
   const settingStyle: typeof import('./src/utils/project').settingStyle
-  const sftpDownloadFile: typeof import('./src/utils/fsUtil').sftpDownloadFile
+  const sftpDownloadFile: typeof import("./src/utils/fsUtil").sftpDownloadFile
   const sftpReadAllBase64: typeof import("./src/utils/fsUtil").sftpReadAllBase64
   const sftpReadChunkBase64: typeof import("./src/utils/fsUtil").sftpReadChunkBase64
   const sftpReadFileStream: typeof import('./src/utils/fsUtil').sftpReadFileStream
   const sftpSha256: typeof import("./src/utils/fsUtil").sftpSha256
   const sftpStat: typeof import("./src/utils/fsUtil").sftpStat
-  const sftpTransferCancel: typeof import('./src/utils/fsUtil').sftpTransferCancel
-  const sftpTransferPause: typeof import('./src/utils/fsUtil').sftpTransferPause
+  const sftpTransferCancel: typeof import("./src/utils/fsUtil").sftpTransferCancel
+  const sftpTransferPause: typeof import("./src/utils/fsUtil").sftpTransferPause
   const sftpWriteChunkBase64: typeof import("./src/utils/fsUtil").sftpWriteChunkBase64
   const shallowReactive: typeof import('vue').shallowReactive
   const shallowReadonly: typeof import('vue').shallowReadonly
@@ -229,6 +237,9 @@ declare global {
   export type { Spread, TreeItemBase, TreeListItem, CountdownTextStyle } from './src/utils/index'
   import('./src/utils/index')
   // @ts-ignore
+  export type { OverviewProcessSort, ServerOverviewState } from './src/utils/serverOverviewPolling'
+  import('./src/utils/serverOverviewPolling')
+  // @ts-ignore
   export type { ConfirmMessage } from './src/utils/ui'
   import('./src/utils/ui')
   // @ts-ignore
@@ -238,7 +249,7 @@ declare global {
   export type { AppStartOkPayload } from './src/stores/app'
   import('./src/stores/app')
   // @ts-ignore
-  export type { ServerTreeClickServerPayload, ChannelInstanceGroupCreatePayload, ChannelInstanceMoveToWindowPayload, ChannelInstance, ChannelInstanceGroup, ChannelData } from './src/stores/channelInstances'
+  export type { ServerTreeClickServerPayload, ChannelInstanceGroupType, ChannelInstanceGroupCreatePayload, ChannelInstanceMoveToWindowPayload, ChannelInstance, ChannelInstanceGroup, ChannelData } from './src/stores/channelInstances'
   import('./src/stores/channelInstances')
   // @ts-ignore
   export type { Theme, ThemeMode, ServerSyncType, ServerRemoteData, ConfigModel } from './src/stores/config'
@@ -252,7 +263,4 @@ declare global {
   // @ts-ignore
   export type { PrivateKeyModel, ServerGroupModel, ServerDataModel, ServerRustModel, ServerDataExportModel, ServerDataSyncModel, RowData } from './src/stores/serverData'
   import('./src/stores/serverData')
-  // @ts-ignore
-  export type { OverviewProcessSort, ServerOverviewState } from './src/stores/serverOverview'
-  import('./src/stores/serverOverview')
 }

@@ -141,7 +141,22 @@ function openContextMenu(e: MouseEvent, server: ServerDataModel) {
                         label: appStore.label,
                     },
                     CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
-                    { ids: selectedServers.value.map((item) => item.id) },
+                    { ids: selectedServers.value.map((item) => item.id), type: "terminal" },
+                );
+            },
+            disabled: selectedServers.value.length < 2,
+        },
+        {
+            label: `融合监控(+${selectedServers.value.length})`,
+            handler: () => {
+                channelInstancesStore.clear();
+                emitTo<ChannelInstanceGroupCreatePayload>(
+                    {
+                        kind: "Window",
+                        label: appStore.label,
+                    },
+                    CHANNEL_INSTANCE_GROUP_CREATE_EVENT,
+                    { ids: selectedServers.value.map((item) => item.id), type: "monitor" },
                 );
             },
             disabled: selectedServers.value.length < 2,

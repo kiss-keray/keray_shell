@@ -1,4 +1,3 @@
-import { defineStore, storeToRefs } from "pinia";
 import { formatAdaptiveBytes } from "@/utils/project";
 
 /** 资源面板进程列表排序：按内存或 CPU 占比降序，脚本侧只取 TOP5 */
@@ -239,113 +238,102 @@ function updateNetRate(o: ServerOverviewState, rx: number, tx: number, now = Dat
     o._prevTs = now;
 }
 
-export const useServerOverviewStore = defineStore("serverOverview", () => {
-    const instancesStore = storeToRefs(useChannelInstancesStore());
+export function getOverview(instance: ChannelInstance): ServerOverviewState | undefined {
+    return instance?.overview;
+}
 
-    const { instances } = instancesStore;
+export function createOverview(instance: ChannelInstance): ServerOverviewState {
+    instance.overview = createDefaultServerOverview();
+    return instance.overview;
+}
 
-    function getOverview(sid: string): ServerOverviewState | undefined {
-        const inst = instances.value.find((i) => i.sessionId === sid) as ChannelInstance | undefined;
-        return inst?.overview;
+/** 核心轮询失败等场景：直接设置错误文案并结束 loading */
+export function setOverviewError(instance: ChannelInstance, msg: string) {
+    const o = getOverview(instance);
+    if (!o) return;
+    o.error = msg;
+    o.loading = false;
+}
+
+/**
+ * 用户在面板中切换网卡：与 ingest 使用同一 iface 字段，
+ * 并清空差分与平滑状态，避免混用上一块网卡的采样。
+ */
+export function setOverviewIface(instance: ChannelInstance, iface: string) {
+    const o = getOverview(instance);
+    if (!o || !iface) return;
+    if (o.ifaceOptions.length > 0 && !o.ifaceOptions.includes(iface)) return;
+    if (o.iface === iface) return;
+    o.iface = iface;
+    resetNetSampling(o, iface);
+}
+
+/**
+ * 处理「CPU / 内存 / 交换 / 负载 / 运行时间」脚本输出。
+ * latencyLabel 非空时写入 latency（仅核心路调用，避免与 1s 网速轮询互相覆盖）。
+ */
+export function ingestRemoteOverviewCore(instance: ChannelInstance, remote: Record<string, unknown>, latencyLabel: string) {
+    const o = getOverview(instance);
+    if (!o) return;
+    o.loading = false;
+    if (applyRemoteOverviewErrorIfAny(o, remote)) return;
+
+    if ("uptime_days" in remote) o.uptimeDays = Number(remote.uptime_days) || 0;
+    if ("load" in remote) o.load = String(remote.load ?? "-");
+    if ("cpu" in remote && remote.cpu && typeof remote.cpu === "object") {
+        const cpu = remote.cpu as { idle?: unknown; total?: unknown };
+        ingestCpuFromIdleTotal(o, cpu.idle, cpu.total);
     }
-
-    /** 核心轮询失败等场景：直接设置错误文案并结束 loading */
-    function setOverviewError(sid: string, msg: string) {
-        const o = getOverview(sid);
-        if (!o) return;
-        o.error = msg;
-        o.loading = false;
+    if ("mem" in remote) {
+        const mem = remote.mem as ServerOverviewState["mem"] | undefined;
+        if (mem && typeof mem === "object") o.mem = { ...mem };
     }
-
-    /**
-     * 用户在面板中切换网卡：与 ingest 使用同一 iface 字段，
-     * 并清空差分与平滑状态，避免混用上一块网卡的采样。
-     */
-    function setOverviewIface(sid: string, iface: string) {
-        const o = getOverview(sid);
-        if (!o || !iface) return;
-        if (o.ifaceOptions.length > 0 && !o.ifaceOptions.includes(iface)) return;
-        if (o.iface === iface) return;
-        o.iface = iface;
-        resetNetSampling(o, iface);
+    if ("swap" in remote) {
+        const swap = remote.swap as ServerOverviewState["swap"] | undefined;
+        if (swap && typeof swap === "object") o.swap = { ...swap };
     }
+    if (latencyLabel !== "") o.latency = latencyLabel;
+}
 
-    /**
-     * 处理「CPU / 内存 / 交换 / 负载 / 运行时间」脚本输出。
-     * latencyLabel 非空时写入 latency（仅核心路调用，避免与 1s 网速轮询互相覆盖）。
-     */
-    function ingestRemoteOverviewCore(sid: string, remote: Record<string, unknown>, latencyLabel: string) {
-        const o = getOverview(sid);
-        if (!o) return;
-        o.loading = false;
-        if (applyRemoteOverviewErrorIfAny(o, remote)) return;
+/**
+ * 处理网速脚本输出：合并网卡列表、维护选中网卡、按累计 rx/tx 差分计算上下行速率并做 EMA 平滑。
+ */
+export function ingestRemoteOverviewNet(instance: ChannelInstance, remote: Record<string, unknown>) {
+    const o = getOverview(instance);
+    if (!o) return;
+    o.loading = false;
+    if (applyRemoteOverviewErrorIfAny(o, remote)) return;
 
-        if ("uptime_days" in remote) o.uptimeDays = Number(remote.uptime_days) || 0;
-        if ("load" in remote) o.load = String(remote.load ?? "-");
-        if ("cpu" in remote && remote.cpu && typeof remote.cpu === "object") {
-            const cpu = remote.cpu as { idle?: unknown; total?: unknown };
-            ingestCpuFromIdleTotal(o, cpu.idle, cpu.total);
-        }
-        if ("mem" in remote) {
-            const mem = remote.mem as ServerOverviewState["mem"] | undefined;
-            if (mem && typeof mem === "object") o.mem = { ...mem };
-        }
-        if ("swap" in remote) {
-            const swap = remote.swap as ServerOverviewState["swap"] | undefined;
-            if (swap && typeof swap === "object") o.swap = { ...swap };
-        }
-        if (latencyLabel !== "") o.latency = latencyLabel;
-    }
+    const hasNet = "net_by_iface" in remote || "ifaces" in remote || "iface" in remote || "net_rx" in remote || "net_tx" in remote;
+    if (!hasNet) return;
 
-    /**
-     * 处理网速脚本输出：合并网卡列表、维护选中网卡、按累计 rx/tx 差分计算上下行速率并做 EMA 平滑。
-     */
-    function ingestRemoteOverviewNet(sid: string, remote: Record<string, unknown>) {
-        const o = getOverview(sid);
-        if (!o) return;
-        o.loading = false;
-        if (applyRemoteOverviewErrorIfAny(o, remote)) return;
+    const nb = readNetByIface(remote.net_by_iface);
+    /** ifaces 与 net_by_iface 同源，合并可避免某次轮询 ifaces 异常时误判网卡无效并重置用户选择 */
+    const iface = syncSelectedIface(o, remote, nb);
+    const pr = nb?.[iface] ?? [Number(remote.net_rx) || 0, Number(remote.net_tx) || 0];
+    const rx = Number(pr[0]) || 0;
+    const tx = Number(pr[1]) || 0;
+    updateNetRate(o, rx, tx);
+}
 
-        const hasNet = "net_by_iface" in remote || "ifaces" in remote || "iface" in remote || "net_rx" in remote || "net_tx" in remote;
-        if (!hasNet) return;
+/** 处理进程 TOP5 脚本输出，整表替换 */
+export function ingestRemoteOverviewProcesses(instance: ChannelInstance, remote: Record<string, unknown>) {
+    const o = getOverview(instance);
+    if (!o) return;
+    o.loading = false;
+    if (applyRemoteOverviewErrorIfAny(o, remote)) return;
 
-        const nb = readNetByIface(remote.net_by_iface);
-        /** ifaces 与 net_by_iface 同源，合并可避免某次轮询 ifaces 异常时误判网卡无效并重置用户选择 */
-        const iface = syncSelectedIface(o, remote, nb);
-        const pr = nb?.[iface] ?? [Number(remote.net_rx) || 0, Number(remote.net_tx) || 0];
-        const rx = Number(pr[0]) || 0;
-        const tx = Number(pr[1]) || 0;
-        updateNetRate(o, rx, tx);
-    }
+    const procs = remote.processes as ServerOverviewState["processes"] | undefined;
+    if (Array.isArray(procs)) o.processes = procs;
+}
 
-    /** 处理进程 TOP5 脚本输出，整表替换 */
-    function ingestRemoteOverviewProcesses(sid: string, remote: Record<string, unknown>) {
-        const o = getOverview(sid);
-        if (!o) return;
-        o.loading = false;
-        if (applyRemoteOverviewErrorIfAny(o, remote)) return;
+/** 处理 df 磁盘列表脚本输出，整表替换 */
+export function ingestRemoteOverviewDisks(instance: ChannelInstance, remote: Record<string, unknown>) {
+    const o = getOverview(instance);
+    if (!o) return;
+    o.loading = false;
+    if (applyRemoteOverviewErrorIfAny(o, remote)) return;
 
-        const procs = remote.processes as ServerOverviewState["processes"] | undefined;
-        if (Array.isArray(procs)) o.processes = procs;
-    }
-
-    /** 处理 df 磁盘列表脚本输出，整表替换 */
-    function ingestRemoteOverviewDisks(sid: string, remote: Record<string, unknown>) {
-        const o = getOverview(sid);
-        if (!o) return;
-        o.loading = false;
-        if (applyRemoteOverviewErrorIfAny(o, remote)) return;
-
-        const disks = remote.disks as ServerOverviewState["disks"] | undefined;
-        if (Array.isArray(disks)) o.disks = disks;
-    }
-
-    return {
-        setOverviewError,
-        setOverviewIface,
-        ingestRemoteOverviewCore,
-        ingestRemoteOverviewNet,
-        ingestRemoteOverviewProcesses,
-        ingestRemoteOverviewDisks,
-    };
-});
+    const disks = remote.disks as ServerOverviewState["disks"] | undefined;
+    if (Array.isArray(disks)) o.disks = disks;
+}

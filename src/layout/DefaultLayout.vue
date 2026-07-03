@@ -22,7 +22,7 @@ onMounted(async () => {
     <div ref="viwer" class="w-full h-full relative flex flex-row default-layout">
         <template v-if="selectSession && isChannelInstance(selectSession)">
             <div v-show="showOverviewPanel" :style="{ width: `${overviewWidthPx}px` }">
-                <ServerOverviewPanel />
+                <ServerOverviewPanel :instance="selectSession" :key="selectSession.sessionId" />
             </div>
             <LayoutColumnResizer v-show="showOverviewPanel" v-model="overviewWidthPx" :min="OVERVIEW_MIN" :max="OVERVIEW_MAX" />
         </template>
@@ -31,7 +31,8 @@ onMounted(async () => {
             <Channels>
                 <template #default="{ server }">
                     <Term v-if="isChannelInstance(server)" :server="server" />
-                    <TermGroup v-else :group="server" />
+                    <TermGroup v-else-if="server.type === 'terminal'" :group="server" />
+                    <MonitorGroup v-else-if="server.type === 'monitor'" :group="server" />
                 </template>
             </Channels>
         </div>
