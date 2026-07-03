@@ -21,6 +21,14 @@ export type RemoteFileItem = {
     toJSON: () => RemoteFileItem;
 };
 
+/** 比较文件路径 */
+export function compareNameLikeExplorer(a: string, b: string): number {
+    const ah = a.startsWith(".");
+    const bh = b.startsWith(".");
+    if (ah !== bh) return ah ? -1 : 1;
+    return a.localeCompare(b);
+}
+
 /** 列出远端目录下的一级文件和子目录，不递归 */
 export async function listRemoteSubFiles(serverId: string, absPath: string): Promise<RemoteFileItem[]> {
     const ppath = absPath === "/" ? absPath : `${absPath}/`;
@@ -53,7 +61,8 @@ export async function listRemoteSubFiles(serverId: string, absPath: string): Pro
         }
         if (item?.linkPath) i++;
     }
-    return items;
+    // 返回子目录时默认先按名称排序
+    return items.sort((a, b) => compareNameLikeExplorer(a.id, b.id));
 }
 
 /** 获取单个文件的远程文件信息 */
@@ -324,7 +333,7 @@ function parseRemoteScanRows(raw: string): RemoteFileItem[] {
         });
     }
     // 默认按文件名排序
-    rows.sort((a, b) => a.id.localeCompare(b.id));
+    rows.sort((a, b) => compareNameLikeExplorer(a.id, b.id));
     return rows;
 }
 

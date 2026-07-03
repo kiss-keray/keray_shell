@@ -42,7 +42,7 @@ const showDisk = computed(() => {
             if (!props.diskFilter) return true;
             return patternToRegExp(props.diskFilter).test(d.path);
         })
-        .sort((a, b) => a.path.length - b.path.length);
+        .sort((a, b) => a.path.localeCompare(b.path));
 });
 
 function onActiveDisk(path: string) {

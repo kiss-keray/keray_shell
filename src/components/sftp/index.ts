@@ -73,10 +73,3 @@ export async function changeFileItemPermissions(serverId: string, fileItem: File
     await execRemote(serverId, `chmod ${octal} ${shellSingleQuote(fileItem.id)}`);
     fileItem.permissions = permBits & 0o777;
 }
-
-export function compareNameLikeExplorer(a: string, b: string): number {
-    const ah = a.startsWith(".");
-    const bh = b.startsWith(".");
-    if (ah !== bh) return ah ? -1 : 1;
-    return a.localeCompare(b);
-}

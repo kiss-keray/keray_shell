@@ -2,8 +2,8 @@
 import Draggable from "vuedraggable";
 
 import { buildDeleteConfirmMessage, buildMoveConfirmMessage } from "@/utils/confirmMessage";
-import { baseName, oneFileRemoteItem, remoteCopy, writeLocalFileToRemote } from "@/utils/fsUtil";
-import { addFileItem, changeFileItemName, changeFileItemPermissions, compareNameLikeExplorer, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
+import { baseName, compareNameLikeExplorer, oneFileRemoteItem, remoteCopy, writeLocalFileToRemote } from "@/utils/fsUtil";
+import { addFileItem, changeFileItemName, changeFileItemPermissions, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
 import { showPermissionEditor } from "./ui";
 import { dragListener, formatAdaptiveBytes } from "@/utils/project";
 import dayjs from "dayjs";

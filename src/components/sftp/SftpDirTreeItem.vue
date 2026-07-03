@@ -1,7 +1,7 @@
 <script setup lang="tsx">
 import { buildMoveConfirmMessage } from "@/utils/confirmMessage";
 import { ChannelInstanceProvideKey, CustomMenusEventKey, SftpActiveItemKey } from "@/utils/constant";
-import { addFileItem, changeFileItemName, changeFileItemPermissions, compareNameLikeExplorer, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
+import { addFileItem, changeFileItemName, changeFileItemPermissions, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
 import { showPermissionEditor } from "./ui";
 import useBus, { FileDragEndEventKey, FileDragStartEventKey, RefreshFileListEventKey } from "@/composables/useBus";
 import { baseName, checkLinuxFileName } from "@/utils/fsUtil";
@@ -32,7 +32,7 @@ const leaf = computed(() => {
 });
 
 const showChildren = computed(() => {
-    return (props.fileItem.children || []).filter((v) => v.isDir).sort((a, b) => compareNameLikeExplorer(a.id, b.id));
+    return (props.fileItem.children || []).filter((v) => v.isDir);
 });
 
 watch(activeItem, (newVal) => {

@@ -48,6 +48,7 @@ declare global {
   const buildUploadFileRemoteCmd: typeof import("./src/utils/fsUtil").buildUploadFileRemoteCmd
   const calculateSpeedBps: typeof import('./src/utils/index').calculateSpeedBps
   const checkLinuxFileName: typeof import('./src/utils/fsUtil').checkLinuxFileName
+  const compareNameLikeExplorer: typeof import('./src/utils/fsUtil').compareNameLikeExplorer
   const computed: typeof import('vue').computed
   const copy: typeof import("./src/utils/project").copy
   const copyText: typeof import('./src/utils/project').copyText
