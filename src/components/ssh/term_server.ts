@@ -147,25 +147,34 @@ export default class TermServer {
         this.pty_config.col_width = terminal.cols;
         this.pty_config.row_height = terminal.rows;
         {
+            const fit = () => {
+                this._fit();
+                if (this._active()) {
+                    invoke("resize_pty", {
+                        ...this._ps(),
+                        pty: this.pty_config,
+                    });
+                }
+            };
             let last_time = 0;
-            let last_time1 = 0;
+            let resizeEndTimer: ReturnType<typeof setTimeout> | undefined;
             // 当容器尺寸变化时重新 fit
             const observer = new ResizeObserver(() => {
+                // 每一帧来时都要清除上一次的定时器
+                clearTimeout(resizeEndTimer);
                 const now = new Date().getTime();
-                last_time1 = now;
-                // 释放鼠标后才更新后端
-                setTimeout(() => {
-                    if (last_time1 === now && this._active()) {
-                        invoke("resize_pty", {
-                            ...this._ps(),
-                            pty: this.pty_config,
-                        });
-                    }
+                // resize/布局动画过程中保留节流 fit，避免每一帧都触发终端重排。
+                if (now - last_time > 50) {
+                    last_time = now;
+                    // 当前帧已经fit了就不管
+                    return fit();
+                }
+                // 节流可能跳过最后一帧：容器已变为最终高度，但 xterm 仍停留在中间高度，
+                // 此时底部内容会被父容器的 overflow:hidden 裁掉。尺寸稳定后必须补一次最终 fit，
+                // 并在 fit 之后把最终行列数同步给 PTY，保证前后端使用同一套尺寸。
+                resizeEndTimer = setTimeout(() => {
+                    return fit();
                 }, 100);
-                // 大于50毫秒fit一次
-                if (now - last_time < 50) return;
-                last_time = now;
-                this._fit();
             });
             observer.observe(dom);
         }
