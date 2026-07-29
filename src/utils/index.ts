@@ -460,9 +460,10 @@ export function calculateSpeedBps(bpsData: Record<number, number>): number {
     const bps = list.map(([_, bps]) => bps).reduce((acc, b) => acc + b, 0);
     const minTime = Math.min(...list.map(([time]) => Number(time)));
     const maxTime = Math.max(...list.map(([time]) => Number(time)));
+    if (maxTime - minTime <= 0) return 0;
+    if (bps <= 0) return 0;
     return (bps / (maxTime - minTime)) * 1000;
 }
-
 
 declare global {
     interface Array<T> {

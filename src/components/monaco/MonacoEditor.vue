@@ -41,10 +41,20 @@ let saveAction: monaco.IDisposable | null = null;
 let contentListener: monaco.IDisposable | null = null;
 let resizeObserver: ResizeObserver | null = null;
 
-/** 构建 model URI，便于 Monaco 按语言提供语法服务 */
-function modelUri(path: string) {
-    const lang = languageFromPath(path);
-    return monaco.Uri.parse(`file:///${path.replace(/^\//, "")}.${lang === "shell" ? "txt" : lang}`);
+/**
+ * 构建 Monaco model URI。
+ *
+ * Monaco 在整个窗口内按 URI 唯一管理 model；不同服务器可能存在相同远程路径，
+ * 因此 URI 必须包含父组件生成的全局唯一 key，不能只使用远程 path。
+ * 原始 path 仍保留在 URI 末尾，确保语言服务可以继续按真实扩展名识别文件。
+ */
+function modelUri(key: string, path: string) {
+    const modelNamespace = encodeURIComponent(key);
+    const remotePath = path.replace(/^\/+/, "");
+    return monaco.Uri.from({
+        scheme: "file",
+        path: `/__keray_remote__/${modelNamespace}/${remotePath}`,
+    });
 }
 
 /** 同步外部文件状态到当前 editor 的 model */
@@ -69,7 +79,7 @@ function initEditor() {
     defineKerayMonacoTheme(document.documentElement, themeMode.value);
 
     const editor = monaco.editor.create(host, {
-        model: monaco.editor.createModel(props.file.content, props.file.language ?? languageFromPath(props.file.path), modelUri(props.file.path)),
+        model: monaco.editor.createModel(props.file.content, props.file.language ?? languageFromPath(props.file.path), modelUri(props.file.key, props.file.path)),
         automaticLayout: false,
         fontSize: fontSize.value,
         fontFamily: termFontFamily.value || DEFAULT_FONT_FAMILY,

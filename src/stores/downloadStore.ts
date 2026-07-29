@@ -73,6 +73,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
     let running = 0;
     let __id_counter = 0;
     const configStore = useConfigStore();
+    const channelInstancesStore = useChannelInstancesStore();
 
     const concurrency = ref(CONCURRENCY_DEFAULT);
     const taskItems = ref<TransferItem[]>([]);
@@ -117,11 +118,12 @@ export const useDownloadStore = defineStore("sftp-download", () => {
         localPath: string,
         offset: number,
         total: number,
+        bufSize: number,
         progress: (data: DownloadProgressPayload) => void,
     ): Promise<"Success" | "Paused" | "Cancelled"> {
         const stream = new Channel<DownloadProgressPayload>();
         stream.onmessage = progress;
-        return await invoke<"Success" | "Paused" | "Cancelled">("upload_file", { stream, requestId, serverId, remotePath, localPath, offset, total });
+        return await invoke<"Success" | "Paused" | "Cancelled">("upload_file", { stream, requestId, serverId, remotePath, localPath, offset, total, bufSize });
     }
 
     /** 暂停后端下载任务 */
@@ -273,7 +275,8 @@ export const useDownloadStore = defineStore("sftp-download", () => {
         syncParentStatus(detail);
         const bpsTask = setInterval(() => {
             detail.speedBps = calculateSpeedBps(detail.bps);
-            detail.remainingTime = ((total - detail.loaded) / detail.speedBps) * 1000;
+            // 计算时间时必须避免除以0
+            detail.remainingTime = ((total - detail.loaded) / (detail.speedBps || 1)) * 1000;
             parentEdit(detail, (parent) => {
                 parent.speedBps = calculateSpeedBps(parent.bps);
             });
@@ -504,7 +507,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
                 },
                 endCall() {
                     callback?.(this);
-                }
+                },
             };
             if (localInfo.isDirectory) {
                 const children = await readDir(localPath);
@@ -607,9 +610,31 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             }
             const requestId = uuid();
             detail.requestId = requestId;
+            let bufSize = 10 * 1024 * 1024; // 默认本地每次读取10MB
+            // 更具服务器的CPU，内存尺寸动态设置bufSize
+            const instance = channelInstancesStore.instances.find((instance) => {
+                if (isChannelInstance(instance)) {
+                    return instance.server.id === serverId;
+                }
+                return false;
+            });
+            if (instance) {
+                const overview = (instance as ChannelInstance).overview;
+                const cpu = overview?.cpuTotal || 0;
+                const memory_mb = (overview?.mem.totalKb || 0) / 1024;
+                if (cpu < 1 || memory_mb < 200)
+                    bufSize = 200 * 1024; // 如果服务器CPU小于1核，或者内存小于200MB，则设置bufSize为200KB
+                else if (cpu < 2 || memory_mb < 500)
+                    bufSize = 500 * 1024; // 如果服务器CPU小于2核，或者内存小于500MB，则设置bufSize为500KB
+                else if (cpu < 4 || memory_mb < 1000)
+                    bufSize = 800 * 1024; // 如果服务器CPU小于2核，或者内存小于1000MB，则设置bufSize为800KB
+                else if (cpu < 8 || memory_mb < 2000)
+                    bufSize = 1024 * 1024; // 如果服务器CPU小于4核，或者内存小于2000MB，则设置bufSize为1MB
+                else if (cpu < 16 || memory_mb < 4000) bufSize = 5 * 1024 * 1024; // 如果服务器CPU小于8核，或者内存小于4000MB，则设置bufSize为2MB
+            }
             await __transfer(
                 detail,
-                sftpUploadFile(requestId, serverId, remotePath, localPath, detail.loaded, total, (data) => {
+                sftpUploadFile(requestId, serverId, remotePath, localPath, detail.loaded, total, bufSize, (data) => {
                     ensureProgressListener(detail, data);
                 }),
             );

@@ -14,8 +14,10 @@ export interface ServerOverviewState {
     error: string | null;
     uptimeDays: number;
     load: string;
+    /** 远端当前在线的逻辑 CPU 数，例如 8 核为 8、32 核为 32 */
+    cpuTotal: number;
     cpuPct: number;
-    mem: { used: number; total: number; pct: number };
+    mem: { used: number; total: number; pct: number; totalKb: number };
     swap: { used: number; total: number; pct: number };
     processes: Array<{ mem: string; cpu: string; cmd: string }>;
     /** 进程表排序方式（默认内存），轮询脚本会读取以决定 ps 排序键 */
@@ -64,8 +66,9 @@ export function createDefaultServerOverview(): ServerOverviewState {
         error: null,
         uptimeDays: 0,
         load: "-",
+        cpuTotal: 0,
         cpuPct: 0,
-        mem: { used: 0, total: 0, pct: 0 },
+        mem: { used: 0, total: 0, pct: 0, totalKb: 0 },
         swap: { used: 0, total: 0, pct: 0 },
         processes: [],
         processSort: "mem",
@@ -280,6 +283,11 @@ export function ingestRemoteOverviewCore(instance: ChannelInstance, remote: Reco
 
     if ("uptime_days" in remote) o.uptimeDays = Number(remote.uptime_days) || 0;
     if ("load" in remote) o.load = String(remote.load ?? "-");
+    if ("cpuTotal" in remote) {
+        const cpuTotal = Number(remote.cpuTotal);
+        /** 仅接受正整数，避免异常采集覆盖上一轮有效的 CPU 核心数。 */
+        if (Number.isFinite(cpuTotal) && cpuTotal > 0) o.cpuTotal = Math.trunc(cpuTotal);
+    }
     if ("cpu" in remote && remote.cpu && typeof remote.cpu === "object") {
         const cpu = remote.cpu as { idle?: unknown; total?: unknown };
         ingestCpuFromIdleTotal(o, cpu.idle, cpu.total);

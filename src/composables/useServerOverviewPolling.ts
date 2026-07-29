@@ -36,7 +36,7 @@ function shSingleQuote(s: string): string {
  * 行格式：
  * 1: uptime_sec, load1, load2, load3
  * 2: mem_total_kb, mem_avail_kb, swap_total_kb, swap_free_kb
- * 3: cpu_idle, cpu_total（累计 jiffies，与 store 差分算 CPU%）
+ * 3: cpu_idle, cpu_ticks_total（累计 jiffies，与 store 差分算 CPU%）, cpu_total（在线逻辑 CPU 数）
  * 4: 选中的网卡名（按 IFACE_PREF 或首张非 lo）
  * 5: 网卡行数 N
  * 6..5+N: iface, rx_bytes, tx_bytes
@@ -68,13 +68,15 @@ const FAST_AWK_SOURCE = String.raw`BEGIN {
   }
   close("/proc/uptime")
 
-  cpu_idle = 0; cpu_total = 0
+  cpu_idle = 0; cpu_ticks_total = 0; cpu_total = 0
   while ((getline line < "/proc/stat") > 0) {
     if (substr(line, 1, 4) == "cpu ") {
       n = split(line, f, /[[:space:]]+/)
       cpu_idle = f[5] + f[6]
-      for (i = 2; i <= n; i++) cpu_total += f[i] + 0
-      break
+      for (i = 2; i <= n; i++) cpu_ticks_total += f[i] + 0
+    } else if (line ~ /^cpu[0-9]+[[:space:]]/) {
+      # /proc/stat 中每个在线逻辑 CPU 对应一行 cpuN，用于得到 8、32 等核心数。
+      cpu_total++
     }
   }
   close("/proc/stat")
@@ -104,7 +106,7 @@ const FAST_AWK_SOURCE = String.raw`BEGIN {
 
   print up "\t" l1 "\t" l2 "\t" l3
   print mt "\t" ma "\t" st "\t" sf
-  print cpu_idle "\t" cpu_total
+  print cpu_idle "\t" cpu_ticks_total "\t" cpu_total
   print chosen
   print ncnt
   for (i = 1; i <= ncnt; i++) print nics[i] "\t" rxs[i] "\t" txs[i]
@@ -175,7 +177,9 @@ function parseFastOverviewText(raw: string): { core: Record<string, unknown>; ne
 
     const row2 = lines[2].split("\t");
     const cpuIdle = Number(row2[0]);
-    const cpuTotal = Number(row2[1]);
+    const cpuTicksTotal = Number(row2[1]);
+    /** /proc/stat 的 cpuN 行数即当前在线逻辑 CPU 数，例如 8 核返回 8。 */
+    const cpuTotal = Number(row2[2]);
 
     const chosenIface = lines[3].trim() || "eth0";
     const ncnt = Math.max(0, Math.floor(Number(lines[4])));
@@ -191,10 +195,12 @@ function parseFastOverviewText(raw: string): { core: Record<string, unknown>; ne
     const core: Record<string, unknown> = {
         uptime_days: Math.trunc((Number.isFinite(uptimeSec) ? uptimeSec : 0) / 86400),
         load,
-        cpu: { idle: cpuIdle, total: cpuTotal },
+        cpuTotal: Number.isFinite(cpuTotal) && cpuTotal > 0 ? Math.trunc(cpuTotal) : 0,
+        cpu: { idle: cpuIdle, total: cpuTicksTotal },
         mem: {
             used: diskLabelFromKb(mu),
             total: diskLabelFromKb(safeMt),
+            totalKb: safeMt,
             pct: memPct,
         },
         swap: {

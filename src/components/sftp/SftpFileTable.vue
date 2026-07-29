@@ -504,17 +504,18 @@ function uploadFiles(paths: string[], fileItem: RemoteFileItem = activeItem.valu
     });
 }
 
-async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
+async function openRowContextMenu(e: MouseEvent, rowItem?: FileStoreItem) {
     e.preventDefault();
     e.stopPropagation();
     const offline = server.status !== "connected";
     const onlyOne = selectedPaths.value.size < 2; // 之前只选了一个或者没选
-    if (onlyOne) {
+    if (onlyOne && rowItem) {
         // 之前只选了一个后 右键后只选择当前行
-        selectedPaths.value = new Set([row.id]); // 右键后只选择当前行
+        selectedPaths.value = new Set([rowItem.id]); // 右键后只选择当前行
     }
     const selectedItems = fileList.value.filter((item) => selectedPaths.value.has(item.id));
-    const canBulkEdit = selectedItems.every((item) => isEditableTextFile(item));
+    const canBulkEdit = selectedItems.length > 0 && selectedItems.every((item) => isEditableTextFile(item));
+    const selectedItem: FileStoreItem | undefined = rowItem || selectedItems[0];
 
     /* 使用系统关联软件打开文件 */
     async function openFileWithSystem(path: string, appPath: string | null): Promise<void> {
@@ -542,7 +543,7 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
     }
 
     async function openFileByLocal(appPath?: string) {
-        const item = selectedItems[0]!;
+        const item = selectedItem!;
         // null 表示没有拿到文件大小，0 表示真实空文件；空文件也允许用系统应用打开。
         if (item.size === null) return;
         if (item.size > MAX_OPEN_SIZE) {
@@ -692,15 +693,15 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
         },
         {
             label: "重命名",
-            disabled: offline || selectedItems.length !== 1,
+            disabled: offline || selectedItems.length !== 1 || !selectedItem,
             handler: () => {
-                renameItem.value = row;
-                editName.value = baseName(row.id);
+                renameItem.value = selectedItem!;
+                editName.value = baseName(selectedItem!.id);
             },
         },
         {
             label: "快速删除(rm命令)",
-            disabled: offline,
+            disabled: offline || !selectedItem,
             handler: () => {
                 void handleDelete(selectedItems);
             },
@@ -708,15 +709,16 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
         "---",
         {
             label: "复制路径",
+            disabled: !selectedItem,
             handler: () => {
-                const text = selectedItems.length > 1 ? selectedItems.map((v) => v.id).join("\n") : (selectedItems[0]?.id ?? row.id);
+                const text = selectedItems.length > 1 ? selectedItems.map((v) => v.id).join("\n") : (selectedItems[0]?.id ?? selectedItem.id);
                 void copyText(text);
             },
         },
         "---",
         {
             label: "下载",
-            disabled: offline,
+            disabled: offline || !selectedItem,
             handler: () => {
                 clickDownload(selectedItems);
             },
@@ -726,7 +728,7 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
                   label: "上传",
                   disabled: offline,
                   handler: async () => {
-                      clickUpload(onlyOne ? row : activeItem.value);
+                      clickUpload(onlyOne ? selectedItem : activeItem.value);
                   },
               }
             : {
@@ -736,13 +738,13 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
                       {
                           label: "上传文件",
                           handler: async () => {
-                              clickUpload(onlyOne ? row : activeItem.value, false);
+                              clickUpload(onlyOne ? selectedItem : activeItem.value, false);
                           },
                       },
                       {
                           label: "上传文件夹",
                           handler: async () => {
-                              clickUpload(onlyOne ? row : activeItem.value);
+                              clickUpload(onlyOne ? selectedItem : activeItem.value);
                           },
                       },
                   ],
@@ -752,7 +754,7 @@ async function openRowContextMenu(e: MouseEvent, row: FileStoreItem) {
             label: "文件权限…",
             disabled: offline || selectedItems.length !== 1,
             handler: async () => {
-                const node = selectedItems[0]!;
+                const node = selectedItem;
                 const perms = await showPermissionEditor({
                     title: "修改文件权限",
                     path: node.id,
@@ -1235,7 +1237,7 @@ async function drop(event: DragEvent) {
 </script>
 
 <template>
-    <div class="table-wrap grow min-w-0 overflow-auto" ref="tableWrapRef" tabindex="0">
+    <div class="table-wrap grow min-w-0 overflow-auto" ref="tableWrapRef" tabindex="0" @contextmenu.stop="openRowContextMenu($event)">
         <table class="file-table text-left" :style="{ width: tableWidthPx + 'px' }">
             <colgroup>
                 <col class="col-name" :style="{ width: colWidths.name + 'px' }" />
@@ -1286,7 +1288,7 @@ async function drop(event: DragEvent) {
                     :class="{ sel: selectedPaths.has(row.id) }"
                     draggable="true"
                     @dblclick.prevent.stop="dblclickRow(row)"
-                    @contextmenu="openRowContextMenu($event, row)"
+                    @contextmenu.stop="openRowContextMenu($event, row)"
                     @click="handleRowClick(row)"
                     @dragstart="dragstart"
                     @dragend="dragend"

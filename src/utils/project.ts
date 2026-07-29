@@ -72,7 +72,7 @@ export function formatAdaptiveBytes(bytes: number): string {
 
 /** 格式化网速 */
 export function formatSpeedBps(bps: number): string {
-    if (!Number.isFinite(bps) || bps < 0.1) return "—";
+    if (!Number.isFinite(bps) || bps < 0) return "—";
     return `${formatAdaptiveBytes(bps)}its/s`;
 }
 

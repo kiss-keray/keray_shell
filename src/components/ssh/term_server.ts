@@ -61,7 +61,7 @@ export default class TermServer {
         letterSpacing: 0,
         lineHeight: 1.2,
         allowProposedApi: true,
-        scrollback: 5000,
+        scrollback: 0,
     };
     private pty_config = {
         term: "xterm-256color",
@@ -124,7 +124,14 @@ export default class TermServer {
         const terminal = new Terminal({
             ...this.termConfig,
             ...options,
+            // 用户查看过历史输出后，键盘输入需要回到缓冲区底部；否则 Vim 的“:”命令行
+            // 仍绘制在实际最后一行，但 xterm 视口停留在上方，看起来像命令行超出显示区域。
             scrollOnUserInput: false,
+            convertEol: true,
+            documentOverride: dom,
+            macOptionIsMeta: true,
+            reflowCursorLine: true,
+            scrollOnEraseInDisplay: true,
         });
         this.terminal = terminal;
         terminal.loadAddon(this.fitAddon);

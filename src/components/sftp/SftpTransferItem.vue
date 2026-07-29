@@ -63,20 +63,28 @@ function openContextMenu(e: MouseEvent) {
             handler: () => void handleRevealInDir(),
         },
         "---",
-        {
-            label: "取消并删除本地",
-            handler: async () => {
-                props.item.cancel();
-                removeLocalIfAny(props.item.localPath);
-            },
-        },
+        props.item.kind === "download"
+            ? {
+                  label: "取消并删除本地",
+                  handler: async () => {
+                      props.item.cancel();
+                      removeLocalIfAny(props.item.localPath);
+                  },
+              }
+            : {
+                  label: "取消并删除远程",
+                  handler: async () => {
+                      props.item.cancel();
+                      remoteRemove(props.item.serverId, props.item.remotePath);
+                  },
+              },
     ];
     document.body.dispatchEvent(new CustomEvent(CustomMenusEventKey, { bubbles: true, detail: { menus, target: e } }));
 }
 </script>
 
 <template>
-    <div v-if="item.status !== 'cancelled'" :style="{ marginLeft: `${level * 24}px` }" class="transfer-item" @contextmenu="openContextMenu($event)">
+    <div v-if="item.status !== 'cancelled'" :style="{ marginLeft: `${level * 24}px` }" class="transfer-item select-auto" @contextmenu="openContextMenu($event)">
         <div class="title-line">
             <div class="line1" :class="{ [item.isDir ? 'is-dir' : 'is-file']: true }">
                 <div class="flex items-center gap-2">
@@ -94,6 +102,8 @@ function openContextMenu(e: MouseEvent) {
                     <button v-if="canRetry" type="button" class="tx-btn tx-btn--accent" @click="item.retry">重试</button>
                 </div>
             </div>
+            <p class="item-name truncate pl-4">local：{{ item.localPath }}</p>
+            <p class="item-name truncate">remote：{{ item.remotePath }}</p>
             <div class="line2 progress">
                 <div class="download-track"><div class="download-bar" :key="item.loaded" :style="{ width: `${((item.loaded / (item.total || 1)) * 100).toFixed(2)}%` }" /></div>
                 <p class="bfb">{{ ((item.loaded / (item.total || 1)) * 100).toFixed(2) }}%</p>

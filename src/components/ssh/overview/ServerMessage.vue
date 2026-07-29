@@ -11,7 +11,7 @@ const metrics = computed(() => {
             uptimeDays: 0,
             load: "-",
             cpuPct: 0,
-            mem: { used: 0, total: 0, pct: 0 },
+            mem: { used: 0, total: 0, pct: 0, totalKb: 0 },
             swap: { used: 0, total: 0, pct: 0 },
         };
     }
@@ -21,6 +21,7 @@ const metrics = computed(() => {
         cpuPct: o.cpuPct,
         mem: o.mem,
         swap: o.swap,
+        cpuTotal: o.cpuTotal,
     };
 });
 
@@ -72,6 +73,7 @@ async function copyIp() {
             <div class="bar-track">
                 <div class="bar-fill cpu" :style="{ width: metrics.cpuPct + '%' }" />
                 <span class="bar-inlabel">{{ metrics.cpuPct }}%</span>
+                <span class="bar-right">{{ metrics.cpuTotal }}核</span>
             </div>
         </div>
         <div class="bar-row">

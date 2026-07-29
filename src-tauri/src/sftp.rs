@@ -2,7 +2,7 @@ use crate::dto::res::Res;
 use crate::sftp::TransferFileRes::{Cancelled, Paused, Success};
 use crate::ssh::{server_get_channel, server_get_channel_other, ServerModel};
 use crate::utils::now_millis;
-use log::debug;
+use log::{info};
 use once_cell::sync::Lazy;
 use russh::client::Msg;
 use russh::{Channel, ChannelMsg};
@@ -356,6 +356,7 @@ pub async fn upload_file(
     local_path: String,
     offset: u64,
     total: u64,
+    buf_size: usize,
 ) -> Res<TransferFileRes> {
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
@@ -372,68 +373,61 @@ pub async fn upload_file(
     let loaded = Arc::new(AtomicU64::new(offset)); // 已经上传的大小
     let pending_delta = Arc::new(AtomicU64::new(0)); // 每次通知的增量
     let last_emit_at = Arc::new(AtomicU64::new(now_millis())); // 上次通知的时间戳
-    let res = Arc::new(AtomicI8::new(1)); // 结束状态 0 暂停 -1 取消 1成功
-    match _sftp_write(channel, &remote_path, &(offset > 0), || {
-        let request_id = request_id.clone();
-        let ctrl = ctrl.clone();
-        let local_file = local_file.clone();
-        let loaded = loaded.clone();
-        let pending_delta = pending_delta.clone();
-        let last_emit_at = last_emit_at.clone();
-        let res = res.clone();
-        async move {
-            let cancelled = ctrl.cancelled.load(Ordering::SeqCst);
-            let paused = ctrl.paused.load(Ordering::SeqCst);
-            if cancelled || paused {
-                let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                ctrl_map.remove(&request_id);
-                if cancelled {
-                    res.store(-1, Ordering::SeqCst);
-                } else {
-                    res.store(0, Ordering::SeqCst);
-                }
-                return Ok(None);
-            }
-            let mut local_file = local_file.lock().await;
-            let mut buf = vec![0u8; 10 * 1024 * 1024];
-            match local_file.read(&mut buf).await {
-                Ok(n) => {
-                    let delta = n as u64;
-                    let _loaded = loaded.fetch_add(delta, Ordering::SeqCst) + delta;
-                    let size = pending_delta.fetch_add(delta, Ordering::SeqCst) + delta;
-                    let now = now_millis();
-                    // 进度事件节流，避免前端在高吞吐时被消息风暴阻塞。
-                    if now - last_emit_at.load(Ordering::SeqCst) >= 100
-                        || size >= 1024 * 1024
-                        || n == 0
-                    // n=0表述读取结束  结束后强制刷新进度
-                    {
-                        emit(_loaded, size);
-                        pending_delta.store(0, Ordering::SeqCst);
-                        last_emit_at.store(now, Ordering::SeqCst);
+    match _sftp_write(
+        channel,
+        &remote_path,
+        &(offset > 0),
+        || {
+            let request_id = request_id.clone();
+            let local_file = local_file.clone();
+            async move {
+                let mut local_file = local_file.lock().await;
+                let mut buf = vec![0u8; buf_size];
+                match local_file.read(&mut buf).await {
+                    Ok(n) => {
+                        // n=0表述读取结束
+                        if n == 0 {
+                            return Ok(None);
+                        }
+                        buf.truncate(n);
+                        Ok(Some(buf))
                     }
-                    if n == 0 {
-                        return Ok(None);
+                    Err(_) => {
+                        let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
+                        ctrl_map.remove(&request_id);
+                        return Err("读取失败".into());
                     }
-                    buf.truncate(n);
-                    Ok(Some(buf))
-                }
-                Err(_) => {
-                    let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                    ctrl_map.remove(&request_id);
-                    return Err("读取失败".into());
                 }
             }
-        }
-    })
+        },
+        {
+            let progress_stream = stream.clone();
+            let ctrl = ctrl.clone();
+            move |n| {
+                let delta = n as u64;
+                let _loaded = loaded.fetch_add(delta, Ordering::SeqCst) + delta;
+                let size = pending_delta.fetch_add(delta, Ordering::SeqCst) + delta;
+                let now = now_millis();
+                // 进度事件节流，避免前端在高吞吐时被消息风暴阻塞。
+                if now - last_emit_at.load(Ordering::SeqCst) >= 100 || size >= 1024 * 1024 || n == 0
+                {
+                    __emit(&progress_stream, &_loaded, &size, &total);
+                    pending_delta.store(0, Ordering::SeqCst);
+                    last_emit_at.store(now, Ordering::SeqCst);
+                }
+                let cancelled = ctrl.cancelled.load(Ordering::SeqCst);
+                let paused = ctrl.paused.load(Ordering::SeqCst);
+                !cancelled && !paused
+            }
+        },
+    )
     .await
     {
         Ok(()) => {
-            let n = res.load(Ordering::SeqCst);
-            if n == 0 {
+            if ctrl.paused.load(Ordering::SeqCst) {
                 return Res::of(Paused);
             }
-            if n == -1 {
+            if ctrl.cancelled.load(Ordering::SeqCst) {
                 return Res::of(Cancelled);
             }
             Res::of(Success)
@@ -495,31 +489,37 @@ pub async fn sftp_upload_local_file(
         total = file.metadata().await.unwrap().len();
     }
     let loaded = Arc::new(AtomicU64::new(0));
-    let result = _sftp_write(channel, &remote_path, &append.unwrap_or(false), || {
-        let file = file.clone();
-        let total = total.clone();
-        let stream = stream.clone();
-        let loaded = loaded.clone();
-        async move {
-            let mut buf = vec![0u8; 64 * 1024];
-            let mut file = file.lock().await;
-            match file.read(&mut buf).await {
-                Ok(n) => {
-                    if n > 0 {
-                        buf.truncate(n); // 别忘了截断
-                        let loaded = loaded.fetch_add(n as u64, Ordering::SeqCst) + n as u64;
-                        let _ = stream.send(loaded as f32 / total as f32);
-                        Ok(Some(buf))
-                    } else {
-                        // 上传完成
-                        let _ = stream.send(1f32);
-                        Ok(None)
+    let result = _sftp_write(
+        channel,
+        &remote_path,
+        &append.unwrap_or(false),
+        || {
+            let file = file.clone();
+            let total = total.clone();
+            let stream = stream.clone();
+            let loaded = loaded.clone();
+            async move {
+                let mut buf = vec![0u8; 64 * 1024];
+                let mut file = file.lock().await;
+                match file.read(&mut buf).await {
+                    Ok(n) => {
+                        if n > 0 {
+                            buf.truncate(n); // 别忘了截断
+                            let loaded = loaded.fetch_add(n as u64, Ordering::SeqCst) + n as u64;
+                            let _ = stream.send(loaded as f32 / total as f32);
+                            Ok(Some(buf))
+                        } else {
+                            // 上传完成
+                            let _ = stream.send(1f32);
+                            Ok(None)
+                        }
                     }
+                    _ => Err("读取失败".into()),
                 }
-                _ => Err("读取失败".into()),
             }
-        }
-    })
+        },
+        |_| true,
+    )
     .await;
     match result {
         Ok(_) => Res::ok(),
@@ -586,17 +586,23 @@ pub async fn one_write_string(
         Err(e) => return Res::fail(e),
     };
     let ok = Arc::new(AtomicBool::new(false));
-    match _sftp_write(channel, &path, &false, || {
-        let ok = ok.clone();
-        let content = content.clone();
-        async move {
-            if ok.load(Ordering::Relaxed) {
-                return Ok(None);
+    match _sftp_write(
+        channel,
+        &path,
+        &false,
+        || {
+            let ok = ok.clone();
+            let content = content.clone();
+            async move {
+                if ok.load(Ordering::Relaxed) {
+                    return Ok(None);
+                }
+                ok.store(true, Ordering::Relaxed);
+                Ok(Some(content.into_bytes()))
             }
-            ok.store(true, Ordering::Relaxed);
-            Ok(Some(content.into_bytes()))
-        }
-    })
+        },
+        |_| true,
+    )
     .await
     {
         Ok(_) => {
@@ -620,7 +626,7 @@ where
 {
     channel.request_subsystem(true, "sftp").await.unwrap();
     let sftp = SftpSession::new(channel.into_stream()).await.map_err(|e| {
-        debug!("SftpSession创建失败 {:?}", e);
+        info!("SftpSession创建失败 {:?}", e);
         "通道创建失败".to_string()
     })?;
     let mut file = sftp.open_with_flags(path, OpenFlags::READ).await.unwrap();
@@ -680,19 +686,21 @@ where
 }
 
 // 流式写入文件
-async fn _sftp_write<F, Fut>(
+async fn _sftp_write<F, Fut, Q>(
     channel: Channel<Msg>,
     path: &String,
     append: &bool,
     call: F,
+    process_call: Q,
 ) -> Result<(), String>
 where
+    Q: Fn(usize) -> bool + Send + 'static, // 返回true继续 返回false结束
     F: Fn() -> Fut,
     Fut: Future<Output = Result<Option<Vec<u8>>, String>>,
 {
     channel.request_subsystem(true, "sftp").await.unwrap();
     let sftp = SftpSession::new(channel.into_stream()).await.map_err(|e| {
-        debug!("SftpSession创建失败 {:?}", e);
+        info!("SftpSession创建失败 {:?}", e);
         "通道创建失败".to_string()
     })?;
     if path == "/" {
@@ -734,7 +742,13 @@ where
                     }
                 }
                 match file.flush().await {
-                    Ok(_) => {}
+                    Ok(_) => {
+                        if !process_call(bys.len()) {
+                            // 返回false表示结束写入 暂停  取消触发
+                            write_flag1.store(false, Ordering::Relaxed);
+                            break;
+                        }
+                    }
                     Err(_) => {
                         write_flag1.store(false, Ordering::Relaxed);
                         let _ = file.shutdown().await;
@@ -743,30 +757,33 @@ where
                 }
             } else {
                 // 读取失败或者结束了  读取失败的错误外层处理了
+                process_call(0); // 写入结束后强制推送0 保证刷新进度
                 break;
             }
         }
+        // 写入结束后必须关闭文件
         let _ = file.shutdown().await;
         Ok(())
     });
     loop {
+        // 写入失败了 返回future里面控制结束
         if !write_flag.load(Ordering::Relaxed) {
-            // 写入失败了 返回future的Error
             break;
         }
         match call().await {
             Ok(bys) => {
                 if bys.is_none() {
-                    break;
+                    break; // 本地读取结束
                 }
                 let _ = tx.send(bys.unwrap()).await;
             }
             Err(e) => {
+                // 本地读取失败 直接return 后会自动drop掉tx  future也就会自动停
                 return Err(e);
             }
         }
     }
-    // drop掉tx  保证future能够拿到None
+    // drop掉tx  保证future能够拿到None然后future.await保证能结束
     drop(tx);
     future.await.unwrap_or_else(|_| Err("写入失败".into()))
 }

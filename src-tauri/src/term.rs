@@ -90,8 +90,10 @@ async fn write_ssh(sid: String, tp: u32, val: Value) -> Res<()> {
         return Res::fail("连接已断开");
     }
     let session = session.unwrap();
-    let _ = session.sender.send((tp, val)).await;
-    Res::ok()
+    match session.sender.send((tp, val)).await {
+        Ok(_) => Res::ok(),
+        Err(_) => Res::fail_code(0, "send error"),
+    }
 }
 
 // 终端session输入
@@ -182,7 +184,8 @@ pub async fn open_ssh(
                                             debug!("发送命令:{}", val)
                                         }
                                         Err(e) => {
-                                           debug!("发送失败 {:?}", e)
+                                            debug!("发送失败 {:?}", e);
+                                            send_web(vec![0]).await;
                                         }
                                     }
                                 }
