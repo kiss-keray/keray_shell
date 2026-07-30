@@ -76,7 +76,6 @@ export default class TermServer {
         this.fitAddon = new FitAddon();
         this.searchAddon = new SearchAddon();
         this.serializeAddon = new SerializeAddon();
-        this._ping();
     }
 
     _ps(): {
@@ -97,7 +96,7 @@ export default class TermServer {
         this.pingTask = setTimeout(async () => {
             if (this._active()) await invoke("ping", this._ps());
             this._ping();
-        }, 20000);
+        }, 5000); // 5秒ping一次
     }
 
     _fit() {
@@ -194,6 +193,7 @@ export default class TermServer {
         if (noSnapshot) this.terminal!.write("连接中...\r\n");
         readerChannel.onmessage = (message) => {
             if (message.length === 1 && message[0] === 0) {
+                this.close();
                 this.terminal!.write("连接断开\r\n");
                 // 连接断开
                 this.server.status = "disconnected";
@@ -211,6 +211,7 @@ export default class TermServer {
             pty: this.pty_config,
         })
             .then(async () => {
+                this._ping();
                 this.server.status = "connected";
                 try {
                     const home = await resolveRemoteHome(this.server.server.id);

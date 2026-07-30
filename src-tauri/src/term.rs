@@ -48,18 +48,11 @@ static TIME_HANDLER: Lazy<String> = Lazy::new(|| {
         loop {
             sleep(Duration::from_secs(secs)).await;
             let timestamp = now();
-            let mut remove_keys: Vec<String> = vec![];
             for (id, session_store) in SESSION_STORE.read().await.iter() {
                 if is_expire(session_store.time, timestamp, secs) {
+                    // 只需要通知关闭 SESSION_STORE 由open_ssh结束后自动remove
                     session_store.close().await;
-                    remove_keys.push(id.clone());
                     info!("session已关闭:{}", id);
-                }
-            }
-            if !remove_keys.is_empty() {
-                let mut map = SESSION_STORE.write().await;
-                for id in remove_keys {
-                    map.remove(&id);
                 }
             }
         }
