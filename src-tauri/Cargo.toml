@@ -1,6 +1,6 @@
 [package]
 name = "keray_shell_rust"
-version = "0.1.6"
+version = "0.1.7"
 description = "A Tauri SSH and SFTP desktop client."
 authors = ["Keray"]
 license = "MIT"

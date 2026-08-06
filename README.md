@@ -3,7 +3,7 @@
 一个基于 Tauri 2、Vue 3 和 Rust 的现代桌面 SSH/SFTP 客户端。Keray Shell Rust 面向日常服务器运维、远程文件管理、多会话开发和批量监控场景，重点放在启动速度、原生窗口体验、清爽界面、跨窗口协作和可控的数据管理上。
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Version](https://img.shields.io/badge/version-0.1.6-brightgreen.svg)
+![Version](https://img.shields.io/badge/version-0.1.7-brightgreen.svg)
 ![Tauri](https://img.shields.io/badge/Tauri-2.x-24C8DB.svg)
 ![Vue](https://img.shields.io/badge/Vue-3.x-42B883.svg)
 ![Rust](https://img.shields.io/badge/Rust-2021-DEA584.svg)
@@ -171,7 +171,7 @@ cargo check
 同步应用版本号：
 
 ```bash
-pnpm set-version 0.1.6
+pnpm set-version 0.1.7
 ```
 
 该脚本会统一更新前端、Tauri 配置和 Cargo 相关版本号，避免发布前多处版本不一致。
