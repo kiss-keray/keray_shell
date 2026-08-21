@@ -4,6 +4,9 @@
     "targets": [
       "msi"
     ],
+    "resources": {
+      "../agents/": "agents/"
+    },
     "windows": {
       "webviewInstallMode": {
         "type": "embedBootstrapper"

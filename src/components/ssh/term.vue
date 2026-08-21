@@ -26,8 +26,8 @@ const configStore = useConfigStore();
 const serverDataStore = useServerDataStore();
 const keyEventStore = useKeyEventStore();
 const { emit, on } = useBus();
-const { showSftpPanel, showTermPanel } = storeToRefs(appStore);
-const { termFontSize, termLineHeight, termFontFamily, termScrollback, sftpPanelHeightPx } = storeToRefs(configStore);
+const { showSftpPanel, showTermPanel, showAgentPanel } = storeToRefs(appStore);
+const { termFontSize, termLineHeight, termFontFamily, termScrollback, sftpPanelHeightPx, agentPanelWidthPx } = storeToRefs(configStore);
 const { serverDataChange } = serverDataStore;
 
 let termServer: TermServer;
@@ -229,7 +229,7 @@ function termKeydown(e: KeyboardEvent): boolean {
 
 async function ctrlV() {
     const text = await readClipboardText();
-    termServer._onData(text);
+    termServer.write(text);
 }
 
 async function ctrlC() {
@@ -393,63 +393,91 @@ provide(ChannelInstanceProvideKey, props.server);
 </script>
 
 <template>
-    <div ref="panelRoot" class="relative flex h-full w-full min-h-0 flex-col overflow-hidden">
-        <div v-show="showTermPanel || groupId" class="relative viwer root term-module min-h-0 flex-1 overflow-hidden" ref="root">
-            <div v-if="!groupId || groupActive" ref="lineNumber" class="line-number" @click="selectLine" @contextmenu="menuLineNumber"></div>
-            <div class="term" ref="divRef"></div>
-            <div v-show="searchData.show" class="search">
-                <div class="grow flex justify-between items-center ml-2 left">
-                    <Icon icon="si:search-alt-fill" class="mr-1" />
-                    <!-- 搜索内容需要严格保留用户输入的大小写，避免 macOS/WebKit 按自然语言自动改写。 -->
-                    <SystemInput ref="searchInput" v-model="searchData.text" class="grow w-full" @input="search" @focus="searchIsFocus = true" @blur="searchIsFocus = false" />
-                    <Icon
-                        icon="mdi:format-lowercase"
-                        class="pointer icon"
-                        :class="{ active: searchData.caseSensitive }"
-                        @click="
-                            searchData.caseSensitive = !searchData.caseSensitive;
-                            search();
-                        "
-                    />
-                    <Icon
-                        icon="icon-park-solid:word"
-                        class="pointer icon"
-                        :class="{ active: searchData.wholeWord }"
-                        @click="
-                            searchData.wholeWord = !searchData.wholeWord;
-                            search();
-                        "
-                    />
-                    <Icon
-                        icon="mdi:regex"
-                        class="pointer icon"
-                        :class="{ active: searchData.regex }"
-                        @click="
-                            searchData.regex = !searchData.regex;
-                            search();
-                        "
-                    />
-                    <p class="cnt">
-                        {{ searchData.count ? `${searchData.index}/${searchData.count}` : "0" }}
-                    </p>
+    <div class="flex flex-row h-full w-full">
+        <div ref="panelRoot" class="relative flex h-full w-full min-h-0 flex-col overflow-hidden">
+            <div v-show="showTermPanel || groupId" class="relative viwer root term-module min-h-0 flex-1 overflow-hidden" ref="root">
+                <div
+                    v-if="!groupId || groupActive"
+                    ref="lineNumber"
+                    class="line-number"
+                    @click="selectLine"
+                    @contextmenu="menuLineNumber"
+                ></div>
+                <div class="term" ref="divRef"></div>
+                <div v-show="searchData.show" class="search">
+                    <div class="grow flex justify-between items-center ml-2 left">
+                        <Icon icon="si:search-alt-fill" class="mr-1" />
+                        <!-- 搜索内容需要严格保留用户输入的大小写，避免 macOS/WebKit 按自然语言自动改写。 -->
+                        <SystemInput
+                            ref="searchInput"
+                            v-model="searchData.text"
+                            class="grow w-full"
+                            @input="search"
+                            @focus="searchIsFocus = true"
+                            @blur="searchIsFocus = false"
+                        />
+                        <Icon
+                            icon="mdi:format-lowercase"
+                            class="pointer icon"
+                            :class="{ active: searchData.caseSensitive }"
+                            @click="
+                                searchData.caseSensitive = !searchData.caseSensitive;
+                                search();
+                            "
+                        />
+                        <Icon
+                            icon="icon-park-solid:word"
+                            class="pointer icon"
+                            :class="{ active: searchData.wholeWord }"
+                            @click="
+                                searchData.wholeWord = !searchData.wholeWord;
+                                search();
+                            "
+                        />
+                        <Icon
+                            icon="mdi:regex"
+                            class="pointer icon"
+                            :class="{ active: searchData.regex }"
+                            @click="
+                                searchData.regex = !searchData.regex;
+                                search();
+                            "
+                        />
+                        <p class="cnt">
+                            {{ searchData.count ? `${searchData.index}/${searchData.count}` : "0" }}
+                        </p>
+                    </div>
+                    <div class="flex justify-center items-center">
+                        <Icon icon="si:expand-less-fill" class="pointer icon" @click="clickSearch(false)" />
+                        <Icon icon="si:expand-more-fill" class="pointer icon" @click="clickSearch(true)" />
+                        <Icon icon="si:close-duotone" class="pointer icon" @click="searchData.show = false" />
+                    </div>
                 </div>
-                <div class="flex justify-center items-center">
-                    <Icon icon="si:expand-less-fill" class="pointer icon" @click="clickSearch(false)" />
-                    <Icon icon="si:expand-more-fill" class="pointer icon" @click="clickSearch(true)" />
-                    <Icon icon="si:close-duotone" class="pointer icon" @click="searchData.show = false" />
+                <div
+                    v-if="selectPrompt.show"
+                    class="select-prompt flex"
+                    :style="{ left: selectPrompt.x + 'px', top: selectPrompt.y + 10 + 'px' }"
+                >
+                    <Icon icon="si:copy-alt-duotone" class="pointer icon" @click.stop="clickCopyText" />
+                    <Icon icon="si:copy-fill" class="pointer icon" @click.stop="applyText" />
+                    <Icon icon="si:search-alt-fill" class="pointer icon" @click.stop="applySearch" />
                 </div>
             </div>
-            <div v-if="selectPrompt.show" class="select-prompt flex" :style="{ left: selectPrompt.x + 'px', top: selectPrompt.y + 10 + 'px' }">
-                <Icon icon="si:copy-alt-duotone" class="pointer icon" @click.stop="clickCopyText" />
-                <Icon icon="si:copy-fill" class="pointer icon" @click.stop="applyText" />
-                <Icon icon="si:search-alt-fill" class="pointer icon" @click.stop="applySearch" />
-            </div>
+            <template v-if="termReady && !groupId">
+                <LayoutRowResizer v-show="showSftpPanel && showTermPanel" :container="panelRoot" v-model="sftpPanelHeightPx" />
+                <div
+                    v-show="showSftpPanel"
+                    class="overflow-hidden"
+                    :class="{ 'min-h-0 flex-1': !showTermPanel }"
+                    :style="showTermPanel ? { height: `${sftpPanelHeightPx}px` } : {}"
+                >
+                    <Sftp class="h-full min-h-0" :server="server" :write-terminal="writeToTerm" />
+                </div>
+            </template>
         </div>
-        <template v-if="termReady && !groupId">
-            <LayoutRowResizer v-show="showSftpPanel && showTermPanel" :container="panelRoot" v-model="sftpPanelHeightPx" />
-            <div v-show="showSftpPanel" class="overflow-hidden" :class="{ 'min-h-0 flex-1': !showTermPanel }" :style="showTermPanel ? { height: `${sftpPanelHeightPx}px` } : {}">
-                <Sftp class="h-full min-h-0" :server="server" :write-terminal="writeToTerm" />
-            </div>
+        <template v-if="showAgentPanel && !groupId">
+            <LayoutColumnResizer v-show="showAgentPanel" v-model="agentPanelWidthPx" :min="200" :max="1000" reverse />
+            <AgentPanel :style="{ width: `${agentPanelWidthPx}px` }" :servers="[server]" />
         </template>
     </div>
 </template>

@@ -2,16 +2,20 @@
 const props = defineProps({
     modelValue: {
         type: Number,
-        required: true
+        required: true,
     },
     min: {
         type: Number,
-        required: true
+        required: true,
     },
     max: {
         type: Number,
-        required: true
-    }
+        required: true,
+    },
+    reverse: {
+        type: Boolean,
+        default: false,
+    },
 });
 
 const emit = defineEmits(["update:modelValue"]);
@@ -32,7 +36,7 @@ function onPointerDown(e) {
             return;
         }
         const delta = ev.clientX - startX;
-        const next = startW + delta;
+        const next = startW + (props.reverse ? -delta : delta);
         emit("update:modelValue", Math.min(props.max, Math.max(props.min, next)));
     }
     function onUp() {
@@ -47,6 +51,15 @@ function onPointerDown(e) {
 </script>
 
 <template>
-    <div class="layout-column-resizer" role="separator" aria-orientation="vertical" :aria-valuenow="modelValue"
-        :aria-valuemin="min" :aria-valuemax="max" tabindex="0" title="拖动调整宽度" @mousedown="onPointerDown" />
+    <div
+        class="layout-column-resizer"
+        role="separator"
+        aria-orientation="vertical"
+        :aria-valuenow="modelValue"
+        :aria-valuemin="min"
+        :aria-valuemax="max"
+        tabindex="0"
+        title="拖动调整宽度"
+        @mousedown="onPointerDown"
+    />
 </template>

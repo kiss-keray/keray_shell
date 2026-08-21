@@ -9,7 +9,7 @@ const { loadingText } = storeToRefs(appStore);
         <div v-if="loadingText" class="loading-mask">
             <div class="loading-content">
                 <div class="loading-icon-wrap">
-                    <Icon icon="mdi:loading" class="loading-icon" />
+                    <Icon icon="mdi:loading" class="loading-icon app-loading-spin" />
                 </div>
                 <div class="loading-text-wrap">
                     <p class="loading-text">{{ loadingText }}</p>
@@ -59,7 +59,6 @@ const { loadingText } = storeToRefs(appStore);
     width: 18px;
     height: 18px;
     color: #8fc2ff;
-    animation: app-loading-spin 0.9s linear infinite;
 }
 
 .loading-text-wrap {
@@ -79,9 +78,4 @@ const { loadingText } = storeToRefs(appStore);
     word-break: break-word;
 }
 
-@keyframes app-loading-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
 </style>

@@ -29,6 +29,38 @@ pub async fn read_clipboard_text() -> Res<String> {
     Res::of(text)
 }
 
+#[derive(Debug, Serialize)]
+pub struct ClipboardImage {
+    width: usize,
+    height: usize,
+    rgba_base64: String,
+}
+
+/// 读取剪切板位图（RGBA），由前端转成 PNG 附件。没有图片时返回失败而不是 panic。
+#[tauri::command]
+pub async fn read_clipboard_image() -> Res<ClipboardImage> {
+    let mut clipboard = match Clipboard::new() {
+        Ok(clipboard) => clipboard,
+        Err(err) => return Res::fail(format!("读取剪切板失败: {err}")),
+    };
+    let image = match clipboard.get_image() {
+        Ok(image) => image,
+        Err(_) => return Res::fail("剪切板中没有图片"),
+    };
+    let expected = image
+        .width
+        .checked_mul(image.height)
+        .and_then(|pixels| pixels.checked_mul(4));
+    if expected != Some(image.bytes.len()) {
+        return Res::fail("剪切板图片数据不完整");
+    }
+    Res::of(ClipboardImage {
+        width: image.width,
+        height: image.height,
+        rgba_base64: data_encoding::BASE64.encode(image.bytes.as_ref()),
+    })
+}
+
 // 加载字体列表
 #[tauri::command]
 pub async fn local_fonts() -> Res<LocalFonts> {

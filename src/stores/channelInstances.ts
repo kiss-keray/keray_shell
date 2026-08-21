@@ -87,7 +87,7 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
     function del(instance: ChannelData) {
         const index = instances.value.indexOf(instance);
         if (index < 0) return;
-        instances.value.splice(index, 1);
+        instances.value = instances.value.filter((item) => item !== instance);
         if (instance.sessionId === selectSessionId.value && instances.value.length > 0) {
             const newIndex = Math.min(instances.value.length - 1, index);
             selectSessionId.value = instances.value[newIndex].sessionId;

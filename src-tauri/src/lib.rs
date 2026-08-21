@@ -1,10 +1,10 @@
 use crate::app_icon::get_app_icon;
-use crate::os::{disable_native_fullscreen, local_fonts, pick_file_or_folder, read_clipboard_text};
+use crate::os::{disable_native_fullscreen, local_fonts, pick_file_or_folder, read_clipboard_image, read_clipboard_text};
 use crate::sftp::{
     cat_download_file, download_file, one_read_string, one_write_string, sftp_read,
     sftp_upload_local_file, transfer_cancel, transfer_pause, upload_file,
 };
-use crate::ssh::{exec_cmd, sync_server_data};
+use crate::ssh::{cancel_exec_cmd, exec_cmd, sync_server_data};
 use crate::term::{close_term, open_ssh, ping, resize_pty, write_cmd};
 use crate::utils::{open_file_with_app, uuid};
 use crate::window_glass::{sync_window_glass, sync_window_transparent};
@@ -12,7 +12,7 @@ use tauri::{
     Emitter, Manager, PhysicalSize, TitleBarStyle, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
 use tauri_plugin_log::{Target, TargetKind};
-
+mod agent_resources;
 mod app_icon;
 mod dto;
 mod os;
@@ -33,6 +33,7 @@ pub fn run() {
             sync_server_data,
             // 命令相关
             exec_cmd,
+            cancel_exec_cmd,
             // 终端相关
             open_ssh,
             write_cmd,
@@ -56,6 +57,7 @@ pub fn run() {
             // os相关
             pick_file_or_folder,
             read_clipboard_text,
+            read_clipboard_image,
             local_fonts,
             sync_window_glass,
             sync_window_transparent,
@@ -82,6 +84,10 @@ pub fn run() {
             }
         })
         .setup(|app| {
+            // setup 阶段已经持有 App，且发生在主窗口创建之前，适合准备前端依赖的 Agent 资源。
+            let agents_dir = agent_resources::prepare_agents_dir(app)?;
+            log::info!("Agent 提示词目录初始化完成: {}", agents_dir.display());
+
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("")
                 .inner_size(1200.0, 800.0)

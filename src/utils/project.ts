@@ -32,7 +32,7 @@ export async function copyText(text: string) {
     }
 }
 
-/** 读取剪切板内容 */
+/** 读取剪切板文本 */
 export async function readClipboardText(): Promise<string> {
     try {
         const text = await invoke<string>("read_clipboard_text", {});
@@ -42,6 +42,30 @@ export async function readClipboardText(): Promise<string> {
         console.error("读取剪切板失败：", err);
     }
     return "";
+}
+
+/**
+ * 读取剪切板位图并转成 PNG File。
+ * WebView 的 paste 事件拿不到截图时，用原生 arboard 回退。
+ */
+export async function readClipboardImageFile(): Promise<File | null> {
+    try {
+        const data = await invoke<{ width: number; height: number; rgba_base64: string }>("read_clipboard_image");
+        if (!data?.rgba_base64 || !data.width || !data.height) return null;
+        const raw = Uint8Array.from(atob(data.rgba_base64), (char) => char.charCodeAt(0));
+        if (raw.length !== data.width * data.height * 4) return null;
+        const canvas = document.createElement("canvas");
+        canvas.width = data.width;
+        canvas.height = data.height;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return null;
+        ctx.putImageData(new ImageData(new Uint8ClampedArray(raw), data.width, data.height), 0, 0);
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!blob) return null;
+        return new File([blob], "clipboard.png", { type: "image/png" });
+    } catch {
+        return null;
+    }
 }
 
 /** 判断事件是否发生在目标元素上 */
@@ -81,9 +105,16 @@ export function shellSingleQuote(path: string): string {
     return `'${path.replace(/'/g, `'\"'\"'`)}'`;
 }
 
-/** 执行远端命令 */
-export async function execRemote(serverId: string, cmd: string): Promise<string> {
-    return invoke<string>("exec_cmd", { serverId, cmd });
+/** 执行远端命令；executionId 用于 Agent 在运行中按 ID 取消对应 SSH channel。 */
+export async function execRemote(serverId: string, cmd: string, executionId?: string): Promise<string> {
+    const params: Record<string, string> = { serverId, cmd };
+    if (executionId) params.executionId = executionId;
+    return invoke<string>("exec_cmd", params);
+}
+
+/** 请求后端向指定静默 SSH 命令发送 SIGINT 并关闭 channel。 */
+export async function cancelExecRemote(executionId: string): Promise<void> {
+    await invoke<void>("cancel_exec_cmd", { executionId });
 }
 
 /** 将 UTF-8 字符串转换为 Base64 字符串 */

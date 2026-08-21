@@ -132,8 +132,11 @@ type ShowPromptOptions = {
     placeholder?: string;
     confirmText?: string;
     cancelText?: string;
+    showInput?: boolean;
+    danger?: boolean;
+    warning?: boolean;
 };
-/** 显示输入弹窗 */
+/** 显示输入弹窗；showInput=false 时当作确认框，确定返回空字符串，取消返回 null。 */
 export function showPrompt(options: ShowPromptOptions): Promise<string | null> {
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -156,6 +159,9 @@ export function showPrompt(options: ShowPromptOptions): Promise<string | null> {
                         placeholder: options.placeholder,
                         confirmText: options.confirmText,
                         cancelText: options.cancelText,
+                        showInput: options.showInput,
+                        danger: options.danger,
+                        warning: options.warning,
                         onConfirm: (value: string) => close(value),
                         onCancel: () => close(null),
                     });

@@ -25,8 +25,10 @@
         --nt-shadow-out-light: rgba(from var(--nt-shadow-highlight) r g b / 0.16);
         --nt-shadow-in-dark: rgba(from var(--nt-shadow-deep) r g b / 0.68);
         --nt-shadow-in-light: rgba(from var(--nt-shadow-highlight) r g b / 0.12);
-        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow-deep) r g b / 0.48), -4px -4px 14px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
-        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow-deep) r g b / 0.5), -6px -6px 20px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-popup:
+            10px 12px 28px rgba(from var(--nt-shadow-deep) r g b / 0.48), -4px -4px 14px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
+        --nt-shadow-dialog:
+            14px 16px 36px rgba(from var(--nt-shadow-deep) r g b / 0.5), -6px -6px 20px rgba(from var(--nt-shadow-highlight) r g b / 0.1);
         --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-line-highlight) r g b / 0.1);
         --nt-border: rgba(from var(--nt-line-highlight) r g b / 0.1);
         --nt-divider: rgba(from var(--nt-line-highlight) r g b / 0.08);
@@ -56,8 +58,10 @@
         --nt-shadow-out-light: rgba(from var(--nt-highlight) r g b / 0.92);
         --nt-shadow-in-dark: rgba(from var(--nt-shadow) r g b / 0.38);
         --nt-shadow-in-light: rgba(from var(--nt-highlight) r g b / 0.86);
-        --nt-shadow-popup: 10px 12px 28px rgba(from var(--nt-shadow) r g b / 0.34), -5px -5px 16px rgba(from var(--nt-highlight) r g b / 0.82);
-        --nt-shadow-dialog: 14px 16px 36px rgba(from var(--nt-shadow) r g b / 0.34), -7px -7px 22px rgba(from var(--nt-highlight) r g b / 0.88);
+        --nt-shadow-popup:
+            10px 12px 28px rgba(from var(--nt-shadow) r g b / 0.34), -5px -5px 16px rgba(from var(--nt-highlight) r g b / 0.82);
+        --nt-shadow-dialog:
+            14px 16px 36px rgba(from var(--nt-shadow) r g b / 0.34), -7px -7px 22px rgba(from var(--nt-highlight) r g b / 0.88);
         --nt-shadow-topline: inset 0 1px 0 rgba(from var(--nt-highlight) r g b / 0.82);
         --nt-border: rgba(from var(--nt-shadow) r g b / 0.16);
         --nt-divider: rgba(from var(--nt-shadow) r g b / 0.14);
@@ -259,15 +263,27 @@
             .status {
                 @include nt-in;
                 &.dis {
-                    @include nt-in-fun(linear-gradient(145deg, var(--nt-danger), var(--nt-danger-bg-hover)), var(--nt-danger), var(--nt-danger-bg-hover));
+                    @include nt-in-fun(
+                        linear-gradient(145deg, var(--nt-danger), var(--nt-danger-bg-hover)),
+                        var(--nt-danger),
+                        var(--nt-danger-bg-hover)
+                    );
                 }
 
                 &.connect {
-                    @include nt-in-fun(linear-gradient(145deg, var(--nt-success), var(--nt-success-bg-hover)), var(--nt-success), var(--nt-success-bg-hover));
+                    @include nt-in-fun(
+                        linear-gradient(145deg, var(--nt-success), var(--nt-success-bg-hover)),
+                        var(--nt-success),
+                        var(--nt-success-bg-hover)
+                    );
                 }
 
                 &.active {
-                    @include nt-in-fun(linear-gradient(145deg, var(--nt-accent), var(--nt-success-bg-hover)), var(--nt-accent), var(--nt-success-bg-hover));
+                    @include nt-in-fun(
+                        linear-gradient(145deg, var(--nt-accent), var(--nt-success-bg-hover)),
+                        var(--nt-accent),
+                        var(--nt-success-bg-hover)
+                    );
                 }
             }
         }
@@ -1289,9 +1305,17 @@
                 background: var(--nt-bg-hover);
             }
 
-            .confirm-btn.danger {
+            .confirm-btn.danger,
+            .prompt-btn.danger {
                 border-color: var(--nt-btn-danger-border);
                 background: var(--nt-btn-danger-bg);
+            }
+
+            /* Prompt.vue：高度自主确认按钮 */
+            .prompt-btn.warning {
+                border-color: rgba(from var(--nt-warning) r g b / 0.5);
+                background: rgba(from var(--nt-warning) r g b / 0.18);
+                color: var(--nt-warning);
             }
 
             .confirm-message {
@@ -1317,6 +1341,27 @@
                 .confirm-danger-note {
                     color: var(--nt-danger-solid);
                 }
+            }
+        }
+    }
+
+    /* ImageLightbox.vue：Agent 图片点击放大预览 */
+    .agent-image-lightbox {
+        background: var(--nt-bg-overlay);
+
+        img {
+            box-shadow: var(--nt-shadow-dialog);
+        }
+
+        .agent-image-lightbox-close {
+            color: var(--nt-text-muted);
+            background: var(--nt-bg-frost);
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-out-soft);
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
             }
         }
     }
@@ -1498,6 +1543,35 @@
             color: var(--nt-text-dim);
         }
 
+        /* SettingDialog.vue 模型最大上下文滑动条 */
+        .setting-context-slider input[type="range"] {
+            accent-color: var(--nt-accent);
+        }
+
+        .setting-context-slider-limits {
+            color: var(--nt-text-dim);
+        }
+
+        .setting-agent-status {
+            color: var(--nt-text-muted);
+            border-color: var(--nt-border);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &.error {
+                color: var(--nt-danger);
+                border-color: var(--nt-danger-border);
+                background: var(--nt-danger-bg);
+            }
+        }
+
+        /* SettingDialog Agent 多模型选择区域 */
+        .setting-agent-models {
+            border-color: var(--nt-border);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
         .setting-sync-panel {
             border-color: var(--nt-border);
             background: var(--nt-bg-well);
@@ -1659,6 +1733,861 @@
 
             .monaco-status-hint {
                 color: var(--nt-text-dim);
+            }
+        }
+    }
+
+    /* AgentPanel.vue / SessionBar.vue：多会话标签、历史列表与对话区 */
+    .agent-panel {
+        background: var(--nt-surface);
+        color: var(--nt-text);
+
+        .agent-panel-header,
+        .agent-session-bar {
+            border-bottom: 1px solid var(--nt-divider);
+            background: var(--nt-surface-raised);
+            box-shadow: var(--nt-shadow-topline);
+        }
+
+        .agent-panel-brand p,
+        .agent-panel-hint,
+        .ai-conversation-empty p,
+        .ai-loader,
+        .agent-session-history-label,
+        .agent-session-history-empty,
+        .agent-session-history-item small {
+            color: var(--nt-text-muted);
+        }
+
+        /* AgentPanel.vue：用户消息里的粘贴图片/附件预览 */
+        .agent-user-attachments img {
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        .agent-user-file {
+            color: var(--nt-text-muted);
+            background: var(--nt-bg-hover-strong);
+        }
+
+        /* SessionBar.vue：多会话标签与历史列表 */
+        .agent-session-tab {
+            color: var(--nt-text-muted);
+
+            &:hover,
+            &.active {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .agent-session-tab-close {
+            color: inherit;
+
+            &:hover {
+                background: var(--nt-bg-hover-strong);
+            }
+        }
+
+        .agent-session-tool {
+            color: var(--nt-text-muted);
+
+            &:hover,
+            &[aria-expanded="true"] {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .agent-session-history {
+            color: var(--nt-text);
+            background: var(--nt-bg-frost);
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-out);
+            backdrop-filter: blur(18px);
+
+            input {
+                color: var(--nt-text);
+                background: var(--nt-bg-well);
+                box-shadow: var(--nt-shadow-in-soft);
+
+                &::placeholder {
+                    color: var(--nt-text-dim);
+                }
+            }
+        }
+
+        .agent-session-history-row {
+            color: var(--nt-text);
+
+            &:hover,
+            &.active {
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        /* SessionBar.vue：历史会话删除按钮 */
+        .agent-session-history-delete {
+            color: var(--nt-text-muted);
+
+            &:hover {
+                color: var(--nt-danger);
+                background: var(--nt-danger-bg);
+            }
+        }
+
+        .agent-panel-logo,
+        .ai-conversation-empty-icon {
+            color: var(--nt-accent);
+            background: var(--nt-surface-raised);
+            box-shadow: var(--nt-shadow-out-soft);
+        }
+
+        .agent-panel-status {
+            color: var(--nt-text-muted);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &.online {
+                color: var(--nt-success);
+                background: var(--nt-success-bg);
+            }
+
+            &.error {
+                color: var(--nt-danger);
+                background: var(--nt-danger-bg);
+            }
+        }
+
+        .ai-message.is-user {
+            padding: 10px 14px;
+            border-radius: 14px 14px 4px 14px;
+            color: var(--nt-text-strong);
+            background: var(--nt-accent-soft);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        /* Reasoning.vue：思考标题与推理正文共用次级文字色 */
+        .ai-reasoning-trigger,
+        .ai-reasoning-content {
+            color: var(--nt-text-muted);
+        }
+
+        /* Reasoning.vue：标题右侧的本轮 token 用量，用更弱的文字色避免抢标题 */
+        .ai-reasoning-usage {
+            color: var(--nt-text-dim);
+        }
+
+        .ai-reasoning-shimmer {
+            background-image: linear-gradient(90deg, var(--nt-text-dim) 20%, var(--nt-accent) 50%, var(--nt-text-dim) 80%);
+        }
+
+        /* Tool.vue：思考过程内的工具调用夹头，展开区用井底底色承载参数/结果 */
+        .ai-tool-header {
+            color: var(--nt-text-muted);
+
+            &:hover {
+                color: var(--nt-text);
+            }
+        }
+
+        .ai-tool.is-running .ai-tool-name {
+            color: var(--nt-accent);
+        }
+
+        .ai-tool.is-error .ai-tool-name {
+            color: var(--nt-danger);
+        }
+
+        .ai-tool-content {
+            color: var(--nt-text-muted);
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        /* CodeBlock.vue：工具参数/结果与 markdown 共用的命令块 */
+        .ai-code-block {
+            color: var(--nt-text);
+            background: var(--nt-bg-row-dark);
+            box-shadow: var(--nt-shadow-in-soft);
+        }
+
+        .ai-code-block-label {
+            color: var(--nt-text-muted);
+        }
+
+        .ai-code-block-copy {
+            color: var(--nt-text-muted);
+            background: var(--nt-bg-hover-strong);
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        /* ConversationScrollButton.vue */
+        .ai-conversation-scroll {
+            color: var(--nt-text);
+            background: var(--nt-bg-frost);
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-out);
+
+            &:hover {
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        /* ConversationEmptyState.vue：常用问题、添加表单与自定义项管理 */
+        .ai-suggestion,
+        .ai-suggestion-add,
+        .ai-suggestion-form-action {
+            color: var(--nt-text);
+            background: var(--nt-bg-hover-strong);
+            border: 0;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &:hover:not(:disabled) {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .ai-suggestion-remove {
+            color: var(--nt-text-muted);
+
+            &:hover {
+                color: var(--nt-danger);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .ai-suggestion-form textarea {
+            color: var(--nt-text);
+            background: var(--nt-bg-well);
+            border: 0;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &::placeholder {
+                color: var(--nt-text-dim);
+            }
+
+            &:focus {
+                box-shadow:
+                    var(--nt-shadow-in),
+                    0 0 0 2px var(--nt-accent-soft);
+            }
+        }
+
+        /* MessageAction.vue */
+        .ai-message-action {
+            color: var(--nt-text-muted);
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
+            }
+        }
+
+        .agent-panel-footer {
+            border-top: 1px solid var(--nt-divider);
+            background: var(--nt-surface);
+        }
+
+        /* CommandQueue.vue：exec_command 命令执行队列面板（输入框上方） */
+        .agent-command-queue {
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in);
+            color: var(--nt-text);
+
+            .agent-command-queue-header {
+                color: var(--nt-text-muted);
+
+                &:hover {
+                    color: var(--nt-text-strong);
+                }
+            }
+
+            .agent-command-queue-count {
+                color: var(--nt-accent);
+                background: var(--nt-accent-soft);
+            }
+
+            .agent-command-queue-time {
+                color: var(--nt-text-dim);
+            }
+
+            .agent-command-queue-item.is-running .agent-command-queue-status {
+                color: var(--nt-accent);
+            }
+
+            .agent-command-queue-item.is-success .agent-command-queue-status {
+                color: var(--nt-success);
+            }
+
+            .agent-command-queue-item.is-error .agent-command-queue-status {
+                color: var(--nt-danger);
+            }
+        }
+
+        .ai-prompt-input {
+            background: var(--nt-bg-well);
+            box-shadow: var(--nt-shadow-in), var(--nt-shadow-out-soft);
+
+            textarea::placeholder {
+                color: var(--nt-text-dim);
+            }
+
+            .ai-send-button {
+                color: var(--nt-surface);
+                background: var(--nt-accent);
+                box-shadow: var(--nt-shadow-out-soft);
+
+                &:hover:not(:disabled) {
+                    filter: brightness(1.08);
+                }
+
+                /* PromptInput.vue：运行中的停止态用危险色，与可发送的强调色区分开 */
+                &.is-stop {
+                    background: var(--nt-danger);
+                }
+
+                &:disabled {
+                    color: var(--nt-text-disabled);
+                    background: var(--nt-bg-hover);
+                    box-shadow: none;
+                }
+            }
+
+            .ai-icon-button,
+            .ai-selector-button,
+            .ai-access-trigger {
+                color: var(--nt-text-muted);
+                background: transparent;
+                box-shadow: none;
+
+                &:hover,
+                &[aria-expanded="true"] {
+                    color: var(--nt-text-strong);
+                    background: var(--nt-bg-hover);
+                }
+            }
+
+            /* PromptInput.vue：高度自主 / 完全访问的触发器颜色。菜单项颜色写在 .ai-menu-item 之后以免被默认文字色盖掉。 */
+            .ai-access-trigger.is-warning {
+                color: var(--nt-warning);
+
+                &:hover,
+                &[aria-expanded="true"] {
+                    color: var(--nt-warning);
+                    background: rgba(from var(--nt-warning) r g b / 0.12);
+                }
+            }
+
+            .ai-access-trigger.is-error {
+                color: var(--nt-danger);
+
+                &:hover,
+                &[aria-expanded="true"] {
+                    color: var(--nt-danger);
+                    background: rgba(from var(--nt-danger) r g b / 0.12);
+                }
+            }
+
+            .ai-access-popover-title {
+                color: var(--nt-text-strong);
+            }
+
+            .ai-exec-switch {
+                background: var(--nt-bg-hover-strong);
+                box-shadow: var(--nt-shadow-in-soft);
+
+                button {
+                    color: var(--nt-text-muted);
+
+                    &:hover {
+                        color: var(--nt-text-strong);
+                    }
+
+                    &.active {
+                        color: var(--nt-text-strong);
+                        background: var(--nt-bg-hover);
+                        box-shadow: var(--nt-shadow-out-soft);
+                    }
+                }
+            }
+
+            .ai-prompt-chip {
+                color: var(--nt-text-muted);
+                background: var(--nt-bg-hover-strong);
+                box-shadow: var(--nt-shadow-in-soft);
+
+                &.is-skill {
+                    color: var(--nt-accent);
+                    background: var(--nt-accent-soft);
+                }
+
+                img {
+                    box-shadow: var(--nt-shadow-in-soft);
+                }
+
+                button {
+                    color: inherit;
+                }
+            }
+
+            .ai-prompt-popover,
+            .ai-context-panel {
+                color: var(--nt-text);
+                background: var(--nt-bg-frost);
+                border: 1px solid var(--nt-border);
+                box-shadow: var(--nt-shadow-out);
+                backdrop-filter: blur(18px);
+            }
+
+            .ai-menu-item {
+                color: var(--nt-text);
+                background: transparent;
+
+                small {
+                    color: var(--nt-text-muted);
+                }
+
+                &:hover {
+                    background: var(--nt-bg-hover);
+                }
+            }
+
+            /* PromptInput.vue：高度自主、完全访问在菜单里始终用对应色。 */
+            .ai-menu-item.is-warning {
+                color: var(--nt-warning);
+
+                strong,
+                small,
+                > svg {
+                    color: var(--nt-warning);
+                }
+
+                &:hover {
+                    background: rgba(from var(--nt-warning) r g b / 0.12);
+                }
+            }
+
+            .ai-menu-item.is-error {
+                color: var(--nt-danger);
+
+                strong,
+                small,
+                > svg {
+                    color: var(--nt-danger);
+                }
+
+                &:hover {
+                    background: rgba(from var(--nt-danger) r g b / 0.12);
+                }
+            }
+
+            .ai-config-row {
+                color: var(--nt-text);
+
+                span,
+                > svg {
+                    color: var(--nt-text-muted);
+                }
+
+                &:hover,
+                &.active {
+                    background: var(--nt-bg-hover);
+                }
+            }
+
+            .ai-menu-label,
+            .ai-menu-empty,
+            .ai-context-slider-limits,
+            .ai-context-slider-hint,
+            .ai-context-summary,
+            .ai-context-list {
+                color: var(--nt-text-muted);
+            }
+
+            /* PromptInput.vue 上下文大小滑动条 */
+            .ai-context-slider input[type="range"] {
+                accent-color: var(--nt-accent);
+            }
+
+            .ai-menu-check {
+                color: var(--nt-accent);
+            }
+
+            .ai-menu-divider {
+                background: var(--nt-divider);
+            }
+
+            .ai-context-panel header button,
+            .ai-prompt-chip button {
+                color: var(--nt-text-muted);
+
+                &:hover {
+                    color: var(--nt-text-strong);
+                }
+            }
+
+            /* PromptInput.vue：上下文用量弹层里的手动压缩按钮。 */
+            .ai-context-compress-button {
+                color: var(--nt-text-muted);
+                background: var(--nt-bg-hover);
+
+                &:hover:not(:disabled) {
+                    color: var(--nt-text-strong);
+                    background: var(--nt-bg-hover-strong);
+                }
+
+                &.compressed {
+                    color: var(--nt-accent);
+                }
+
+                /* PromptInput.vue：运行态保持强调色，和普通禁用态区分。 */
+                &.running {
+                    color: var(--nt-accent);
+                    background: rgba(from var(--nt-accent) r g b / 0.12);
+                    box-shadow: var(--nt-shadow-in-soft);
+                }
+
+                &.error {
+                    color: var(--nt-danger);
+                    background: var(--nt-danger-bg);
+                }
+            }
+
+            .ai-context-bar {
+                background: var(--nt-bg-hover-strong);
+            }
+
+            /* PromptInput.vue 上下文圆环：轨道与 active 弧段分别表达总量和实际占用。 */
+            .ai-context-ring-track {
+                stroke: var(--nt-bg-hover-strong);
+            }
+
+            .ai-context-ring-value {
+                stroke: var(--nt-text-strong);
+            }
+
+            .is-system {
+                background: var(--nt-text-muted);
+            }
+            .is-tools {
+                background: #a87bd4;
+            }
+            .is-rules {
+                background: var(--nt-success);
+            }
+            .is-skills {
+                background: #d1a06c;
+            }
+            .is-mcp {
+                background: #bd61d5;
+            }
+            .is-subagents {
+                background: #4ba3eb;
+            }
+            .is-conversation {
+                background: var(--nt-warning);
+            }
+        }
+
+        .agent-message-error {
+            color: var(--nt-danger);
+        }
+
+        /* AgentItem.vue：模型切换系统提示 */
+        .agent-model-notice {
+            color: var(--nt-text-muted);
+        }
+
+        /* AgentItem.vue：上下文压缩过程与结果提示条。 */
+        .agent-compression-notice {
+            color: var(--nt-text-muted);
+            border-color: var(--nt-border);
+            background: var(--nt-bg-hover);
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &.is-running {
+                color: var(--nt-accent);
+                border-color: rgba(from var(--nt-accent) r g b / 0.3);
+                background: rgba(from var(--nt-accent) r g b / 0.1);
+            }
+
+            &.is-compressed {
+                color: var(--nt-success);
+                border-color: rgba(from var(--nt-success) r g b / 0.3);
+                background: rgba(from var(--nt-success) r g b / 0.1);
+            }
+
+            &.is-error {
+                color: var(--nt-danger);
+                border-color: rgba(from var(--nt-danger-solid) r g b / 0.32);
+                background: var(--nt-danger-bg);
+            }
+        }
+
+        /* AgentItem.vue：提交失败浮层提示条 */
+        .agent-submit-error {
+            border: 1px solid rgba(from var(--nt-danger-solid) r g b / 0.4);
+            background: var(--nt-bg-frost);
+            box-shadow: var(--nt-shadow-popup);
+            color: var(--nt-danger);
+
+            .agent-submit-error-close {
+                color: inherit;
+
+                &:hover {
+                    background: rgba(from var(--nt-danger-solid) r g b / 0.14);
+                }
+            }
+        }
+
+        /* MessageResponse.vue：把 markdown 代码块复制按钮叠到 pre 右上角 */
+        .ai-message-response {
+            color: var(--nt-text);
+            --foreground: var(--nt-text);
+            --muted-foreground: var(--nt-text-muted);
+            --muted: var(--nt-bg-hover-strong);
+            --border: var(--nt-border);
+            --background: var(--nt-bg-well);
+            --primary: var(--nt-accent);
+            --accent: var(--nt-bg-hover);
+            --popover: var(--nt-bg-frost);
+            --popover-foreground: var(--nt-text);
+
+            [data-stream-markdown="code-block"] {
+                position: relative;
+                border-color: var(--nt-border);
+                background: var(--nt-bg-row-dark);
+            }
+
+            [data-stream-markdown="code-block-header"] {
+                position: absolute;
+                top: 4px;
+                right: 4px;
+                left: 8px;
+                z-index: 2;
+                padding: 0;
+                background: transparent;
+                border: 0;
+                pointer-events: none;
+            }
+
+            [data-stream-markdown="language-title"] {
+                color: var(--nt-text-muted);
+            }
+
+            [data-stream-markdown="actions"] {
+                pointer-events: auto;
+            }
+
+            [data-stream-markdown="actions"] button {
+                color: var(--nt-text-muted);
+                background: var(--nt-bg-hover-strong);
+                border-radius: 6px;
+
+                &:hover {
+                    color: var(--nt-text-strong);
+                    background: var(--nt-bg-hover);
+                }
+            }
+
+            [data-stream-markdown="code-block-content"] pre {
+                padding-top: 34px;
+            }
+
+            pre,
+            code {
+                border-color: var(--nt-border);
+            }
+        }
+    }
+
+    /* SkillsWin.vue：用户 Skills 独立管理窗口 */
+    .skills-manager {
+        color: var(--nt-text);
+        background: var(--nt-surface);
+
+        .skills-manager-header {
+            border-bottom: 1px solid var(--nt-divider);
+            @include nt-out;
+        }
+
+        .skills-manager-heading {
+            color: var(--nt-text-strong);
+
+            svg {
+                color: var(--nt-accent);
+            }
+
+            small {
+                color: var(--nt-text-dim);
+            }
+        }
+
+        .skills-sidebar {
+            border-right: 1px solid var(--nt-divider);
+            background: var(--nt-bg-well);
+        }
+
+        .skills-search,
+        .skills-field input,
+        .skills-field textarea {
+            color: var(--nt-text-strong);
+            border: 1px solid var(--nt-border);
+            @include nt-in;
+            box-shadow: var(--nt-shadow-in-soft);
+
+            &:focus-within,
+            &:focus {
+                border-color: var(--nt-accent-border);
+            }
+        }
+
+        .skills-search {
+            color: var(--nt-text-muted);
+
+            input {
+                color: var(--nt-text-strong);
+
+                &::placeholder {
+                    color: var(--nt-text-dim);
+                }
+            }
+        }
+
+        .skills-list-item {
+            color: var(--nt-text);
+            border: 1px solid transparent;
+            background: transparent;
+
+            &:hover {
+                background: var(--nt-bg-hover);
+            }
+
+            &.active {
+                color: var(--nt-text-strong);
+                border-color: var(--nt-accent-border);
+                background: var(--nt-accent-soft);
+                box-shadow: var(--nt-shadow-in-soft);
+            }
+
+            code,
+            .skills-list-description {
+                color: var(--nt-text-dim);
+            }
+        }
+
+        .skills-state,
+        .skills-directory,
+        .skills-editor-empty,
+        .skills-editor-header p,
+        .skills-save-hint {
+            color: var(--nt-text-dim);
+        }
+
+        .skills-state.error,
+        .skills-link-btn,
+        .skills-field em {
+            color: var(--nt-danger);
+        }
+
+        .skills-editor-header,
+        .skills-editor-footer {
+            border-bottom: 1px solid var(--nt-divider);
+        }
+
+        .skills-editor-footer {
+            border-top: 1px solid var(--nt-divider);
+            border-bottom: 0;
+        }
+
+        .skills-editor-header h1,
+        .skills-field > span {
+            color: var(--nt-text-strong);
+        }
+
+        .skills-field input::placeholder,
+        .skills-field textarea::placeholder {
+            color: var(--nt-text-dim);
+        }
+
+        .skills-unsaved {
+            color: var(--nt-warning);
+            border: 1px solid rgba(from var(--nt-warning) r g b / 0.36);
+            background: rgba(from var(--nt-warning) r g b / 0.14);
+        }
+
+        .skills-btn,
+        .skills-window-close {
+            color: var(--nt-text-strong);
+            border: 1px solid var(--nt-btn-primary-border);
+            background: var(--nt-btn-primary-bg);
+            @include nt-control-out;
+
+            &:hover:not(:disabled) {
+                filter: brightness(1.05);
+            }
+
+            &:disabled {
+                color: var(--nt-text-disabled);
+                border-color: var(--nt-border);
+                background: var(--nt-bg-well);
+                box-shadow: none;
+            }
+
+            &.secondary,
+            &.skills-window-close {
+                color: var(--nt-text-muted);
+                border-color: var(--nt-border);
+                background: var(--nt-bg-hover);
+            }
+
+            &.danger {
+                color: var(--nt-danger);
+                border-color: var(--nt-danger-border);
+                background: var(--nt-danger-bg);
+
+                &:hover:not(:disabled) {
+                    background: rgba(from var(--nt-danger-solid) r g b / 0.2);
+                }
+            }
+        }
+    }
+
+    /* MessageResponse.vue：表格下载菜单 / 全屏层 teleport 到 body，必须在 markdown 根外单独铺底 */
+    #stream-markdown-overlay {
+        --foreground: var(--nt-text);
+        --popover-foreground: var(--nt-text);
+        --muted-foreground: var(--nt-text-muted);
+        --muted: var(--nt-bg-hover-strong);
+        --border: var(--nt-border);
+        --primary: var(--nt-accent);
+        --accent: var(--nt-bg-hover);
+        --popover: var(--nt-bg-frost);
+        --background: var(--nt-surface);
+
+        [data-stream-markdown="tooltip"] {
+            color: var(--nt-text);
+            background: var(--nt-bg-frost);
+            border: 1px solid var(--nt-border);
+            box-shadow: var(--nt-shadow-popup);
+        }
+
+        [data-stream-markdown="modal"] {
+            color: var(--nt-text);
+            background: var(--nt-surface);
+        }
+
+        [data-stream-markdown="button"] {
+            color: var(--nt-text-muted);
+
+            &:hover {
+                color: var(--nt-text-strong);
+                background: var(--nt-bg-hover);
             }
         }
     }

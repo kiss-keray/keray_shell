@@ -6,7 +6,7 @@ import type { SettingsTab } from "./SettingDialog.vue";
 defineOptions({
     name: "GlobalButton",
 });
-type Bts = "serverTree" | "setting" | "theme" | "themeMode" | "overviewPanel" | "termPanel" | "sftpPanel";
+type Bts = "serverTree" | "setting" | "theme" | "themeMode" | "overviewPanel" | "termPanel" | "sftpPanel" | "agentPanel";
 
 const props = withDefaults(
     defineProps<{
@@ -14,7 +14,7 @@ const props = withDefaults(
         settingTab?: SettingsTab;
     }>(),
     {
-        bts: () => ["serverTree", "setting", "theme", "themeMode", "overviewPanel", "termPanel", "sftpPanel"],
+        bts: () => ["serverTree", "setting", "theme", "themeMode", "overviewPanel", "termPanel", "sftpPanel", "agentPanel"],
         settingTab: () => "general",
     },
 );
@@ -22,7 +22,7 @@ const props = withDefaults(
 const configStore = useConfigStore();
 const appStore = useAppStore();
 const { theme, themeMode } = storeToRefs(configStore);
-const { showOverviewPanel, showTermPanel, showSftpPanel } = storeToRefs(appStore);
+const { showOverviewPanel, showTermPanel, showSftpPanel, showAgentPanel } = storeToRefs(appStore);
 const { changeConfig } = configStore;
 
 const isNtTheme = computed(() => theme.value === "nt");
@@ -41,6 +41,9 @@ function openServerTreeWin() {
     <div class="global-button flex items-center">
         <button v-if="bts.includes('serverTree')" type="button" class="btn" title="服务器列表" @click="openServerTreeWin">
             <Icon icon="material-symbols:folder" class="text-lg" />
+        </button>
+        <button v-if="bts.includes('agentPanel')" type="button" class="btn" :class="{ active: showAgentPanel }" title="Agent" @click="showAgentPanel = !showAgentPanel">
+            <Icon :icon="showAgentPanel ? 'mdi:robot-outline' : 'mdi:robot-off-outline'" class="text-lg" />
         </button>
         <!-- macOS 下支持原生毛玻璃，其他系统不支持 -->
         <button

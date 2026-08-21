@@ -14,7 +14,7 @@ import {
 import type { ServerOverviewState } from "@/utils/serverOverviewPolling";
 
 /** 核心指标（CPU/内存/网速）轮询间隔（毫秒） */
-const FAST_INTERVAL_MS = 1000;
+const FAST_INTERVAL_MS = 2000;
 /** 进程列表与磁盘列表轮询间隔（毫秒），降低远端 ps/df 频率 */
 const SLOW_INTERVAL_MS = 10000;
 
@@ -418,7 +418,6 @@ export function useServerOverviewPolling(instance: ChannelInstance) {
     );
 
     onMounted(() => {
-        console.log("onMounted", instance);
         let overview = getOverview(instance);
         if (!overview) {
             overview = createOverview(instance);

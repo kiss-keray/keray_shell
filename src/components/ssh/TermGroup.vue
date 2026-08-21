@@ -3,15 +3,20 @@ import type { ChannelInstance, ChannelInstanceGroup } from "@/stores/channelInst
 import { GroupLayout, type LayoutRect } from "./term_grpup";
 import { TauriEvent, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { storeToRefs } from "pinia";
 
 const props = defineProps<{
     group: ChannelInstanceGroup;
 }>();
 
 const channelInstancesStore = useChannelInstancesStore();
+const appStore = useAppStore();
+const configStore = useConfigStore();
 const container = ref<HTMLElement | null>(null);
 const layoutMap = ref<Record<string, LayoutRect>>({});
 const selectTermId = ref<string | null>(null);
+const { showAgentPanel } = storeToRefs(appStore);
+const { agentPanelWidthPx } = storeToRefs(configStore);
 let groupLayoutInstance: GroupLayout | null = null;
 
 const closeFuns: UnlistenFn[] = [];
@@ -83,31 +88,40 @@ function statusLabel(status: ChannelInstance["status"]) {
 </script>
 
 <template>
-    <div ref="container" class="term-group">
-        <div
-            v-for="instance in group.instances"
-            :key="instance.sessionId"
-            :style="{
-                left: layoutMap[instance.sessionId]?.x + 'px',
-                top: layoutMap[instance.sessionId]?.y + 'px',
-                width: layoutMap[instance.sessionId]?.width + 'px',
-                height: layoutMap[instance.sessionId]?.height + 'px',
-            }"
-            class="child-box"
-            :class="{ active: selectTermId === instance.sessionId }"
-            @click="selectTermId = instance.sessionId"
-        >
-            <div class="child-box-header" :title="`${instance.server.name} · ${instance.server.user}@${instance.server.ip}:${instance.server.port}`">
-                <div class="child-box-name">{{ instance.server.name }}</div>
-                <div class="child-box-meta">{{ instance.server.user }}@{{ instance.server.ip }}:{{ instance.server.port }}</div>
-                <div class="child-box-status" :class="instance.status">
-                    <i class="child-box-status-dot" aria-hidden="true" />
-                    {{ statusLabel(instance.status) }}
+    <div class="flex flex-row h-full w-full">
+        <div ref="container" class="term-group">
+            <div
+                v-for="instance in group.instances"
+                :key="instance.sessionId"
+                :style="{
+                    left: layoutMap[instance.sessionId]?.x + 'px',
+                    top: layoutMap[instance.sessionId]?.y + 'px',
+                    width: layoutMap[instance.sessionId]?.width + 'px',
+                    height: layoutMap[instance.sessionId]?.height + 'px',
+                }"
+                class="child-box"
+                :class="{ active: selectTermId === instance.sessionId }"
+                @click="selectTermId = instance.sessionId"
+            >
+                <div
+                    class="child-box-header"
+                    :title="`${instance.server.name} · ${instance.server.user}@${instance.server.ip}:${instance.server.port}`"
+                >
+                    <div class="child-box-name">{{ instance.server.name }}</div>
+                    <div class="child-box-meta">{{ instance.server.user }}@{{ instance.server.ip }}:{{ instance.server.port }}</div>
+                    <div class="child-box-status" :class="instance.status">
+                        <i class="child-box-status-dot" aria-hidden="true" />
+                        {{ statusLabel(instance.status) }}
+                    </div>
+                    <Icon icon="si:close-duotone" class="pointer icon" @click.stop="closeInstance(instance)" />
                 </div>
-                <Icon icon="si:close-duotone" class="pointer icon" @click.stop="closeInstance(instance)" />
+                <Term :server="instance" :group-id="group.sessionId" :group-active="selectTermId === instance.sessionId" />
             </div>
-            <Term :server="instance" :group-id="group.sessionId" :group-active="selectTermId === instance.sessionId" />
         </div>
+        <template v-if="showAgentPanel">
+            <LayoutColumnResizer v-show="showAgentPanel" v-model="agentPanelWidthPx" :min="200" :max="1000" reverse />
+            <AgentPanel :style="{ width: `${agentPanelWidthPx}px` }" :servers="group.instances" />
+        </template>
     </div>
 </template>
 

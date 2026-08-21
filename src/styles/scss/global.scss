@@ -17,6 +17,22 @@ body {
     font-size: var(--font-size-base);
 }
 
+/* loading 图标共用旋转节奏；3D 变换让动画留在合成层，避免流式输出或毛玻璃背景造成卡顿。 */
+.app-loading-spin {
+    transform-origin: center;
+    will-change: transform;
+    animation: app-loading-spin 0.9s linear infinite;
+}
+
+@keyframes app-loading-spin {
+    from {
+        transform: rotate(0deg) translateZ(0);
+    }
+    to {
+        transform: rotate(360deg) translateZ(0);
+    }
+}
+
 .global-button {
     position: fixed;
     // 收进标题栏右上角，保留少量边距防止外阴影被裁切。
@@ -33,7 +49,8 @@ body {
 input,
 textarea,
 [contenteditable="true"],
-.monaco-editor {
+.monaco-editor,
+.ai-message-content {
     user-select: text;
     -webkit-user-select: text;
 }

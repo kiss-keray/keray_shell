@@ -1,6 +1,6 @@
 [package]
 name = "keray_shell_rust"
-version = "0.1.7"
+version = "0.2.0"
 description = "A Tauri SSH and SFTP desktop client."
 authors = ["Keray"]
 license = "MIT"
@@ -23,7 +23,8 @@ tauri = { version = "2.11", features = ["macos-private-api"] }
 tauri-plugin-opener = "2"
 tauri-plugin-dialog = "2"
 rfd="0.17"
-tauri-plugin-fs = "2"
+# Agent 前端通过 plugin-fs 监听 model.json 和 agents/*.md 的热更新。
+tauri-plugin-fs = { version = "2", features = ["watch"] }
 tauri-plugin-os = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"

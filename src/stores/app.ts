@@ -109,6 +109,7 @@ export const useAppStore = defineStore("app", () => {
         showOverviewPanel: ref(true), // 是否显示概览面板
         showTermPanel: ref(true), // 是否显示终端面板
         showSftpPanel: ref(true), // 是否显示SFTP面板
+        showAgentPanel: ref(true), // 是否显示Agent面板
         windowInitData, // 窗口初始化数据
     };
 });

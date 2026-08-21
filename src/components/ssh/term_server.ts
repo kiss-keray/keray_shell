@@ -34,6 +34,7 @@ export interface TerminalSnapshot {
     select?: IBufferRange;
     offsety: number;
 }
+const SESSION_MAP = new Map<string, TermServer>();
 export default class TermServer {
     private readonly server: ChannelInstance;
     private fitAddon: FitAddon;
@@ -51,6 +52,10 @@ export default class TermServer {
     private cwdChangeCallback: ((path: string) => void) | null = null;
     private onDataCallback: ((data: string) => void) | null = null;
     private onSearchChangeCallback: ((count: number, index: number) => void) | null = null;
+
+    public lineCount: number = 0;
+
+    public lineData: string[] = [];
 
     //
     private _lastChangeFontSizeTime: number = 0;
@@ -76,6 +81,11 @@ export default class TermServer {
         this.fitAddon = new FitAddon();
         this.searchAddon = new SearchAddon();
         this.serializeAddon = new SerializeAddon();
+        SESSION_MAP.set(this.server.sessionId, this);
+    }
+
+    public static getTermServer(sessionId: string): TermServer | undefined {
+        return SESSION_MAP.get(sessionId);
     }
 
     _ps(): {
@@ -96,7 +106,7 @@ export default class TermServer {
         this.pingTask = setTimeout(async () => {
             if (this._active()) await invoke("ping", this._ps());
             this._ping();
-        }, 5000); // 5秒ping一次
+        }, 10000); // 10秒ping一次
     }
 
     _fit() {
@@ -231,6 +241,7 @@ export default class TermServer {
     close() {
         try {
             clearTimeout(this.pingTask);
+            SESSION_MAP.delete(this.server.sessionId);
         } catch {}
     }
 
@@ -343,7 +354,7 @@ export default class TermServer {
         }, 50);
     }
 
-    _onData(data: string) {
+    private _onData(data: string) {
         this.lineNumberChangeFun();
         // 如果是ctrl+c 并且有选择文本 不处理
         if (data === "\u0003" && this.selectedText) {
@@ -368,6 +379,8 @@ export default class TermServer {
     onLineNumberChange(calll: (p: { nums: Array<[number, number]>; height: number; fontSize: number }) => void) {
         this.lineNumberChangeFun = () => {
             // @ts-ignore
+            window.terminal = this.terminal;
+            // @ts-ignore
             const lineHeight = this.terminal._core._renderService.dimensions.css.cell.height;
             const activeNums = this.pty_config.row_height;
             let sn = this.terminal!.buffer.active.viewportY + 1;
@@ -377,6 +390,25 @@ export default class TermServer {
             for (let i = 0; i < activeNums; i++) {
                 nums.push([Math.abs(sn + i), sn + zero + i]);
             }
+            {
+                const buffer = this.terminal!.buffer.active;
+                const lines: string[] = [];
+                let current = "";
+                for (let i = 0; i < buffer.length; i++) {
+                    const line = buffer.getLine(i);
+                    if (!line) continue;
+                    const text = line.translateToString(true);
+                    if (line.isWrapped) {
+                        current += text;
+                    } else {
+                        if (current) lines.push(current);
+                        current = text;
+                    }
+                }
+                if (current) lines.push(current);
+                this.lineData = lines;
+            }
+            this.lineCount = this.lineData.length;
             calll({
                 nums,
                 height: lineHeight,

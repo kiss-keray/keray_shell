@@ -47,6 +47,7 @@ declare global {
   const buildResolveHomeRemoteCmd: typeof import("./src/utils/fsUtil").buildResolveHomeRemoteCmd
   const buildUploadFileRemoteCmd: typeof import("./src/utils/fsUtil").buildUploadFileRemoteCmd
   const calculateSpeedBps: typeof import('./src/utils/index').calculateSpeedBps
+  const cancelExecRemote: typeof import('./src/utils/project').cancelExecRemote
   const checkLinuxFileName: typeof import('./src/utils/fsUtil').checkLinuxFileName
   const compareNameLikeExplorer: typeof import('./src/utils/fsUtil').compareNameLikeExplorer
   const computed: typeof import('vue').computed
@@ -133,6 +134,7 @@ declare global {
   const openOrFocusMonacoEditorWindow: typeof import('./src/utils/window').openOrFocusMonacoEditorWindow
   const openOrFocusServerTreeWindow: typeof import('./src/utils/window').openOrFocusServerTreeWindow
   const openOrFocusSettingsWindow: typeof import('./src/utils/window').openOrFocusSettingsWindow
+  const openOrFocusSkillsWindow: typeof import('./src/utils/window').openOrFocusSkillsWindow
   const openUploadConflictWindow: typeof import('./src/utils/window').openUploadConflictWindow
   const padZero: typeof import('./src/utils/index').padZero
   const parentDirSlash: typeof import('./src/utils/fsUtil').parentDirSlash
@@ -142,6 +144,7 @@ declare global {
   const pathAllParentPaths: typeof import('./src/utils/fsUtil').pathAllParentPaths
   const provide: typeof import('vue').provide
   const reactive: typeof import('vue').reactive
+  const readClipboardImageFile: typeof import('./src/utils/project').readClipboardImageFile
   const readClipboardText: typeof import('./src/utils/project').readClipboardText
   const readonly: typeof import('vue').readonly
   const ref: typeof import('vue').ref

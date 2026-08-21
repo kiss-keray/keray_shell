@@ -4,15 +4,17 @@ defineOptions({
 });
 const channelInstancesStore = useChannelInstancesStore();
 const { instances, selectSessionId } = toRefs(channelInstancesStore);
-
-onMounted(async () => {
-    console.log("instances", instances.value);
-});
 </script>
 
 <template>
     <div class="w-full h-full relative">
-        <div v-for="server in instances" :key="server.sessionId" class="channel" :style="{ zIndex: server.zindex }" :class="{ active: selectSessionId === server.sessionId }">
+        <div
+            v-for="server in instances"
+            :key="server.sessionId"
+            class="channel"
+            :style="{ zIndex: server.zindex }"
+            :class="{ active: selectSessionId === server.sessionId }"
+        >
             <slot :server="server" />
         </div>
     </div>

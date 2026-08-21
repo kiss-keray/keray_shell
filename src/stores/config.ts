@@ -26,6 +26,7 @@ export type ConfigModel = {
     overviewWidthPx: number; // 概览面板宽度
     sftpPanelHeightPx: number; // SFTP面板高度
     sftpTreeWidthPx: number; // SFTP面板树宽度
+    agentPanelWidthPx: number; // Agent面板宽度
     termFontSize: number; // 终端字体大小
     termLineHeight: number; // 终端行高
     termFontFamily: string; // 终端字体
@@ -45,6 +46,7 @@ export const initialState: ConfigModel = {
     overviewWidthPx: 320,
     sftpPanelHeightPx: 320,
     sftpTreeWidthPx: 250,
+    agentPanelWidthPx: 500,
     termFontSize: 12,
     termLineHeight: 1.2,
     termFontFamily: "",

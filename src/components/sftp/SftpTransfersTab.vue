@@ -19,7 +19,7 @@ const { stopAllTasks, startAllTasks, cancelAllTasks, cleanFinishedTasks } = useD
             </div>
             <div class="bulk-actions flex flex-wrap items-center gap-1 shrink-0">
                 <button type="button" class="tx-btn" :class="{ 'tx-btn--inline-loading': allLoadingFlag === 'stop' }" :disabled="!canPauseAll || allLoadingFlag !== 'none'" @click="stopAllTasks">
-                    <Icon v-if="allLoadingFlag === 'stop'" icon="mdi:loading" class="tx-btn-load-ic" />
+                    <Icon v-if="allLoadingFlag === 'stop'" icon="mdi:loading" class="tx-btn-load-ic app-loading-spin" />
                     全部暂停
                 </button>
                 <button type="button" class="tx-btn" :disabled="!canResumeAll || allLoadingFlag !== 'none'" @click="startAllTasks">全部开始</button>
@@ -52,15 +52,6 @@ const { stopAllTasks, startAllTasks, cancelAllTasks, cleanFinishedTasks } = useD
 .tx-btn-load-ic {
     flex-shrink: 0;
     opacity: 0.9;
-    animation: sftp-tx-spin 0.85s linear infinite;
-}
-@keyframes sftp-tx-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
 }
 .tx-btn {
     font-size: var(--font-size-2xs);

@@ -94,7 +94,7 @@ function openContextMenu(e: MouseEvent) {
                 </div>
                 <div class="item-actions" @click.stop>
                     <button v-if="canPause" type="button" class="tx-btn" :class="{ 'tx-btn--inline-loading': item.loadingFlag === 'stop' }" :disabled="item.loadingFlag !== 'none'" @click="item.stop">
-                        <Icon v-if="item.loadingFlag === 'stop'" icon="mdi:loading" class="tx-btn-load-ic" />
+                        <Icon v-if="item.loadingFlag === 'stop'" icon="mdi:loading" class="tx-btn-load-ic app-loading-spin" />
                         暂停
                     </button>
                     <button v-if="canResume" type="button" class="tx-btn" :disabled="item.loadingFlag !== 'none'" @click="item.resume">继续</button>
@@ -194,15 +194,6 @@ function openContextMenu(e: MouseEvent) {
 .tx-btn-load-ic {
     flex-shrink: 0;
     opacity: 0.9;
-    animation: sftp-tx-spin 0.85s linear infinite;
-}
-@keyframes sftp-tx-spin {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
 }
 .tx-btn {
     font-size: var(--font-size-2xs);

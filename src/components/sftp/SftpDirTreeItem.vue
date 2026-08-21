@@ -362,7 +362,7 @@ async function drop(e: DragEvent) {
             @drop="drop"
         >
             <button type="button" class="tree-toggle" disabled>
-                <Icon v-if="fileItem.loading" icon="mdi:loading" class="text-base opacity-80 spin" />
+                <Icon v-if="fileItem.loading" icon="mdi:loading" class="text-base opacity-80 app-loading-spin" />
                 <Icon
                     v-else-if="fileItem.children?.length && !leaf"
                     :icon="fileItem.open ? 'mdi:chevron-down' : 'mdi:chevron-right'"
@@ -463,13 +463,4 @@ async function drop(e: DragEvent) {
     pointer-events: none;
 }
 
-.spin {
-    animation: sftp-spin 0.85s linear infinite;
-}
-
-@keyframes sftp-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
 </style>

@@ -6,7 +6,7 @@ import { emitTo, listen, once, type UnlistenFn } from "@tauri-apps/api/event";
 import { type } from "@tauri-apps/plugin-os";
 import { APP_START_OK_EVENT, type AppStartOkPayload } from "@/stores/app";
 
-export type AppType = "main" | "settings" | "server-tree" | "edit-server" | "monaco-editor" | "upload-conflict";
+export type AppType = "main" | "settings" | "skills" | "server-tree" | "edit-server" | "monaco-editor" | "upload-conflict";
 
 /** 窗口初始化数据事件 */
 export const WEBVIEW_INIT_DATA_EVENT = "tauri://webview-init-data";
@@ -27,6 +27,29 @@ export async function openOrFocusSettingsWindow(tab: SettingsTab = "general"): P
         {
             width: 760,
             height: 620,
+        },
+        {},
+    );
+}
+
+/** 打开或聚焦独立「用户 Skills 管理」窗口。 */
+export async function openOrFocusSkillsWindow(): Promise<void> {
+    const label = "skills";
+    const existing = await WebviewWindow.getByLabel(label);
+    if (existing) {
+        await existing.show();
+        await existing.setFocus();
+        return;
+    }
+    await createNewWindow(
+        label,
+        "skills",
+        "",
+        {
+            width: 920,
+            height: 680,
+            minWidth: 680,
+            minHeight: 520,
         },
         {},
     );

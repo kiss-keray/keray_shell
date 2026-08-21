@@ -4,13 +4,13 @@ use log::debug;
 use once_cell::sync::Lazy;
 use russh::client::{Handle, Msg};
 use russh::keys::{decode_secret_key, ssh_key, Error as KeyError, PrivateKeyWithHashAlg};
-use russh::{client, kex, Channel, ChannelMsg, Preferred};
+use russh::{client, kex, Channel, ChannelMsg, Preferred, Sig};
 use serde::{Deserialize, Serialize};
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
-use tokio::sync::RwLock;
+use tokio::sync::{watch, RwLock};
 
 #[derive(Debug, Serialize, Deserialize, Getters, Setters, Default, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -43,6 +43,12 @@ static SERVER_STORE: Lazy<RwLock<HashMap<String, ServerModel>>> =
 
 static HANDLE_STORE: Lazy<RwLock<HashMap<String, Handle<Client>>>> =
     Lazy::new(|| RwLock::new(HashMap::new()));
+
+/// Agent 静默命令的取消通道。键由前端为每次执行生成，只中断对应的 SSH channel。
+static EXEC_CANCEL_STORE: Lazy<RwLock<HashMap<String, watch::Sender<bool>>>> =
+    Lazy::new(|| RwLock::new(HashMap::new()));
+
+const EXEC_CANCELLED_MESSAGE: &str = "命令已取消";
 
 /// 规范化 PEM（去除 `\r`、首尾空白），避免前端/Windows 换行导致头行匹配失败。
 fn normalize_pem(pem: &str) -> String {
@@ -295,11 +301,36 @@ pub async fn server_get_channel_other(server: &ServerModel) -> Result<Channel<Ms
     get_channel(&handle).await
 }
 
-/// 执行远端 shell 命令，返回 stdout 原始字节。二进制安全（供 SFTP 分块读取等场景使用）。
-pub async fn exec_shell(server_id: &str, cmd: &str) -> Result<Vec<u8>, String> {
-    let channel = server_get_channel(server_id).await?;
+async fn wait_exec_cancel(cancel_rx: &mut watch::Receiver<bool>) {
+    if !*cancel_rx.borrow() {
+        let _ = cancel_rx.changed().await;
+    }
+}
+
+/// 先发送 SIGINT，再关闭当前 channel。关闭的是本次 exec channel，不影响复用的 SSH handle。
+async fn interrupt_exec_channel(channel: &Channel<Msg>) {
+    let _ = channel.signal(Sig::INT).await;
+    let _ = channel.close().await;
+}
+
+async fn exec_shell_with_cancel(
+    server_id: &str,
+    cmd: &str,
+    cancel_rx: &mut watch::Receiver<bool>,
+) -> Result<Vec<u8>, String> {
+    let channel = tokio::select! {
+        result = server_get_channel(server_id) => result?,
+        _ = wait_exec_cancel(cancel_rx) => return Err(EXEC_CANCELLED_MESSAGE.to_string()),
+    };
     let mut channel = channel;
-    channel.exec(true, cmd.as_bytes()).await.map_err(|e| {
+    let exec_result = tokio::select! {
+        result = channel.exec(true, cmd.as_bytes()) => result,
+        _ = wait_exec_cancel(cancel_rx) => {
+            interrupt_exec_channel(&channel).await;
+            return Err(EXEC_CANCELLED_MESSAGE.to_string());
+        }
+    };
+    exec_result.map_err(|e| {
         debug!("发送失败 {:?}", e);
         "命令发送失败".to_string()
     })?;
@@ -308,7 +339,14 @@ pub async fn exec_shell(server_id: &str, cmd: &str) -> Result<Vec<u8>, String> {
     let mut stderr_bytes: Vec<u8> = vec![];
     let mut exit_status: Option<u32> = None;
     loop {
-        let Some(msg) = channel.wait().await else {
+        let msg = tokio::select! {
+            msg = channel.wait() => msg,
+            _ = wait_exec_cancel(cancel_rx) => {
+                interrupt_exec_channel(&channel).await;
+                return Err(EXEC_CANCELLED_MESSAGE.to_string());
+            }
+        };
+        let Some(msg) = msg else {
             break;
         };
         match msg {
@@ -341,11 +379,32 @@ pub async fn exec_shell(server_id: &str, cmd: &str) -> Result<Vec<u8>, String> {
 }
 
 #[tauri::command]
-pub async fn exec_cmd(server_id: String, cmd: String) -> Res<String> {
-    match exec_shell(&server_id, &cmd).await {
+pub async fn exec_cmd(server_id: String, cmd: String, execution_id: Option<String>) -> Res<String> {
+    let (cancel_tx, mut cancel_rx) = watch::channel(false);
+    if let Some(id) = execution_id.as_ref() {
+        EXEC_CANCEL_STORE
+            .write()
+            .await
+            .insert(id.clone(), cancel_tx.clone());
+    }
+    let result = exec_shell_with_cancel(&server_id, &cmd, &mut cancel_rx).await;
+    if let Some(id) = execution_id.as_ref() {
+        EXEC_CANCEL_STORE.write().await.remove(id);
+    }
+    drop(cancel_tx);
+    match result {
         Ok(bytes) => Res::of(String::from_utf8_lossy(&bytes).into_owned()),
         Err(msg) => Res::fail(msg),
     }
+}
+
+#[tauri::command]
+pub async fn cancel_exec_cmd(execution_id: String) -> Res<()> {
+    let sender = EXEC_CANCEL_STORE.read().await.get(&execution_id).cloned();
+    if let Some(sender) = sender {
+        let _ = sender.send(true);
+    }
+    Res::ok()
 }
 
 // 同步服务器数据

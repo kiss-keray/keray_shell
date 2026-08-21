@@ -1,6 +1,7 @@
 import { appDataDir, join, tempDir } from "@tauri-apps/api/path";
 import { BaseDirectory, exists, mkdir, readDir, readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
 import { defineStore } from "pinia";
+import { removeLocalIfAny } from "@/utils/localFsUtils";
 const DEFAULT_CACHE_FILE = "default.json";
 export const RUNTIME_CACHE_FILE = "runtime.json";
 
@@ -108,6 +109,45 @@ export const useLocalStore = defineStore("local", () => {
         await removeLocalIfAny(path);
     }
 
+    /** 拼接 cache 根目录下的相对路径，例如 conversation/abc/id.json。 */
+    async function resolveCachePath(...segments: string[]): Promise<string> {
+        return await join(await cachePath, ...segments);
+    }
+
+    /** 确保 cache 下的子目录存在后返回绝对路径。 */
+    async function ensureCacheDir(...segments: string[]): Promise<string> {
+        const path = await resolveCachePath(...segments);
+        if (!(await exists(path))) await mkdir(path, { recursive: true });
+        return path;
+    }
+
+    /** 读取 cache 相对路径上的 JSON 文件。 */
+    async function readCacheFile<T>(...segments: string[]): Promise<T | undefined> {
+        return await readFileData<T>(await resolveCachePath(...segments));
+    }
+
+    /** 写入 cache 相对路径上的 JSON 文件，自动创建中间目录。 */
+    async function writeCacheFile(segments: string[], value: unknown): Promise<void> {
+        const path = await resolveCachePath(...segments);
+        // join(file, "..") 得到父目录；会话 JSON 嵌在 conversation/{md5}/ 下，写文件前必须先建好。
+        const dir = await join(path, "..");
+        if (!(await exists(dir))) await mkdir(dir, { recursive: true });
+        await writeTextFile(path, JSON.stringify(value), { create: true });
+    }
+
+    /** 删除 cache 相对路径上的文件。 */
+    async function removeCacheFile(...segments: string[]): Promise<void> {
+        await removeLocalIfAny(await resolveCachePath(...segments));
+    }
+
+    /** 列出 cache 子目录中的文件名；目录不存在时返回空数组。 */
+    async function listCacheFiles(...segments: string[]): Promise<string[]> {
+        const path = await resolveCachePath(...segments);
+        if (!(await exists(path))) return [];
+        const entries = await readDir(path);
+        return entries.filter((entry) => !entry.isDirectory).map((entry) => entry.name).filter((name): name is string => Boolean(name && !name.startsWith(".")));
+    }
+
     onMounted(async () => {
         // 启动时就删除 肯定是main窗口
         if (appType === "main") {
@@ -124,5 +164,11 @@ export const useLocalStore = defineStore("local", () => {
         readData,
         writeData,
         removeData,
+        resolveCachePath,
+        ensureCacheDir,
+        readCacheFile,
+        writeCacheFile,
+        removeCacheFile,
+        listCacheFiles,
     };
 });

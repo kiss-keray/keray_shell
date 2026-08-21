@@ -162,4 +162,3 @@ fn set_macos_window_transparent(
     })?;
     Ok(())
 }
-
