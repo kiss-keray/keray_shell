@@ -54,26 +54,54 @@ Keray Shell Rust 基于 Tauri 2、Vue 3 和 Rust 构建，面向日常服务器�
 
 ## 更多界面
 
-点击缩略图可查看原图。
+点击截图可查看原图。
 
-<p align="center">
-  <a href="docs/images/拟态风格.png"><img src="docs/images/拟态风格.png" alt="拟态风格" width="300" /></a>
-  <a href="docs/images/毛玻璃风格.png"><img src="docs/images/毛玻璃风格.png" alt="毛玻璃风格" width="300" /></a>
-  <a href="docs/images/融合终端.png"><img src="docs/images/融合终端.png" alt="融合终端" width="300" /></a>
-</p>
-<p align="center">
-  <a href="docs/images/融合监控.png"><img src="docs/images/融合监控.png" alt="融合监控" width="300" /></a>
-  <a href="docs/images/在线文本编辑.png"><img src="docs/images/在线文本编辑.png" alt="在线文本编辑" width="300" /></a>
-  <a href="docs/images/服务器数据同步.png"><img src="docs/images/服务器数据同步.png" alt="服务器数据同步" width="300" /></a>
-</p>
-<p align="center">
-  <a href="docs/images/侧边栏Agent01.png"><img src="docs/images/侧边栏Agent01.png" alt="侧边 Agent" width="300" /></a>
-  <a href="docs/images/融合终端Agent.png"><img src="docs/images/融合终端Agent.png" alt="融合终端Agent" width="300" /></a>
-  <a href="docs/images/Agent配置.png"><img src="docs/images/Agent配置.png" alt="Agent 配置" width="300" /></a>
-</p>
-<p align="center">
-  <a href="docs/images/skill管理.png"><img src="docs/images/skill管理.png" alt="Skills 管理" width="300" /></a>
-</p>
+<table>
+  <thead>
+    <tr>
+      <th align="center">拟态风格</th>
+      <th align="center">毛玻璃风格</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center"><a href="docs/images/拟态风格.png"><img src="docs/images/拟态风格.png" alt="拟态风格" width="440" /></a></td>
+      <td align="center"><a href="docs/images/毛玻璃风格.png"><img src="docs/images/毛玻璃风格.png" alt="毛玻璃风格" width="440" /></a></td>
+    </tr>
+    <tr>
+      <th align="center">融合终端</th>
+      <th align="center">融合监控</th>
+    </tr>
+    <tr>
+      <td align="center"><a href="docs/images/融合终端.png"><img src="docs/images/融合终端.png" alt="融合终端" width="440" /></a></td>
+      <td align="center"><a href="docs/images/融合监控.png"><img src="docs/images/融合监控.png" alt="融合监控" width="440" /></a></td>
+    </tr>
+    <tr>
+      <th align="center">在线文本编辑</th>
+      <th align="center">服务器数据同步</th>
+    </tr>
+    <tr>
+      <td align="center"><a href="docs/images/在线文本编辑.png"><img src="docs/images/在线文本编辑.png" alt="在线文本编辑" width="440" /></a></td>
+      <td align="center"><a href="docs/images/服务器数据同步.png"><img src="docs/images/服务器数据同步.png" alt="服务器数据同步" width="440" /></a></td>
+    </tr>
+    <tr>
+      <th align="center">侧边 Agent</th>
+      <th align="center">融合终端 Agent</th>
+    </tr>
+    <tr>
+      <td align="center"><a href="docs/images/侧边栏Agent01.png"><img src="docs/images/侧边栏Agent01.png" alt="侧边 Agent" width="440" /></a></td>
+      <td align="center"><a href="docs/images/融合终端Agent.png"><img src="docs/images/融合终端Agent.png" alt="融合终端 Agent" width="440" /></a></td>
+    </tr>
+    <tr>
+      <th align="center">Agent 配置</th>
+      <th align="center">Skills 管理</th>
+    </tr>
+    <tr>
+      <td align="center"><a href="docs/images/Agent配置.png"><img src="docs/images/Agent配置.png" alt="Agent 配置" width="440" /></a></td>
+      <td align="center"><a href="docs/images/skill管理.png"><img src="docs/images/skill管理.png" alt="Skills 管理" width="440" /></a></td>
+    </tr>
+  </tbody>
+</table>
 
 ## 技术栈
 
