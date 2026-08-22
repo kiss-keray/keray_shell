@@ -354,7 +354,7 @@ export default class TermServer {
         }, 50);
     }
 
-    private _onData(data: string) {
+    public _onData(data: string) {
         this.lineNumberChangeFun();
         // 如果是ctrl+c 并且有选择文本 不处理
         if (data === "\u0003" && this.selectedText) {

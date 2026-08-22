@@ -361,7 +361,7 @@ export class LangGraphAgent {
     }> {
         const result = await this.graph.invoke(
             { messages: [toHumanMessage(input)] },
-            { configurable: { thread_id: options.threadId ?? "default" } },
+            { configurable: { thread_id: options.threadId ?? "default" }, recursionLimit: 100 },
         );
         return {
             messages: result.messages,
@@ -387,6 +387,7 @@ export class LangGraphAgent {
                 configurable: config.configurable,
                 // RunnableConfig.signal：LangGraph 在每次节点/流迭代前检查，中断后底层 fetch 也会被取消。
                 signal: options.signal,
+                recursionLimit: 100,
             },
         );
         // llmCall 的 updates 要等参数完整后才到；先从 messages 的 tool_call_chunks 发布准备态。

@@ -229,7 +229,12 @@ function termKeydown(e: KeyboardEvent): boolean {
 
 async function ctrlV() {
     const text = await readClipboardText();
-    termServer.write(text);
+    if (props.groupId) {
+        // 组内粘贴需要使用_onData 好触发onData事件写入其他终端中。
+        termServer._onData(text);
+    } else {
+        termServer.write(text);
+    }
 }
 
 async function ctrlC() {
