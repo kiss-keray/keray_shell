@@ -345,7 +345,7 @@ win.listen(TauriEvent.WINDOW_CLOSE_REQUESTED, async () => {
     height: 100vh;
     min-height: 0;
     overflow: hidden;
-    padding-top: 27px;
+    padding-top: 40px;
 
     .monaco-body {
         position: relative;

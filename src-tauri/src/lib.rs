@@ -90,7 +90,7 @@ pub fn run() {
 
             let win_builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::default())
                 .title("")
-                .inner_size(1200.0, 800.0)
+                .inner_size(1500.0, 1000.0)
                 .transparent(false)
                 .prevent_overflow_with_margin(PhysicalSize::new(0, 0))
                 .center();

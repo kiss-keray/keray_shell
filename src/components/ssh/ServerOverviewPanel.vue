@@ -66,4 +66,9 @@ useServerOverviewPolling(props.instance);
     text-align: center;
     border-radius: 8px;
 }
+.windows {
+    .overview-root {
+        margin-top: 40px;
+    }
+}
 </style>

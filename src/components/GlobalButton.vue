@@ -77,18 +77,17 @@ function openServerTreeWin() {
 <style scoped lang="scss">
 .global-button {
     // 主窗口空间紧张，控制组压缩到标题栏内，避免向下侵占终端可视区域。
-    gap: 1px;
+    gap: 10px;
     padding: 3px;
     border-radius: 11px;
     width: min-content;
-    height: 22px;
+    height: 30px;
     overflow: hidden;
 }
 
 .btn {
-    width: 16px;
-    height: 16px;
-    flex: 0 0 16px;
+    width: 24px;
+    height: 24px;
     border: 0;
     border-radius: 8px;
     display: inline-flex;
@@ -111,8 +110,14 @@ function openServerTreeWin() {
     }
 
     :deep(svg) {
-        width: 12px;
-        height: 12px;
+        width: 18px;
+        height: 18px;
+    }
+}
+.windows {
+    .global-button {
+        left: 10px;
+        right: unset;
     }
 }
 </style>

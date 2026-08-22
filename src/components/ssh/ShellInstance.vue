@@ -5,12 +5,18 @@ import { storeToRefs } from "pinia";
 import type { MenuItem } from "@/components/DefaultMenuItems.vue";
 import { CustomMenusEventKey } from "@/utils/constant";
 import { openOrFocusChildWindow } from "@/utils/window";
-import { CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT, isChannelInstance, isChannelInstanceGroup, type ChannelData, type ChannelInstance } from "@/stores/channelInstances";
+import {
+    CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT,
+    isChannelInstance,
+    isChannelInstanceGroup,
+    type ChannelData,
+    type ChannelInstance,
+} from "@/stores/channelInstances";
 import Draggable from "vuedraggable";
 const appWindow = getCurrentWindow();
 const appStore = useAppStore();
 const { windowInitData } = toRefs(appStore) as { windowInitData: Ref<ChannelInstanceMoveToWindowPayload>; mainLabel: Ref<string | null> };
-const { mainLabel, isMainWin } = toRefs(appStore);
+const { mainLabel, isMainWin, showOverviewPanel } = toRefs(appStore);
 
 const root = ref();
 const left = ref(0);
@@ -79,7 +85,11 @@ async function mergeToMainWindow(item: ChannelData) {
     // 已经在主窗口时不需要融合；融合终端组暂不拆组移动，避免组内布局和 session 关系丢失。
     if (!mainLabel.value || mainLabel.value === appWindow.label || !isChannelInstance(item)) return;
     const payload = createMovePayload(item);
-    await emitTo<ChannelInstanceMoveToWindowPayload>({ kind: "Window", label: mainLabel.value }, CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT, payload);
+    await emitTo<ChannelInstanceMoveToWindowPayload>(
+        { kind: "Window", label: mainLabel.value },
+        CHANNEL_INSTANCE_MOVE_TO_WINDOW_EVENT,
+        payload,
+    );
     // 主窗口确认接收事件后，再从当前窗口删除 tab。
     channelInstancesStore.del(item);
     closeWindowIfEmpty();
@@ -92,11 +102,25 @@ watch(windowInitData, (initData) => {
 });
 
 watch(isFullScreenWindow, (val) => {
-    if (val) {
-        left.value = 0;
-    } else {
-        const rect = root.value.getBoundingClientRect();
-        left.value = Math.max(0, 80 - rect.left - window.scrollX);
+    console.log("isFullScreenWindow", appStore.osType);
+    if (appStore.osType === "macos") {
+        if (val) {
+            left.value = 0;
+        } else {
+            const rect = root.value.getBoundingClientRect();
+            left.value = Math.max(0, 80 - rect.left - window.scrollX);
+        }
+    }
+});
+
+watch(showOverviewPanel, (val) => {
+    if (appStore.osType === "windows") {
+        if (val) {
+            left.value = 0;
+        } else {
+            left.value = 240;
+            console.log("showOverviewPanel", left.value);
+        }
     }
 });
 
@@ -228,19 +252,21 @@ function openContextMenu(e: MouseEvent, item: ChannelData) {
 const closeFuns: UnlistenFn[] = [];
 
 onMounted(async () => {
-    const rect = root.value.getBoundingClientRect();
-    left.value = Math.max(0, 80 - rect.left - window.scrollX);
-    if (isFullScreenWindow.value) {
-        left.value = 0;
-    }
-    const observer = new ResizeObserver(() => {
+    if (appStore.osType === "macos") {
         const rect = root.value.getBoundingClientRect();
         left.value = Math.max(0, 80 - rect.left - window.scrollX);
         if (isFullScreenWindow.value) {
             left.value = 0;
         }
-    });
-    observer.observe(root.value);
+        const observer = new ResizeObserver(() => {
+            const rect = root.value.getBoundingClientRect();
+            left.value = Math.max(0, 80 - rect.left - window.scrollX);
+            if (isFullScreenWindow.value) {
+                left.value = 0;
+            }
+        });
+        observer.observe(root.value);
+    }
     if (!isMainWin.value && windowInitData.value) {
         dragOk(windowInitData.value);
     }
@@ -365,7 +391,14 @@ appWindow
 <template>
     <div ref="root" class="module servers" data-tauri-drag-region>
         <div :style="{ width: left + 'px' }"></div>
-        <Draggable :list="channelInstancesStore.instances" item-key="sessionId" tag="div" class="tab-list" :animation="150" :set-data="setDragData">
+        <Draggable
+            :list="channelInstancesStore.instances"
+            item-key="sessionId"
+            tag="div"
+            class="tab-list"
+            :animation="150"
+            :set-data="setDragData"
+        >
             <template #item="{ element: item }: { element: ChannelData }">
                 <div
                     class="item"
@@ -400,6 +433,7 @@ appWindow
 .servers {
     display: flex;
     flex-wrap: wrap;
+    gap: 5px;
 
     .tab-list {
         display: flex;
@@ -414,10 +448,10 @@ appWindow
         align-items: center;
         justify-content: space-between;
         cursor: default;
-        height: 20px;
-        margin: 4px;
+        height: 30px;
+        margin: 5px;
         padding: 0 8px;
-        border-radius: 20px;
+        border-radius: 8px;
         pointer-events: auto;
         user-select: none;
         -webkit-user-select: none;

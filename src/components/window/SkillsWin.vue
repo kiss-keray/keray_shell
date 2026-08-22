@@ -196,19 +196,6 @@ async function closeWindow() {
                 <span data-tauri-drag-region="">Skills 管理</span>
                 <small>{{ skills.length }} 个用户 Skill</small>
             </div>
-            <div class="skills-manager-actions">
-                <button type="button" class="skills-btn secondary" title="重新读取磁盘文件" @click="refresh">
-                    <Icon icon="mdi:refresh" />
-                    刷新
-                </button>
-                <button type="button" class="skills-btn" @click="startCreate">
-                    <Icon icon="mdi:plus" />
-                    新建
-                </button>
-                <button v-if="!isMacOS" type="button" class="skills-window-close" title="关闭" aria-label="关闭" @click="closeWindow">
-                    <Icon icon="mdi:close" />
-                </button>
-            </div>
         </header>
 
         <section class="skills-manager-body">
@@ -288,6 +275,14 @@ async function closeWindow() {
                             删除
                         </button>
                         <span class="skills-save-hint">{{ isDirty ? "按 Ctrl/⌘ + S 保存" : "所有修改已保存" }}</span>
+                        <button type="button" class="skills-btn secondary" title="重新读取磁盘文件" @click="refresh">
+                            <Icon icon="mdi:refresh" />
+                            刷新
+                        </button>
+                        <button type="button" class="skills-btn" @click="startCreate">
+                            <Icon icon="mdi:plus" />
+                            新建
+                        </button>
                         <button type="button" class="skills-btn primary" :disabled="saving || !isDirty" @click="save">
                             <Icon :icon="saving ? 'mdi:loading' : 'mdi:content-save-outline'" :class="{ 'app-loading-spin': saving }" />
                             {{ saving ? "保存中..." : "保存" }}
@@ -312,8 +307,7 @@ async function closeWindow() {
 }
 
 .skills-manager-header {
-    height: 52px;
-    flex: 0 0 52px;
+    height: 40px;
     padding: 0 14px 0 18px;
     display: flex;
     align-items: center;
@@ -327,7 +321,6 @@ async function closeWindow() {
 }
 
 .skills-manager-heading,
-.skills-manager-actions,
 .skills-editor-header,
 .skills-editor-footer {
     display: flex;
@@ -350,12 +343,6 @@ async function closeWindow() {
         font-size: var(--font-size-xs);
         font-weight: 400;
     }
-}
-
-.skills-manager-actions {
-    position: relative;
-    z-index: 2;
-    gap: 8px;
 }
 
 .skills-manager-body {
