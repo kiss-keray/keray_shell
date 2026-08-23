@@ -227,6 +227,7 @@ declare global {
   const watchEffect: typeof import('vue').watchEffect
   const watchPostEffect: typeof import('vue').watchPostEffect
   const watchSyncEffect: typeof import('vue').watchSyncEffect
+  const windowsDragListener: typeof import('./src/utils/windrag').windowsDragListener
   const writeLocalFileToRemote: typeof import('./src/utils/fsUtil').writeLocalFileToRemote
 }
 // for type re-export

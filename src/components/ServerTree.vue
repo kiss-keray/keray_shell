@@ -11,6 +11,7 @@ import type { UnlistenFn } from "@tauri-apps/api/event";
 
 const serverDataStore = useServerDataStore();
 const localStore = useLocalStore();
+const appStore = useAppStore();
 const { serverRootGroup } = storeToRefs(serverDataStore);
 
 /** 搜索框内容；有内容时走 buildSearchRows，否则走 buildRows。 */
@@ -89,6 +90,12 @@ dragListener(() => {
 }).then((unlisten) => {
     closeFuns.push(unlisten);
 });
+
+closeFuns.push(
+    windowsDragListener(() => {
+        return Array.from(document.querySelectorAll<HTMLElement>(".server-tree-row"));
+    }),
+);
 </script>
 
 <template>
@@ -124,7 +131,14 @@ dragListener(() => {
                     <span>创建时间</span>
                 </div>
                 <div class="server-tree-body" ref="serverTreeBodyRef">
-                    <ServerTreeRow :row="serverRootGroup" :level="0" :selectedRawData="selectedRawData" :expandedGroupIds="expandedGroupIds" :copyData="copyData" :searchKeyword="keyword" />
+                    <ServerTreeRow
+                        :row="serverRootGroup"
+                        :level="0"
+                        :selectedRawData="selectedRawData"
+                        :expandedGroupIds="expandedGroupIds"
+                        :copyData="copyData"
+                        :searchKeyword="keyword"
+                    />
                 </div>
             </div>
         </section>

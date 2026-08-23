@@ -54,3 +54,9 @@ textarea,
     user-select: text;
     -webkit-user-select: text;
 }
+
+/* Windows 使用 PointerEvent 模拟内部拖动时，不会产生系统原生拖动光标。 */
+html.windows-pointer-dragging,
+html.windows-pointer-dragging * {
+    cursor: grabbing !important;
+}

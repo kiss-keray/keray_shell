@@ -6,6 +6,8 @@ import { baseName, compareNameLikeExplorer, oneFileRemoteItem, remoteCopy, write
 import { addFileItem, changeFileItemName, changeFileItemPermissions, deleteFileItem, loadDirectory, type FileStoreItem } from ".";
 import { showPermissionEditor } from "./ui";
 import { dragListener, formatAdaptiveBytes } from "@/utils/project";
+import { windowsDragListener } from "@/utils/windrag";
+
 import dayjs from "dayjs";
 import useBus, {
     ActiveFileEventKey,
@@ -260,6 +262,8 @@ watch(renameItem, (newVal) => {
         });
     }
 });
+
+let moveRows: FileStoreItem[] = [];
 
 function fileExtension(name: string): string {
     const lower = name.toLowerCase();
@@ -711,7 +715,8 @@ async function openRowContextMenu(e: MouseEvent, rowItem?: FileStoreItem) {
             label: "复制路径",
             disabled: !selectedItem,
             handler: () => {
-                const text = selectedItems.length > 1 ? selectedItems.map((v) => v.id).join("\n") : (selectedItems[0]?.id ?? selectedItem.id);
+                const text =
+                    selectedItems.length > 1 ? selectedItems.map((v) => v.id).join("\n") : (selectedItems[0]?.id ?? selectedItem.id);
                 void copyText(text);
             },
         },
@@ -1188,17 +1193,25 @@ dragListener(() => {
     closeFuns.push(unlisten);
 });
 
+closeFuns.push(
+    windowsDragListener(() => {
+        return Array.from(document.querySelectorAll<HTMLElement>(".data-row, .tree-row"));
+    }),
+);
 let fileTableDrag = false;
-function dragstart() {
+function dragstart(row: FileStoreItem) {
     fileTableDrag = true;
-    const items = Array.from(selectedPaths.value)
+    let items = Array.from(selectedPaths.value)
         .map((v) => fileList.value.find((item) => item.id === v))
         .filter((v) => v) as FileStoreItem[];
-    if (items.length === 0) return;
+    if (!items.includes(row)) {
+        items = [row];
+    }
+    moveRows = items;
     emit(FileDragStartEventKey, items);
 }
 
-function dragend() {
+function dragend(e: DragEvent) {
     // dragend先于drop执行 延迟60ms
     setTimeout(() => {
         fileTableDrag = false;
@@ -1228,10 +1241,7 @@ async function drop(event: DragEvent) {
     const id = target.getAttribute("data-id");
     const dirItem = fileList.value.find((item) => item.id === id);
     if (!dirItem) return;
-    const selectedItems = Array.from(selectedPaths.value)
-        .filter((v) => v !== id)
-        .map((v) => fileList.value.find((item) => item.id === v))
-        .filter((v) => v) as FileStoreItem[];
+    const selectedItems = moveRows.filter((v) => v.id !== id).filter((v) => v) as FileStoreItem[];
     moveFiles(selectedItems, dirItem, true);
 }
 </script>
@@ -1290,7 +1300,7 @@ async function drop(event: DragEvent) {
                     @dblclick.prevent.stop="dblclickRow(row)"
                     @contextmenu.stop="openRowContextMenu($event, row)"
                     @click="handleRowClick(row)"
-                    @dragstart="dragstart"
+                    @dragstart="dragstart(row)"
                     @dragend="dragend"
                     @dragover="dragover"
                     @dragleave="dragleave"
@@ -1300,7 +1310,11 @@ async function drop(event: DragEvent) {
                         <template v-if="renameItem !== row">
                             <span class="name-cell-inner">
                                 <span class="icon-stack text-base shrink-0">
-                                    <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
+                                    <Icon
+                                        :icon="rowNameIcon(row)"
+                                        class="icon-stack-main name-cell-ic"
+                                        :class="{ 'icon-file-icon': !row.isDir }"
+                                    />
                                     <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="lnk-corner-ic" aria-hidden="true" />
                                 </span>
                                 <span class="name-text">{{ baseName(row.id) }}</span>
@@ -1309,10 +1323,21 @@ async function drop(event: DragEvent) {
                         <template v-else>
                             <span class="name-cell-inner">
                                 <span class="icon-stack text-base shrink-0">
-                                    <Icon :icon="rowNameIcon(row)" class="icon-stack-main name-cell-ic" :class="{ 'icon-file-icon': !row.isDir }" />
+                                    <Icon
+                                        :icon="rowNameIcon(row)"
+                                        class="icon-stack-main name-cell-ic"
+                                        :class="{ 'icon-file-icon': !row.isDir }"
+                                    />
                                     <Icon v-if="row.linkPath" icon="ion:arrow-redo" class="icon-link-icon" aria-hidden="true" />
                                 </span>
-                                <SystemInput v-model="editName" ref="editNameInputRef" class="table-inline-input" @blur="confirmName(true)" @keydown.stop="inputKeyDown" @click.stop />
+                                <SystemInput
+                                    v-model="editName"
+                                    ref="editNameInputRef"
+                                    class="table-inline-input"
+                                    @blur="confirmName(true)"
+                                    @keydown.stop="inputKeyDown"
+                                    @click.stop
+                                />
                             </span>
                         </template>
                     </td>
