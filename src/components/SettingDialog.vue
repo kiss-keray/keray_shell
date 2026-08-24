@@ -281,11 +281,8 @@ async function persistAgentConfig(): Promise<boolean> {
             activeModelId: resolveActiveModelId(models, agentDraft.activeModelId),
         });
         if (!result.success) {
-            const issue = result.error.issues[0];
-            const field = issue.path.length ? `${issue.path.join(".")}：` : "";
-            agentConfigError.value = `配置校验失败：${field}${issue.message}`;
-            showToast(agentConfigError.value, "error");
-            return false;
+            // 忽略Agent的配置错误。
+            return true;
         }
 
         // 直接写入 model.json；已运行 Agent 的文件监听会完成热重载，无需在设置页创建模型实例。

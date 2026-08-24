@@ -51,7 +51,7 @@ export const useAppStore = defineStore("app", () => {
             closeFuns.push(unlisten);
         });
     appWindow
-        .listen<{ label: string }>("tauri://window-created", async ({ payload }) => {
+        .listen<{ label: string }>(TauriEvent.WINDOW_CREATED, async ({ payload }) => {
             // 获取主窗口 label
             // hild-开头的是子窗口 也可以作为主窗口存在
             mainLabel.value = await __getMainWinLabel();

@@ -19,7 +19,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue"]);
-
+const configStore = useConfigStore();
+const { changeConfig } = configStore;
 function onPointerDown(e) {
     e.preventDefault();
     if (e.button !== 0) return;
@@ -44,6 +45,7 @@ function onPointerDown(e) {
         document.body.style.userSelect = prevUserSelect;
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
+        changeConfig({});
     }
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);

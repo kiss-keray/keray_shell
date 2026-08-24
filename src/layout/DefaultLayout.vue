@@ -50,7 +50,7 @@ onMounted(async () => {
     overflow: hidden;
     .servers {
         // 七个 16px 快捷按钮及间距约占 124px，为服务器 Tab 留出不重叠区域。
-        padding-right: 132px;
+        padding-right: 282px;
     }
     .panel-empty {
         height: 100%;

@@ -3,28 +3,30 @@ const props = defineProps({
     /** 下方（或后段）区域高度 px */
     modelValue: {
         type: Number,
-        required: true
+        required: true,
     },
     /** 外层 flex 列容器，用于计算可用高度 */
     container: {
         type: Object,
-        default: null
+        default: null,
     },
     minFirst: {
         type: Number,
-        default: 120
+        default: 120,
     },
     minSecond: {
         type: Number,
-        default: 140
+        default: 140,
     },
     handlePx: {
         type: Number,
-        default: 6
-    }
+        default: 6,
+    },
 });
 
 const emit = defineEmits(["update:modelValue"]);
+const configStore = useConfigStore();
+const { changeConfig } = configStore;
 
 function containerEl() {
     const c = props.container;
@@ -70,6 +72,7 @@ function onPointerDown(e) {
     };
     upHandler = () => {
         endDrag();
+        changeConfig({});
     };
     window.addEventListener("mousemove", moveHandler);
     window.addEventListener("mouseup", upHandler, true);
@@ -86,7 +89,7 @@ watch(
         resizeObserver.disconnect();
         if (el) resizeObserver.observe(el);
     },
-    { immediate: true }
+    { immediate: true },
 );
 
 onBeforeUnmount(() => {
@@ -96,6 +99,13 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="layout-row-resizer" role="separator" aria-orientation="horizontal" :aria-valuenow="modelValue"
-        tabindex="0" title="拖动调整高度" @mousedown="onPointerDown" />
+    <div
+        class="layout-row-resizer"
+        role="separator"
+        aria-orientation="horizontal"
+        :aria-valuenow="modelValue"
+        tabindex="0"
+        title="拖动调整高度"
+        @mousedown="onPointerDown"
+    />
 </template>
