@@ -1,8 +1,9 @@
+use crate::channel::{server_get_channel_pool, server_model_get_channel, ChannelPoolPermit};
 use crate::dto::res::Res;
 use crate::sftp::TransferFileRes::{Cancelled, Paused, Success};
-use crate::ssh::{server_get_channel, server_get_channel_other, ServerModel};
+use crate::ssh::ServerModel;
 use crate::utils::now_millis;
-use log::{info};
+use log::info;
 use once_cell::sync::Lazy;
 use russh::client::Msg;
 use russh::{Channel, ChannelMsg};
@@ -92,7 +93,14 @@ async fn __download_file(
     server_id: &String,
     local_path: &String,
     offset: &u64,
-) -> Result<(File, Channel<Msg>, Arc<DownloadControl>), String> {
+) -> Result<
+    (
+        File,
+        (Channel<Msg>, Option<ChannelPoolPermit>),
+        Arc<DownloadControl>,
+    ),
+    String,
+> {
     if *offset == 0 {
         // 0的时候如果删除本地文件存在删除本地
         let _ = remove_file(local_path).await.map_err(|_| {});
@@ -110,7 +118,7 @@ async fn __download_file(
             return Err("打开本地文件失败".into());
         }
     };
-    let channel = match server_get_channel(&server_id).await {
+    let channel = match server_get_channel_pool(&server_id).await {
         Ok(channel) => channel,
         Err(_) => {
             return Err("服务器连接失败".into());
@@ -138,7 +146,7 @@ pub async fn cat_download_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (mut local_file, mut channel, ctrl) =
+    let (mut local_file, (mut channel, _permit), ctrl) =
         match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
@@ -241,7 +249,7 @@ pub async fn download_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (local_file, channel, ctrl) =
+    let (local_file, (channel, _permit), ctrl) =
         match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
@@ -319,7 +327,14 @@ async fn __upload_file(
     server_id: &String,
     local_path: &String,
     offset: u64,
-) -> Result<(File, Channel<Msg>, Arc<DownloadControl>), String> {
+) -> Result<
+    (
+        File,
+        (Channel<Msg>, Option<ChannelPoolPermit>),
+        Arc<DownloadControl>,
+    ),
+    String,
+> {
     // 前端已经创建了目录
     // 创建文件并打开文件
     let mut local_file = match File::open(local_path).await {
@@ -334,7 +349,7 @@ async fn __upload_file(
             return Err("打开本地文件失败".into());
         }
     }
-    let channel = match server_get_channel(&server_id).await {
+    let channel = match server_get_channel_pool(&server_id).await {
         Ok(channel) => channel,
         Err(_) => {
             return Err("服务器连接失败".into());
@@ -361,7 +376,7 @@ pub async fn upload_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (local_file, channel, ctrl) =
+    let (local_file, (channel, _permit), ctrl) =
         match __upload_file(&request_id, &server_id, &local_path, offset).await {
             Ok(e) => e,
             Err(err) => {
@@ -445,7 +460,7 @@ pub async fn sftp_read(
     offset: u64,
     stream: tauri::ipc::Channel<Vec<u8>>,
 ) -> Res<()> {
-    let channel = match server_get_channel(&server_id).await {
+    let (channel, _permit) = match server_get_channel_pool(&server_id).await {
         Ok(c) => c,
         Err(e) => return Res::fail(e),
     };
@@ -475,7 +490,7 @@ pub async fn sftp_upload_local_file(
     append: Option<bool>,
     stream: tauri::ipc::Channel<f32>, // 通知进度
 ) -> Res<()> {
-    let channel = match server_get_channel(&server_id).await {
+    let (channel, _permit) = match server_get_channel_pool(&server_id).await {
         Ok(c) => c,
         Err(e) => return Res::fail(e),
     };
@@ -541,7 +556,7 @@ pub async fn one_read_string(
     server.set_port(port);
     server.set_user(user);
     server.set_password(Some(password));
-    let channel = match server_get_channel_other(&server).await {
+    let (channel, _permit) = match server_get_channel_pool(server.id()).await {
         Ok(c) => c,
         Err(e) => return Res::fail(e),
     };
@@ -581,8 +596,8 @@ pub async fn one_write_string(
     server.set_port(port);
     server.set_user(user);
     server.set_password(Some(password));
-    let channel = match server_get_channel_other(&server).await {
-        Ok(c) => c,
+    let channel = match server_model_get_channel(&server).await {
+        Ok((_, channel)) => channel,
         Err(e) => return Res::fail(e),
     };
     let ok = Arc::new(AtomicBool::new(false));

@@ -27,6 +27,7 @@ mod ssh;
 mod term;
 mod utils;
 mod window_glass;
+mod channel;
 
 const MAIN_WINDOW_LABEL: &str = "main";
 const MAIN_WINDOW_SIZE_FILE: &str = "main-window-size.json";

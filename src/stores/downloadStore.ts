@@ -89,7 +89,9 @@ export const useDownloadStore = defineStore("sftp-download", () => {
     });
 
     const totalCount = computed(() => taskFileList.value.filter((it) => it.status !== "cancelled").length);
-    const activeCount = computed(() => taskFileList.value.filter((it) => it.status === "running" || it.status === "queued" || it.status === "paused").length);
+    const activeCount = computed(
+        () => taskFileList.value.filter((it) => it.status === "running" || it.status === "queued" || it.status === "paused").length,
+    );
 
     const canPauseAll = computed(() => activeCount.value > 0);
     const canResumeAll = computed(() => taskFileList.value.some((it) => it.status === "paused"));
@@ -107,7 +109,15 @@ export const useDownloadStore = defineStore("sftp-download", () => {
     ): Promise<"Success" | "Paused" | "Cancelled"> {
         const stream = new Channel<DownloadProgressPayload>();
         stream.onmessage = progress;
-        return await invoke<"Success" | "Paused" | "Cancelled">("cat_download_file", { stream, requestId, serverId, remotePath, localPath, offset, total });
+        return await invoke<"Success" | "Paused" | "Cancelled">("cat_download_file", {
+            stream,
+            requestId,
+            serverId,
+            remotePath,
+            localPath,
+            offset,
+            total,
+        });
     }
 
     /** 后端执行下载并直接写入本地文件 */
@@ -123,7 +133,16 @@ export const useDownloadStore = defineStore("sftp-download", () => {
     ): Promise<"Success" | "Paused" | "Cancelled"> {
         const stream = new Channel<DownloadProgressPayload>();
         stream.onmessage = progress;
-        return await invoke<"Success" | "Paused" | "Cancelled">("upload_file", { stream, requestId, serverId, remotePath, localPath, offset, total, bufSize });
+        return await invoke<"Success" | "Paused" | "Cancelled">("upload_file", {
+            stream,
+            requestId,
+            serverId,
+            remotePath,
+            localPath,
+            offset,
+            total,
+            bufSize,
+        });
     }
 
     /** 暂停后端下载任务 */
@@ -210,6 +229,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
     async function retryItem(item: TransferItem): Promise<void> {
         item.status = "queued";
         item.startType = "retry";
+        item.error = "";
         syncParentStatus(item);
         runNext();
     }
@@ -452,9 +472,10 @@ export const useDownloadStore = defineStore("sftp-download", () => {
         const ext = hasExt ? fileName.slice(dotIndex) : "";
         let nextPath = remotePath;
         let index = 1;
-        while (await oneFileRemoteItem(serverId, nextPath)) {
+        while (await execRemote(serverId, `test -e ${shellSingleQuote(nextPath)} && echo 1`)) {
             nextPath = `${par}/${base}(${index})${ext}`;
             index += 1;
+            console.log("nextPath", nextPath);
         }
         return nextPath;
     }
@@ -465,7 +486,12 @@ export const useDownloadStore = defineStore("sftp-download", () => {
      * @param remoteDir 远程目录
      * @param callback 回调函数 每完成一个文件就会回调一次 参数为传输任务
      */
-    async function addUploadTask(ctx: SftpPaneTransferBinding, localPaths: string[], remoteDir: string, callback?: (item: TransferItem) => void): Promise<void> {
+    async function addUploadTask(
+        ctx: SftpPaneTransferBinding,
+        localPaths: string[],
+        remoteDir: string,
+        callback?: (item: TransferItem) => void,
+    ): Promise<void> {
         const conflictList: TransferItem[] = [];
         async function addPath(localPath: string, localAbsPath?: string): Promise<TransferItem | null> {
             const localInfo = await stat(localPath);
@@ -563,7 +589,7 @@ export const useDownloadStore = defineStore("sftp-download", () => {
             if (action === "skip") {
                 item.status = "cancelled";
             } else if (action === "copy") {
-                item.remotePath = `${item.remotePath} Copy`;
+                item.remotePath = await remotePathCheck(item.serverId, item.remotePath);
             } else {
                 // 默认处理就是覆盖
             }

@@ -62,6 +62,12 @@ function openContextMenu(e: MouseEvent) {
             label: "打开所在位置",
             handler: () => void handleRevealInDir(),
         },
+        {
+            label: "取消",
+            handler: () => {
+                props.item.cancel();
+            },
+        },
         "---",
         props.item.kind === "download"
             ? {
@@ -84,28 +90,61 @@ function openContextMenu(e: MouseEvent) {
 </script>
 
 <template>
-    <div v-if="item.status !== 'cancelled'" :style="{ marginLeft: `${level * 24}px` }" class="transfer-item select-auto" @contextmenu="openContextMenu($event)">
+    <div
+        v-if="item.status !== 'cancelled'"
+        :style="{ marginLeft: `${level * 24}px` }"
+        class="transfer-item select-auto"
+        @contextmenu="openContextMenu($event)"
+    >
         <div class="title-line">
             <div class="line1" :class="{ [item.isDir ? 'is-dir' : 'is-file']: true }">
                 <div class="flex items-center gap-2">
-                    <Icon v-if="item.isDir" :icon="open ? 'mdi:chevron-down' : 'mdi:chevron-right'" class="group-ic" @click.stop="open = !open" />
+                    <Icon
+                        v-if="item.isDir"
+                        :icon="open ? 'mdi:chevron-down' : 'mdi:chevron-right'"
+                        class="group-ic"
+                        @click.stop="open = !open"
+                    />
                     <Icon :icon="item.kind === 'download' ? 'mdi:download' : 'mdi:upload'" class="group-ic" />
                     <span class="item-name truncate">{{ item.name }}</span>
                 </div>
                 <div class="item-actions" @click.stop>
-                    <button v-if="canPause" type="button" class="tx-btn" :class="{ 'tx-btn--inline-loading': item.loadingFlag === 'stop' }" :disabled="item.loadingFlag !== 'none'" @click="item.stop">
+                    <button
+                        v-if="canPause"
+                        type="button"
+                        class="tx-btn"
+                        :class="{ 'tx-btn--inline-loading': item.loadingFlag === 'stop' }"
+                        :disabled="item.loadingFlag !== 'none'"
+                        @click="item.stop"
+                    >
                         <Icon v-if="item.loadingFlag === 'stop'" icon="mdi:loading" class="tx-btn-load-ic app-loading-spin" />
                         暂停
                     </button>
-                    <button v-if="canResume" type="button" class="tx-btn" :disabled="item.loadingFlag !== 'none'" @click="item.resume">继续</button>
-                    <button v-if="canCancel" type="button" class="tx-btn tx-btn--danger" :disabled="item.loadingFlag !== 'none'" @click="item.cancel">取消</button>
+                    <button v-if="canResume" type="button" class="tx-btn" :disabled="item.loadingFlag !== 'none'" @click="item.resume">
+                        继续
+                    </button>
+                    <button
+                        v-if="canCancel"
+                        type="button"
+                        class="tx-btn tx-btn--danger"
+                        :disabled="item.loadingFlag !== 'none'"
+                        @click="item.cancel"
+                    >
+                        取消
+                    </button>
                     <button v-if="canRetry" type="button" class="tx-btn tx-btn--accent" @click="item.retry">重试</button>
                 </div>
             </div>
             <p class="item-name truncate pl-4">local：{{ item.localPath }}</p>
             <p class="item-name truncate">remote：{{ item.remotePath }}</p>
             <div class="line2 progress">
-                <div class="download-track"><div class="download-bar" :key="item.loaded" :style="{ width: `${((item.loaded / (item.total || 1)) * 100).toFixed(2)}%` }" /></div>
+                <div class="download-track">
+                    <div
+                        class="download-bar"
+                        :key="item.loaded"
+                        :style="{ width: `${((item.loaded / (item.total || 1)) * 100).toFixed(2)}%` }"
+                    />
+                </div>
                 <p class="bfb">{{ ((item.loaded / (item.total || 1)) * 100).toFixed(2) }}%</p>
                 <span v-if="item.isDir" class="item-name size-name">{{ item.loaded }}/{{ item.total }}</span>
                 <span v-else class="item-name size-name">{{ formatAdaptiveBytes(item.loaded) }}/{{ formatAdaptiveBytes(item.total) }}</span>

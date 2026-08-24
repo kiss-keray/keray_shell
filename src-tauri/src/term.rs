@@ -1,11 +1,10 @@
+use crate::channel::server_get_channel;
 use crate::dto::res::Res;
-use crate::ssh::server_get_channel;
 use crate::utils::now;
 use getset::{Getters, Setters};
 use log::{debug, info};
 use once_cell::sync::Lazy;
-use russh::client::Msg;
-use russh::{Channel, ChannelMsg};
+use russh::ChannelMsg;
 use serde::{Deserialize, Serialize};
 use serde_json::Value::Null;
 use serde_json::{from_value, to_value, Value};
@@ -123,7 +122,7 @@ pub async fn open_ssh(
     let _ = reader.send("连接主机···\r\n".into());
     let (tx, mut rx) = tokio::sync::mpsc::channel::<(u32, Value)>(32);
     // 创建channel
-    let mut channel: Channel<Msg> = match server_get_channel(&server_id).await {
+    let mut channel = match server_get_channel(&server_id).await {
         Ok(c) => {
             let _ = reader.send("主机连接成功\r\n".into());
             c

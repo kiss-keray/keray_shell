@@ -102,7 +102,6 @@ watch(windowInitData, (initData) => {
 });
 
 watch(isFullScreenWindow, (val) => {
-    console.log("isFullScreenWindow", appStore.osType);
     if (appStore.osType === "macos") {
         if (val) {
             left.value = 0;
