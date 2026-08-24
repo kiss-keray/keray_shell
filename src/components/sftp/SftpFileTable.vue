@@ -487,6 +487,7 @@ async function clickUpload(row: FileStoreItem, directory: boolean = true) {
         multiple: true,
         directory,
         defaultPath: uploadDefaultPath,
+        recursive: true
     });
     if (!paths) return;
     uploadFiles(paths, row);

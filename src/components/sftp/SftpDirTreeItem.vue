@@ -215,6 +215,7 @@ async function openContextMenu(e: MouseEvent) {
                                   multiple: true,
                                   directory: true,
                                   defaultPath: uploadDefaultPath,
+                                  recursive: true,
                               });
                               if (!paths) return;
                               uploadFiles(paths, node);

@@ -383,6 +383,7 @@ export const useServerDataStore = defineStore("serverData", () => {
             directory: true,
             defaultPath,
             canCreateDirectories: false,
+            recursive: true,
         });
         if (!selected || Array.isArray(selected)) return;
         const exportServer = async (dir: string, item: ServerDataModel) => {
@@ -399,7 +400,7 @@ export const useServerDataStore = defineStore("serverData", () => {
                     data.passphrase = privateKeyValue.passphrase;
                 }
             }
-            writeTextFile(await join(dir, `${data.name}_keray_export.json`), JSON.stringify(data), { create: true, createNew: true });
+            await writeTextFile(await join(dir, `${data.name}_keray_export.json`), JSON.stringify(data), { create: true, createNew: true });
         };
         for (const item of list) {
             if (isServerModel(item)) {
@@ -412,7 +413,7 @@ export const useServerDataStore = defineStore("serverData", () => {
                         dir: "",
                     };
                 });
-                treeForEachAsync<ServerGroupModelWithDir>(treeMap, async (item: ServerGroupModelWithDir, parent?: ServerGroupModelWithDir) => {
+                await treeForEachAsync<ServerGroupModelWithDir>(treeMap, async (item: ServerGroupModelWithDir, parent?: ServerGroupModelWithDir) => {
                     const dir = item.id === serverRootGroup.value.id ? selected : await join(parent?.dir ?? selected, item.name);
                     item.dir = dir;
                     await mkdir(dir, { recursive: true });
@@ -435,6 +436,7 @@ export const useServerDataStore = defineStore("serverData", () => {
                       multiple: true,
                       directory: true,
                       defaultPath,
+                      recursive: true,
                   });
         if (!selected) return;
         /** 读取文件导入服务器数据 */

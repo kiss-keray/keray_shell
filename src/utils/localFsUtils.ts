@@ -14,7 +14,7 @@ export function linuxPathToLocalPath(path: string): string {
 /* 将本地路径转换为linux路径 */
 export function localPathToLinuxPath(path: string): string {
     if (type() === "windows") {
-        return path.replace(/\//g, "\\");
+        return path.replace(/\\/g, "/");
     }
     return path;
 }
