@@ -1,15 +1,16 @@
 // ===================== 命令执行结果成败判断 =====================
 // 思路说明：
-// 1. exec_cmd 只回传 stdout（stderr 在 ssh.rs 中被丢弃），visual 终端快照则包含全部输出，
-//    没有退出码可用，因此只能基于输出文本做「高置信错误特征」匹配：命中 → error，否则 → success。
-// 2. grep/cat/tail/dmesg/journalctl 等「内容类命令」的输出主体是文件/日志内容，
-//    里面天然带有 error、failed、No such file 等字样，这类命令只认「命令名: 」开头的自身报错，
-//    避免把日志内容误判成执行失败。
-// 3. 非内容类命令按五层判断：shell 级错误 → 「命令名: 错误关键词」行 → errno 行尾 → usage 行 → 命令特定错误表。
+// 1. 静默 exec_cmd 由调用方按 exitCode 判断；本函数用于 visual 终端或缺少退出码时的降级判断，
+//    只能基于输出文本匹配「高置信错误特征」：命中 → error，否则 → success。
+// 2. grep/cat/tail/dmesg/journalctl/echo 等「内容类命令」的输出主体是文件、日志或指定文本，
+//    里面天然带有 error、failed、No such file 等字样；除 shell 外层诊断外，只认命令自身报错。
+// 3. shell 自身诊断对所有命令优先判断；非内容类命令再检查进程错误、主命令错误前缀、usage 和特定错误表。
 
 /** 内容类命令：输出主体是文件/日志/差异内容，不能用通用错误模式判断，只认自身报错 */
 const CONTENT_COMMANDS = new Set([
     "cat",
+    "echo",
+    "printf",
     "grep",
     "egrep",
     "fgrep",
@@ -50,11 +51,45 @@ const CONTENT_COMMANDS = new Set([
 const ERRNO_TAIL =
     /(?:No such file or directory|Permission denied|Operation not permitted|Is a directory|Not a directory|Read-only file system|No space left on device|Disk quota exceeded|Too many open files|Argument list too long|Input\/output error|Cannot allocate memory|Device or resource busy|Directory not empty|No such process|No such device|Connection refused|Connection timed out|Network is unreachable|No route to host|Name or service not known|File exists|Invalid argument|Too many levels of symbolic links|Broken pipe|Access denied)\s*$/i;
 
-/** shell/解释器级错误：任何命令都可能直接抛出，且几乎不会出现在正常输出里 */
+/**
+ * shell 自身的诊断行：内容命令也必须先检查，避免 `cat file | missing-command` 被提前判为成功。
+ * 同时要求错误关键词，避免把普通的 `bash: warning` 文本当作执行失败。
+ */
+const SHELL_DIAGNOSTIC_LINE =
+    /^-?(?:bash|sh|zsh|dash|ash|ksh|fish)(?:\[\d+\])?\s*:\s*.*(?:cannot\b|failed\b|error\b|invalid\b|no such\b|not found\b|permission denied|syntax error|unexpected\b|unknown command|unbound variable|bad substitution)/im;
+
+/** shell 的 command-not-found 诊断中提取缺失的命令名。 */
+function extractMissingCommand(line: string): string {
+    const standard = /:\s*([^\s:]+):\s*(?:command )?not found\s*$/i.exec(line);
+    if (standard) return standard[1];
+    return /command not found:\s*([^\s:]+)\s*$/i.exec(line)?.[1] ?? "";
+}
+
+/**
+ * 默认 shell 不启用 pipefail，管道状态只取末端命令；因此 `missing | head` 中左侧缺失不能代表整条命令失败。
+ * 这里只放过命令文本中明确位于单管道左侧的 command-not-found；显式启用 pipefail 时仍按失败处理。
+ */
+function isNonFinalPipelineCommandMissing(command: string, diagnostic: string): boolean {
+    if (/\bpipefail\b/.test(command)) return false;
+    const missingCommand = extractMissingCommand(diagnostic);
+    if (!missingCommand) return false;
+    const escapedCommand = missingCommand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const commandBeforePipe = new RegExp(`(?:^|\\n)\\s*${escapedCommand}(?:\\s[^\\n]*)?\\s+\\|(?!\\|)`, "m");
+    return commandBeforePipe.test(command);
+}
+
+/** 检查真正会影响整条命令状态的 shell 诊断。 */
+function hasShellDiagnosticError(command: string, text: string): boolean {
+    for (const line of text.split("\n")) {
+        if (!SHELL_DIAGNOSTIC_LINE.test(line)) continue;
+        if (isNonFinalPipelineCommandMissing(command, line)) continue;
+        return true;
+    }
+    return false;
+}
+
+/** 非内容命令的解释器、进程及运行环境错误特征 */
 const SHELL_ERROR_PATTERNS: RegExp[] = [
-    /command not found/i,
-    // bash: cd: xxx / sh: line 1: xxx / zsh: xxx / -bash: xxx（登录 shell）
-    /^-?(?:bash|sh|zsh|dash|ash|ksh|fish)(?:\[\d+\])?\s*:\s*(?:line\s*\d+\s*:\s*)?/im,
     /syntax error near unexpected token/i,
     /Traceback \(most recent call last\)/,
     /Segmentation fault/i,
@@ -78,12 +113,11 @@ const SHELL_ERROR_PATTERNS: RegExp[] = [
 ];
 
 /**
- * 通用「命令名: 错误消息」行首格式。
- * 要求行首是命令名（避开带时间戳的日志行），消息部分以典型错误关键词开头；
- * 中间的 `(?:.*:\s*)?` 兼容 `kill: (123): No such process` 这类带参数段的格式。
+ * 「命令名: 错误消息」中的错误消息格式。
+ * 调用时还会验证行首命令名与实际主命令一致，避免 `echo 'git: error: demo'` 误判。
  */
-const CMD_PREFIX_ERROR =
-    /^[\w./-]+(?:\([^)]*\))?\s*:\s*(?:.*:\s*)?(?:cannot\b|can't\b|unable to\b|invalid\b|unrecognized option|illegal option|missing (?:operand|argument)|too (?:many|few) arguments|not a valid\b|failed\b|error\b|no such\b|permission denied|operation not permitted|read-only\b)/im;
+const CMD_PREFIX_ERROR_MESSAGE =
+    /^(?:.*:\s*)?(?:cannot\b|can't\b|unable to\b|invalid\b|unrecognized option|illegal option|missing (?:operand|argument)|too (?:many|few) arguments|not a valid\b|failed\b|error\b|no such\b|permission denied|operation not permitted|read-only\b)/i;
 
 /** 参数错误时打印的 usage 行；--help/-h/man 场景会排除 */
 const USAGE_LINE = /^(?:[Uu]sage|用法)\s*[:：]/m;
@@ -311,11 +345,13 @@ const WRAPPER_OPTS_WITH_VALUE = new Set([
     "--type",
     "--signal",
     "--kill-after",
+    "--unset",
     "--preserve-env",
     "--cpu",
     "--delay",
     "--output",
     "--file",
+    "-k", // timeout --kill-after
 ]);
 
 /** 从命令行中提取主命令名：跳过环境变量赋值、包装命令及其选项，取 basename */
@@ -324,24 +360,25 @@ function extractMainCommand(command: string): string {
     const firstSegment = command.split(/\|\||&&|[|;>]/)[0] ?? command;
     const tokens = firstSegment.trim().split(/\s+/);
     let i = 0;
-    // 跳过行首环境变量赋值，如 LANG=C ls
-    while (i < tokens.length && /^\w+=\S*$/.test(tokens[i])) i++;
-    // 跳过包装命令及其选项（sudo -u root xxx / timeout 30 xxx）
+    // 每跳过一层包装命令都重新处理环境变量，兼容 `sudo env LANG=C timeout 5s curl`。
     while (i < tokens.length) {
-        const name = tokens[i].split("/").pop() ?? "";
+        while (i < tokens.length && /^[A-Za-z_]\w*=\S*$/.test(tokens[i])) i++;
+        const name = (tokens[i]?.split("/").pop() ?? "").toLowerCase();
         if (!WRAPPER_COMMANDS.has(name)) break;
         i++;
-        // 跳过包装命令的选项：带值选项连值一起跳，纯数字参数（timeout 30）也跳过
+        // 跳过包装命令的选项；带值选项需要同时跳过下一个 token。
         while (i < tokens.length) {
             const token = tokens[i];
             if (WRAPPER_OPTS_WITH_VALUE.has(token)) {
                 i += 2; // 选项 + 值
-            } else if (/^-/.test(token) || /^\d+(?:\.\d+)?$/.test(token)) {
+            } else if (/^-/.test(token)) {
                 i++;
             } else {
                 break;
             }
         }
+        // GNU timeout 的时长支持小数和 s/m/h/d 后缀，如 0.5s、2m。
+        if (name === "timeout" && /^\d+(?:\.\d+)?[smhd]?$/i.test(tokens[i] ?? "")) i++;
     }
     const mainToken = tokens[i] ?? "";
     return (mainToken.split("/").pop() ?? "").toLowerCase();
@@ -367,6 +404,19 @@ function isContentCommandError(cmdName: string, text: string): boolean {
     return false;
 }
 
+/** 只认实际主命令的错误前缀，避免正常输出中其它命令名触发通用规则。 */
+function isMainCommandPrefixError(cmdName: string, text: string): boolean {
+    if (!cmdName) return false;
+    for (const line of text.split("\n")) {
+        const match = /^([\w./+-]+)(?:\([^)]*\))?\s*:\s*(.*)$/.exec(line);
+        if (!match) continue;
+        const lineCommand = (match[1].split("/").pop() ?? "").toLowerCase();
+        if (lineCommand !== cmdName) continue;
+        if (CMD_PREFIX_ERROR_MESSAGE.test(match[2]) || ERRNO_TAIL.test(match[2])) return true;
+    }
+    return false;
+}
+
 // 判断命令执行的结果是否成功
 export function parseCommandResultIsSuccess(command: string, result: string): "success" | "error" {
     if (!result || !result.trim()) return "success"; // 无输出无从判断，按成功处理（rm -f/mkdir -p 等成功本就无输出）
@@ -374,24 +424,23 @@ export function parseCommandResultIsSuccess(command: string, result: string): "s
     const text = result.replace(/\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07]*\x07/g, "").replace(/\r/g, "");
     const cmdName = extractMainCommand(command);
 
+    // shell 诊断属于命令外层错误，必须在内容命令提前返回前判断。
+    if (hasShellDiagnosticError(command, text)) return "error";
+
     // 内容类命令：输出主体是文件/日志内容，只认自身报错，其余一律视为成功
     if (CONTENT_COMMANDS.has(cmdName)) {
         return isContentCommandError(cmdName, text) ? "error" : "success";
     }
 
-    // 第一层：shell/解释器级错误（command not found、bash: 前缀、Traceback 等）
+    // 第一层：解释器、进程及运行环境错误（Traceback、崩溃、磁盘写满等）
     for (const pattern of SHELL_ERROR_PATTERNS) {
         if (pattern.test(text)) return "error";
     }
-    // 第二层：通用「命令名: 错误消息」格式（ls: cannot access ... 等）
-    if (CMD_PREFIX_ERROR.test(text)) return "error";
-    // 第三层：行首是「命令名:」且行尾是 errno 描述（find: '/x': No such file or directory 等）
-    for (const line of text.split("\n")) {
-        if (/^[\w./-]+(?:\([^)]*\))?\s*:/.test(line) && ERRNO_TAIL.test(line)) return "error";
-    }
-    // 第四层：usage 行首视为参数错误（--help/-h/man 场景除外）
+    // 第二层：只检查实际主命令的「命令名: 错误消息」和 errno 行尾格式。
+    if (isMainCommandPrefixError(cmdName, text)) return "error";
+    // 第三层：usage 行首视为参数错误（--help/-h/man 场景除外）
     if (USAGE_LINE.test(text) && !isHelpCommand(command)) return "error";
-    // 第五层：命令特定错误表
+    // 第四层：命令特定错误表
     const specificPatterns = COMMAND_ERROR_PATTERNS[cmdName];
     if (specificPatterns?.some((pattern) => pattern.test(text))) return "error";
     return "success";

@@ -27,6 +27,16 @@ pub struct ServerModel {
 }
 pub struct Client {}
 
+/// 非交互 SSH 命令的完整执行结果，供前端按退出码判断成功与否。
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExecCommandResult {
+    stdout: String,
+    stderr: String,
+    /// SSH 服务端可能不发送 ExitStatus，此时返回 null，由前端降级为文本判断。
+    exit_code: Option<u32>,
+}
+
 impl client::Handler for Client {
     type Error = russh::Error;
 
@@ -317,7 +327,7 @@ async fn exec_shell_with_cancel(
     server_id: &str,
     cmd: &str,
     cancel_rx: &mut watch::Receiver<bool>,
-) -> Result<Vec<u8>, String> {
+) -> Result<ExecCommandResult, String> {
     let channel = tokio::select! {
         result = server_get_channel(server_id) => result?,
         _ = wait_exec_cancel(cancel_rx) => return Err(EXEC_CANCELLED_MESSAGE.to_string()),
@@ -354,6 +364,7 @@ async fn exec_shell_with_cancel(
                 stdout_bytes.extend(data.to_vec());
             }
             ChannelMsg::ExtendedData { ref data, ext } => {
+                // 1 输出的stderr流
                 if ext == 1 {
                     stderr_bytes.extend(data.to_vec());
                 } else {
@@ -366,20 +377,30 @@ async fn exec_shell_with_cancel(
             _ => {}
         }
     }
-    if !stderr_bytes.is_empty() {
-        debug!("远端 stderr: {}", String::from_utf8_lossy(&stderr_bytes));
+    let stdout = String::from_utf8_lossy(&stdout_bytes).into_owned();
+    let stderr = String::from_utf8_lossy(&stderr_bytes).into_owned();
+    if !stderr.is_empty() {
+        debug!("远端 stderr: {}", stderr);
     }
     if let Some(code) = exit_status {
         if code != 0 {
             debug!("远端命令退出码:{}", code);
-            // 不返回Err 由前端自行更新返回内容判断是否失败
+            // 非零退出码属于命令执行结果，不转换成 Tauri 调用错误，由前端更新命令状态。
         }
     }
-    Ok(stdout_bytes)
+    Ok(ExecCommandResult {
+        stdout,
+        stderr,
+        exit_code: exit_status,
+    })
 }
 
 #[tauri::command]
-pub async fn exec_cmd(server_id: String, cmd: String, execution_id: Option<String>) -> Res<String> {
+pub async fn exec_cmd(
+    server_id: String,
+    cmd: String,
+    execution_id: Option<String>,
+) -> Res<ExecCommandResult> {
     let (cancel_tx, mut cancel_rx) = watch::channel(false);
     if let Some(id) = execution_id.as_ref() {
         EXEC_CANCEL_STORE
@@ -393,7 +414,7 @@ pub async fn exec_cmd(server_id: String, cmd: String, execution_id: Option<Strin
     }
     drop(cancel_tx);
     match result {
-        Ok(bytes) => Res::of(String::from_utf8_lossy(&bytes).into_owned()),
+        Ok(exec_result) => Res::of(exec_result),
         Err(msg) => Res::fail(msg),
     }
 }

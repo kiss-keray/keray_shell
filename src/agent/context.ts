@@ -92,14 +92,13 @@ export function reasoningInstruction(effort: AgentReasoningEffort): string {
     return `## 当前推理深度\n\n${descriptions[effort]}`;
 }
 
-/** 序列化服务器列表，交给大模型 */
+/** 序列化当前终端列表。系统提示和对话末尾提醒共用，避免两处文案分叉。 */
 export function serializeServers(servers: ChannelInstance[]): string {
     const serverList = servers.map((item) => ({
         name: item.server.name,
-        sessionId: item.sessionId,
         serverId: item.server.id,
     }));
-    return `## 当前服务器列表，注意服务器当前信息必须以当前传的为准，历史记录里的不可信！\n\n${JSON.stringify(serverList)}`;
+    return `## 当前服务器列表\n\n${JSON.stringify(serverList)}`;
 }
 
 /**

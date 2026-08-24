@@ -105,11 +105,26 @@ export function shellSingleQuote(path: string): string {
     return `'${path.replace(/'/g, `'\"'\"'`)}'`;
 }
 
-/** 执行远端命令；executionId 用于 Agent 在运行中按 ID 取消对应 SSH channel。 */
-export async function execRemote(serverId: string, cmd: string, executionId?: string): Promise<string> {
+/** 非交互 SSH 命令的完整执行结果；exitCode 为 null 表示服务端未发送退出状态。 */
+export type RemoteExecResult = {
+    stdout: string;
+    stderr: string;
+    exitCode: number | null;
+};
+
+/** 执行远端命令并保留 stdout、stderr 与退出码。 */
+export async function execRemoteResult(serverId: string, cmd: string, executionId?: string): Promise<RemoteExecResult> {
     const params: Record<string, string> = { serverId, cmd };
     if (executionId) params.executionId = executionId;
-    return invoke<string>("exec_cmd", params);
+    return invoke<RemoteExecResult>("exec_cmd", params);
+}
+
+/**
+ * 执行远端命令并返回 stdout。
+ * 保留该兼容层，避免不关心退出状态的文件管理、资源轮询调用被结构化返回值影响。
+ */
+export async function execRemote(serverId: string, cmd: string, executionId?: string): Promise<string> {
+    return (await execRemoteResult(serverId, cmd, executionId)).stdout;
 }
 
 /** 请求后端向指定静默 SSH 命令发送 SIGINT 并关闭 channel。 */

@@ -67,7 +67,6 @@ interface StreamingToolCallDraft {
 }
 
 export interface GraphConfigurable {
-    servers: ChannelInstance[];
     thread_id: string;
 }
 
@@ -80,7 +79,6 @@ export class LangGraphAgent {
     readonly promptManager: PromptManager;
     readonly tools: StructuredToolInterface[];
     private readonly graph: CompiledAgentGraph;
-    private readonly servers: ChannelInstance[];
     /** 图内自动压缩和公开手动入口共用同一个状态发布器。 */
     private readonly compressionTracker: ContextCompressionTracker;
     /** 同一 thread 并发 restore 共用一个 Promise，避免两次 updateState 把历史追加两遍。 */
@@ -93,14 +91,12 @@ export class LangGraphAgent {
         promptManager: PromptManager,
         tools: StructuredToolInterface[],
         graph: CompiledAgentGraph,
-        servers: ChannelInstance[],
         compressionTracker: ContextCompressionTracker,
     ) {
         this.modelManager = modelManager;
         this.promptManager = promptManager;
         this.tools = tools;
         this.graph = graph;
-        this.servers = servers;
         this.compressionTracker = compressionTracker;
     }
 
@@ -112,8 +108,15 @@ export class LangGraphAgent {
         const { watch = true, debounceMs, agentsDir, promptPath } = options;
         const modelManager = await ModelConfigManager.create({ debounceMs });
         const promptManager = await PromptManager.create({ debounceMs, agentsDir, promptPath });
+        const serverIdMap = servers.reduce(
+            (acc, server) => {
+                acc[server.server.id] = server.sessionId;
+                return acc;
+            },
+            {} as Record<string, string>,
+        );
         // load_skill 始终挂上，否则 default.md 里的专题文档无法按需读取
-        const tools = createBuiltinTools(promptManager, modelManager, options);
+        const tools = createBuiltinTools(promptManager, modelManager, options, serverIdMap);
         const compressionTracker = new ContextCompressionTracker();
         const graph = compileAgentGraph(modelManager, promptManager, tools, servers, compressionTracker);
         if (watch) {
@@ -127,7 +130,7 @@ export class LangGraphAgent {
                 throw error;
             }
         }
-        return new LangGraphAgent(modelManager, promptManager, tools, graph, servers, compressionTracker);
+        return new LangGraphAgent(modelManager, promptManager, tools, graph, compressionTracker);
     }
 
     getModelConfig(): ModelConfig {
@@ -219,7 +222,7 @@ export class LangGraphAgent {
     }
 
     private async writeThreadIfEmpty(threadId: string, messages: BaseMessage[], contextMemory?: AgentContextMemory): Promise<boolean> {
-        const config: GraphConfigurable = { servers: this.servers, thread_id: threadId };
+        const config: GraphConfigurable = { thread_id: threadId };
         try {
             const snapshot = await this.graph.getState({ configurable: config });
             const existing = (snapshot.values as Partial<AgentStateType>).messages ?? [];
@@ -257,7 +260,7 @@ export class LangGraphAgent {
     }
 
     private async compressThreadContext(threadId: string, signal?: AbortSignal): Promise<ContextCompressionResult> {
-        const configurable = { servers: this.servers, thread_id: threadId };
+        const configurable = { thread_id: threadId };
         this.compressionTracker.start("manual");
         try {
             const snapshot = await this.graph.getState({ configurable });

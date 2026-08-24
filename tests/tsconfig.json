@@ -1,0 +1,11 @@
+{
+  // 必须自己声明 include：父配置只覆盖 src，测试文件否则会落到根目录 tsconfig.node.json。
+  // 那边没有 allowImportingTsExtensions，import "...ts" 会报 TS5097。
+  "extends": "../tsconfig.app.json",
+  "include": ["./**/*.ts"],
+  "compilerOptions": {
+    // 测试用 node:test / node:assert；父配置 types 为空数组会挡住 Node 类型
+    "allowImportingTsExtensions": true,
+    "types": ["node"]
+  }
+}

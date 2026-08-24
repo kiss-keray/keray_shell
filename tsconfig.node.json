@@ -5,6 +5,10 @@
         "./**/*.tsx",
         "./**/*.vue"
     ],
+    // 测试文件走 tests/tsconfig.json，避免落到本配置后无法识别 .ts 导入后缀
+    "exclude": [
+        "tests"
+    ],
     "compilerOptions": {
         "noEmit": true,
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.node.tsbuildinfo",

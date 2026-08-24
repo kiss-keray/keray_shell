@@ -69,6 +69,7 @@ declare global {
   const effectScope: typeof import('vue').effectScope
   const eventHave: typeof import('./src/utils/project').eventHave
   const execRemote: typeof import('./src/utils/project').execRemote
+  const execRemoteResult: typeof import('./src/utils/project').execRemoteResult
   const extractCdTargets: typeof import("./src/utils/termCwd").extractCdTargets
   const formatAdaptiveBytes: typeof import('./src/utils/project').formatAdaptiveBytes
   const formatSpeedBps: typeof import('./src/utils/project').formatSpeedBps
@@ -241,6 +242,9 @@ declare global {
   // @ts-ignore
   export type { Spread, TreeItemBase, TreeListItem, CountdownTextStyle } from './src/utils/index'
   import('./src/utils/index')
+  // @ts-ignore
+  export type { RemoteExecResult } from './src/utils/project'
+  import('./src/utils/project')
   // @ts-ignore
   export type { OverviewProcessSort, ServerOverviewState } from './src/utils/serverOverviewPolling'
   import('./src/utils/serverOverviewPolling')

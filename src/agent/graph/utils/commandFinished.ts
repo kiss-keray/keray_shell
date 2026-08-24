@@ -1,16 +1,15 @@
-// ===================== 命令执行是否结束判断 =====================
+// ===================== 终端观察是否可以停止 =====================
 // 思路说明：
-// 1. visual 终端拿不到退出码，唯一可靠的「结束」信号是：命令输出之后 shell 会打印一个新提示符。
-//    所以主判断 = 增量快照的最后一个非空行是否像 shell 提示符；
-//    命令还在跑时最后一行是输出或命令回显，不会恰好长成提示符。
-// 2. 最后一行若是密码输入、[Y/n] 确认、分页器等「等待输入」形态，直接判未结束（优先级最高）。
-// 3. top、tail -f、vim、mysql 这类常驻/交互程序天然回不到提示符，
+// 1. 这里的 true 不是“进程已经退出”，而是“本轮 Tool 已不必继续观察终端”。
+//    命令结束、程序等待输入、进入交互提示符和会话退出都应停止观察，把快照交还上层。
+// 2. visual 终端拿不到退出码，主要根据增量快照末尾的提示符判断当前状态。
+// 3. top、tail -f、vim 这类没有稳定文本提示符的常驻/交互程序，
 //    按「命令名 + 参数」识别后直接判未结束，交给外层观察超时兜底（超时会发 Ctrl+C 收快照）。
-// 4. ssh/mosh/telnet 特判：登录成功后看到的是「远端」提示符，形状与本地一致，不能当成结束，
-//    只有出现 logout / Connection closed 等会话终止特征才算真正结束。
+// 4. ssh/mosh/telnet 特判：远端提示符表示已经进入下一次交互，也应停止本轮观察；
+//    logout / Connection closed 等会话终止特征同样表示无需继续等待。
 // 5. 驻留判定只看第一个管道段的主命令（sudo -u root ls 归到 ls），不展开管道/复合命令。
 
-/** shell 提示符形态表：覆盖各发行版默认 PS1 与常见定制主题，命中最后一个非空行即视为命令结束 */
+/** Shell 提示符形态表：命中说明 Shell 已进入下一次交互，本轮观察可以停止。 */
 const SHELL_PROMPT_PATTERNS: RegExp[] = [
     // [user@host dir]$ / [root@host ~]#（RHEL/CentOS/Fedora 默认 bash，% 为 csh/tcsh 变体）
     /\[[\w.+-]+@[\w.-]+[^\]\n]*\]\s*[#$%]\s*$/,
@@ -30,7 +29,7 @@ const SHELL_PROMPT_PATTERNS: RegExp[] = [
     /❯\s*$/,
 ];
 
-/** 等待输入形态表：命中说明命令在等人输入，绝不可能是结束 */
+/** 等待输入形态表：命中说明程序在等人输入，本轮观察应立即停止。 */
 const WAITING_INPUT_PATTERNS: RegExp[] = [
     // sudo/ssh/su/passwd/mysql -p/gpg 等密码口令提示，统一以冒号结尾
     /\[sudo\] password for [^:\n]*:\s*$/i,
@@ -59,7 +58,23 @@ const WAITING_INPUT_PATTERNS: RegExp[] = [
     /enter a value:\s*$/i,
 ];
 
-/** 会话终止特征：命中即结束（全部锚定行首，避免把 tail 出来的日志内容误判成会话断开） */
+/**
+ * 常见 REPL/交互客户端提示符：这些程序仍在运行，但已经可以接收下一段输入。
+ * 这里只匹配形态稳定的提示符；全屏 TUI 没有稳定文本标记，仍交给观察超时兜底。
+ */
+const INTERACTIVE_PROMPT_PATTERNS: RegExp[] = [
+    /^(?:>>>|\.\.\.|In \[\d+\]:)\s*$/, // Python / IPython
+    /^>\s*$/, // Node/Deno REPL 与 Shell 续行提示符
+    /^->\s*$/, // MySQL 多行输入
+    /^(?:mysql|sqlite|gnuplot|julia|s?ftp|ftp|php)\s*>\s*$/i,
+    /^MariaDB \[[^\]\n]*\]>\s*$/i,
+    /^[^\s\n]{1,64}(?:=>|=#|-#|'>|">)\s*$/, // psql 及其多行提示符
+    /^(?:\d{1,3}\.){3}\d{1,3}:\d+>\s*$/, // redis-cli
+    /^\((?:gdb|lldb)\)\s*$/i,
+    /^irb\([^\n]*\):\d+:\d+[>*"]\s*$/i,
+];
+
+/** 会话终止特征：命中说明当前交互已结束，本轮观察可以停止。 */
 const SESSION_END_PATTERNS: RegExp[] = [
     /^logout\s*$/i, // exit/登出 shell
     /^Connection to \S+ closed\.?\s*$/i, // ssh 正常退出
@@ -75,67 +90,264 @@ const REMOTE_SESSION_COMMANDS = new Set(["ssh", "mosh", "telnet", "rlogin", "rsh
 /** 常驻/交互命令：不带参数就必定占用终端回不到提示符（是否带参数都按常驻处理） */
 const RESIDENT_COMMANDS = new Set([
     // 全屏监控类（自带刷新界面，不会自己退出）
-    "htop", "btop", "atop", "nmon", "glances", "bashtop", "btm", "zenith", "s-tui", "powertop",
-    "iftop", "iotop", "nethogs", "nload", "bmon", "slurm", "iptraf", "iptraf-ng", "cbm", "bandwhich", "wavemon",
+    "htop",
+    "btop",
+    "atop",
+    "nmon",
+    "glances",
+    "bashtop",
+    "btm",
+    "zenith",
+    "s-tui",
+    "powertop",
+    "iftop",
+    "iotop",
+    "nethogs",
+    "nload",
+    "bmon",
+    "slurm",
+    "iptraf",
+    "iptraf-ng",
+    "cbm",
+    "bandwhich",
+    "wavemon",
     "watch",
     // 分页器与手册
-    "less", "more", "most", "man", "info", "perldoc", "pydoc", "ri",
+    "less",
+    "more",
+    "most",
+    "man",
+    "info",
+    "perldoc",
+    "pydoc",
+    "ri",
     // 编辑器
-    "vi", "vim", "nvim", "view", "ex", "nano", "emacs", "emacsclient", "pico", "joe", "jed",
-    "micro", "helix", "hx", "kak", "kakoune", "ne", "mcedit", "visudo", "vipw", "vigr",
+    "vi",
+    "vim",
+    "nvim",
+    "view",
+    "ex",
+    "nano",
+    "emacs",
+    "emacsclient",
+    "pico",
+    "joe",
+    "jed",
+    "micro",
+    "helix",
+    "hx",
+    "kak",
+    "kakoune",
+    "ne",
+    "mcedit",
+    "visudo",
+    "vipw",
+    "vigr",
     // 终端复用与串口工具（tmux/screen 子命令差异大，在 isResidentByArgs 里特判）
-    "byobu", "zellij", "dvtm", "minicom", "picocom", "cu", "kermit", "ttyd",
+    "byobu",
+    "zellij",
+    "dvtm",
+    "minicom",
+    "picocom",
+    "cu",
+    "kermit",
+    "ttyd",
     // 数据库/消息队列交互客户端
-    "mysql", "mycli", "mariadb", "psql", "pgcli", "litecli", "vsql", "sqlplus", "gqlplus",
-    "redis-cli", "iredis", "mongo", "mongosh", "influx", "clickhouse-client", "cqlsh", "usql", "isql",
-    "kafka-console-consumer", "kafka-console-consumer.sh", "kafka-console-producer", "kafka-console-producer.sh",
-    "zkCli.sh", "zookeeper-shell",
+    "mysql",
+    "mycli",
+    "mariadb",
+    "psql",
+    "pgcli",
+    "litecli",
+    "vsql",
+    "sqlplus",
+    "gqlplus",
+    "redis-cli",
+    "iredis",
+    "mongo",
+    "mongosh",
+    "influx",
+    "clickhouse-client",
+    "cqlsh",
+    "usql",
+    "isql",
+    "kafka-console-consumer",
+    "kafka-console-consumer.sh",
+    "kafka-console-producer",
+    "kafka-console-producer.sh",
+    "zkCli.sh",
+    "zookeeper-shell",
     // 网络设备/蓝牙等交互控制台
-    "bluetoothctl", "iwctl", "vtysh", "clish",
+    "bluetoothctl",
+    "iwctl",
+    "vtysh",
+    "clish",
     // REPL 与调试器（裸命令才进 REPL 的解释器在 isResidentByArgs 里按参数判）
-    "irb", "pry", "ghci", "hugs", "clisp", "sbcl", "erl", "iex", "radian", "gdb", "lldb",
+    "irb",
+    "pry",
+    "ghci",
+    "hugs",
+    "clisp",
+    "sbcl",
+    "erl",
+    "iex",
+    "radian",
+    "gdb",
+    "lldb",
     // 网络交互客户端
-    "ftp", "lftp", "sftp", "ncftp", "nc", "ncat", "netcat", "socat",
+    "ftp",
+    "lftp",
+    "sftp",
+    "ncftp",
+    "nc",
+    "ncat",
+    "netcat",
+    "socat",
     // 文本浏览器与邮件/聊天客户端
-    "lynx", "w3m", "links", "links2", "elinks",
-    "irssi", "weechat", "finch", "mutt", "neomutt", "alpine", "tin", "slrn",
+    "lynx",
+    "w3m",
+    "links",
+    "links2",
+    "elinks",
+    "irssi",
+    "weechat",
+    "finch",
+    "mutt",
+    "neomutt",
+    "alpine",
+    "tin",
+    "slrn",
     // 文件管理器与 k8s/容器 TUI
-    "ranger", "nnn", "mc", "vifm", "lf", "broot",
-    "k9s", "lazydocker", "lazygit", "ctop", "dry", "stern", "kail",
+    "ranger",
+    "nnn",
+    "mc",
+    "vifm",
+    "lf",
+    "broot",
+    "k9s",
+    "lazydocker",
+    "lazygit",
+    "ctop",
+    "dry",
+    "stern",
+    "kail",
     // 其它常驻程序
     "yes", // 无限输出
-    "openvpn", "fswatch", "entr",
-    "mongostat", "mongotop",
+    "openvpn",
+    "fswatch",
+    "entr",
+    "mongostat",
+    "mongotop",
 ]);
 
 /** 裸命令进 REPL 的解释器：是否结束取决于有没有脚本/内联代码参数，见 isReplWithoutScript */
 const INTERPRETER_COMMANDS = new Set([
-    "python", "python2", "python3", "pypy", "pypy3",
-    "node", "nodejs", "deno", "bun",
-    "ruby", "perl", "php",
-    "lua", "lua5.1", "lua5.2", "lua5.3", "lua5.4", "luajit",
-    "r", "julia", "octave", "octave-cli", "gnuplot", "bc", "dc", "sqlite3",
+    "python",
+    "python2",
+    "python3",
+    "pypy",
+    "pypy3",
+    "node",
+    "nodejs",
+    "deno",
+    "bun",
+    "ruby",
+    "perl",
+    "php",
+    "lua",
+    "lua5.1",
+    "lua5.2",
+    "lua5.3",
+    "lua5.4",
+    "luajit",
+    "r",
+    "julia",
+    "octave",
+    "octave-cli",
+    "gnuplot",
+    "bc",
+    "dc",
+    "sqlite3",
 ]);
 
 /** 解释器「带值选项」：其后的 token 是选项值而不是脚本路径 */
 const INTERPRETER_OPTS_WITH_VALUE = new Set([
-    "-W", "-X", "-l", "-L", "-I", "-C", "-D", "-U", "-O",
-    "--require", "--loader", "--include", "--include-path", "--inspect", "--inspect-brk",
-    "--max-old-space-size", "--seed", "--home",
+    "-W",
+    "-X",
+    "-l",
+    "-L",
+    "-I",
+    "-C",
+    "-D",
+    "-U",
+    "-O",
+    "--require",
+    "--loader",
+    "--include",
+    "--include-path",
+    "--inspect",
+    "--inspect-brk",
+    "--max-old-space-size",
+    "--seed",
+    "--home",
 ]);
 
 /** 包装命令：真正的主命令在其参数里，需要跳过（与 commandStatus.ts 同规则） */
 const WRAPPER_COMMANDS = new Set([
-    "sudo", "doas", "nohup", "env", "command", "builtin", "time", "timeout",
-    "strace", "ltrace", "nice", "ionice", "taskset", "chrt", "setsid", "stdbuf",
+    "sudo",
+    "doas",
+    "nohup",
+    "env",
+    "command",
+    "builtin",
+    "time",
+    "timeout",
+    "strace",
+    "ltrace",
+    "nice",
+    "ionice",
+    "taskset",
+    "chrt",
+    "setsid",
+    "stdbuf",
 ]);
 
 /** 包装命令中带值的选项：跳过选项本身后还要再跳过它的值（与 commandStatus.ts 同规则） */
 const WRAPPER_OPTS_WITH_VALUE = new Set([
-    "-u", "-g", "-h", "-p", "-c", "-C", "-T", "-U", "-r", "-t", "-D", "-R", // sudo
-    "-n", "-d", "-o", "-f", "-e", "-a", "-w", "-s", // nice/strace 等
-    "--user", "--group", "--host", "--prompt", "--chdir", "--role", "--type", "--signal",
-    "--kill-after", "--preserve-env", "--cpu", "--delay", "--output", "--file",
+    "-u",
+    "-g",
+    "-h",
+    "-p",
+    "-c",
+    "-C",
+    "-T",
+    "-U",
+    "-r",
+    "-t",
+    "-D",
+    "-R", // sudo
+    "-n",
+    "-d",
+    "-o",
+    "-f",
+    "-e",
+    "-a",
+    "-w",
+    "-s", // nice/strace 等
+    "--user",
+    "--group",
+    "--host",
+    "--prompt",
+    "--chdir",
+    "--role",
+    "--type",
+    "--signal",
+    "--kill-after",
+    "--preserve-env",
+    "--cpu",
+    "--delay",
+    "--output",
+    "--file",
 ]);
 
 /**
@@ -188,7 +400,8 @@ function hasInteractiveTty(args: string[]): boolean {
  */
 function isReplWithoutScript(cmdName: string, args: string[]): boolean {
     // 内联代码/模块执行：跑完即退出，不算 REPL（-r 对 php 是内联代码，对 node 是预载模块，分开处理）
-    const codeOpts = cmdName === "php" ? ["-c", "-e", "-E", "-m", "-p", "-r", "--eval", "--print"] : ["-c", "-e", "-E", "-m", "-p", "--eval", "--print"];
+    const codeOpts =
+        cmdName === "php" ? ["-c", "-e", "-E", "-m", "-p", "-r", "--eval", "--print"] : ["-c", "-e", "-E", "-m", "-p", "--eval", "--print"];
     if (args.some((t) => codeOpts.includes(t) || /^-[eE]\S/.test(t))) return false;
     // -i/--interactive / php -a：就算有脚本，跑完也会停在 REPL
     if (args.some((t) => t === "-i" || t === "--interactive" || (t === "-a" && cmdName === "php"))) return true;
@@ -224,7 +437,13 @@ function isResidentByArgs(cmdName: string, args: string[]): boolean {
         case "nping":
         case "fping":
             return !args.some(
-                (t) => t === "-c" || t === "-w" || /^-[cw]\d/.test(t) || t.startsWith("--count") || t.startsWith("--timeout") || t.startsWith("--deadline"),
+                (t) =>
+                    t === "-c" ||
+                    t === "-w" ||
+                    /^-[cw]\d/.test(t) ||
+                    t.startsWith("--count") ||
+                    t.startsWith("--timeout") ||
+                    t.startsWith("--deadline"),
             );
         // mtr：无 --report 参数时是 GTK/curses 全屏界面
         case "mtr":
@@ -374,7 +593,25 @@ function isResidentByArgs(cmdName: string, args: string[]): boolean {
         case "supervisorctl": {
             // 裸命令进交互 shell；tail -f 持续跟随；其余子命令一次性
             if (subs.includes("tail")) return hasFollowFlag(args);
-            const oneshot = ["status", "start", "stop", "restart", "reread", "update", "add", "remove", "clear", "signal", "pid", "reload", "shutdown", "avail", "maintail", "fg", "version"];
+            const oneshot = [
+                "status",
+                "start",
+                "stop",
+                "restart",
+                "reread",
+                "update",
+                "add",
+                "remove",
+                "clear",
+                "signal",
+                "pid",
+                "reload",
+                "shutdown",
+                "avail",
+                "maintail",
+                "fg",
+                "version",
+            ];
             return !subs.some((t) => oneshot.includes(t));
         }
 
@@ -392,15 +629,18 @@ function isResidentByArgs(cmdName: string, args: string[]): boolean {
     }
 }
 
-// 判断命令是否结束
-export function parseCommandResultIsFinished(command: string, result: string): boolean {
+/**
+ * 判断本轮终端观察是否可以停止。
+ * true 包含命令结束、等待输入、进入交互提示符和会话退出，不代表进程一定已经退出。
+ */
+export function parseCommandResultShouldStopWatching(command: string, result: string): boolean {
     // 快照为空说明连命令回显都还没渲染出来，无从判断
     if (!result || !result.trim()) return false;
     // 终端快照带 ANSI 颜色码和 \r，先剥离避免干扰匹配
     const text = result.replace(/\x1b\[[0-9;?]*[a-zA-Z]|\x1b\][^\x07]*\x07/g, "").replace(/\r/g, "");
     const lines = text.split("\n");
 
-    // 命令是否结束主要看最后一个非空行：跑完是新提示符，没跑完是输出或回显
+    // 终端状态主要看最后一个非空行：提示符表示已进入下一次交互，普通输出表示仍需观察。
     let lastLine = "";
     let nonEmptyCount = 0;
     // 尾部非空行（最多 3 行）：会话终止特征不一定在最后一行，
@@ -421,16 +661,24 @@ export function parseCommandResultIsFinished(command: string, result: string): b
 
     const { name, args } = parseMainCommand(command);
 
-    // 第一层：等待输入形态（密码/确认/分页器），优先级最高
-    if (WAITING_INPUT_PATTERNS.some((pattern) => pattern.test(lastLine))) return false;
-    // 第二层：远程会话命令的提示符在远端，只能凭尾部几行里的终止特征判断
+    // 第一层：密码、确认、分页器和 REPL 都已经进入下一次交互，立即把快照交还上层。
+    if (WAITING_INPUT_PATTERNS.some((pattern) => pattern.test(lastLine))) return true;
+    if (INTERACTIVE_PROMPT_PATTERNS.some((pattern) => pattern.test(lastLine))) return true;
+
+    const shellPromptReady = SHELL_PROMPT_PATTERNS.some((pattern) => pattern.test(lastLine));
+    // 第二层：远程会话的远端提示符与本地提示符都表示无需继续等待；会话终止也直接停止观察。
     if (REMOTE_SESSION_COMMANDS.has(name)) {
-        return SESSION_END_PATTERNS.some((pattern) => tailLines.some((line) => pattern.test(line)));
+        return shellPromptReady || SESSION_END_PATTERNS.some((pattern) => tailLines.some((line) => pattern.test(line)));
     }
-    // 第三层：常驻/交互命令回不到提示符，直接判未结束
+
+    // 第三层：出现 Shell 提示符时，即使原命令被归为常驻程序，也说明它已经退出并交还终端。
+    // 这项检查必须早于常驻判定，否则 mysql -e、超时包装命令等一次性用法会一直等待。
+    if (shellPromptReady) return true;
+
+    // 第四层：仍在持续输出且没有任何输入提示的常驻命令，需要继续观察。
     if (RESIDENT_COMMANDS.has(name) || isResidentByArgs(name, args)) return false;
-    // 第四层：exit/logout 等会话终止特征（放在常驻判定之后，避免 tail -f 的日志内容命中）
+
+    // 第五层：exit/logout 等终止特征。放在常驻判定之后，避免 tail -f 的日志内容误触发。
     if (SESSION_END_PATTERNS.some((pattern) => pattern.test(lastLine))) return true;
-    // 第五层：最后一行是 shell 提示符 → 命令已执行完
-    return SHELL_PROMPT_PATTERNS.some((pattern) => pattern.test(lastLine));
+    return false;
 }

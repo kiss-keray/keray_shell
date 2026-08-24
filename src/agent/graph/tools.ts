@@ -6,9 +6,9 @@ import { getAgentRuntimeContext } from "../runtimeContext";
 import { runTerminalWatchAgent, sleep, TERMINAL_WATCH_SETTLE_MS } from "../subAgent/watchTermResult";
 import TermServer from "@/components/ssh/term_server";
 import { parseCommandResultIsSuccess } from "./utils/commandStatus";
-import { parseCommandResultIsFinished } from "./utils/commandFinished";
+import { parseCommandResultShouldStopWatching } from "./utils/commandFinished";
 import { increasingSleep } from "./utils/Index";
-import { cancelExecRemote, execRemote } from "@/utils/project";
+import { cancelExecRemote, execRemoteResult, type RemoteExecResult } from "@/utils/project";
 
 export type AgentToolRisk = "R0" | "R1" | "R2" | "R3" | "R4";
 
@@ -34,7 +34,7 @@ export interface ToolOptions {
 }
 
 /** 静默命令使用独立执行 ID；AbortSignal 触发时通知 Rust 端中断对应 SSH channel。 */
-async function execRemoteWithAbort(serverId: string, data: string, signal?: AbortSignal): Promise<string> {
+async function execRemoteWithAbort(serverId: string, data: string, signal?: AbortSignal): Promise<RemoteExecResult> {
     signal?.throwIfAborted();
     const executionId = crypto.randomUUID();
     const cancel = () => {
@@ -44,10 +44,17 @@ async function execRemoteWithAbort(serverId: string, data: string, signal?: Abor
     };
     signal?.addEventListener("abort", cancel, { once: true });
     try {
-        return await execRemote(serverId, data, executionId);
+        return await execRemoteResult(serverId, data, executionId);
     } finally {
         signal?.removeEventListener("abort", cancel);
     }
+}
+
+/** 合并静默执行的两个输出流；无法还原跨流时序，但必须把 stderr 返回给 Agent 作为失败证据。 */
+function mergeRemoteExecOutput(result: RemoteExecResult): string {
+    if (!result.stdout) return result.stderr;
+    if (!result.stderr) return result.stdout;
+    return result.stdout.endsWith("\n") ? `${result.stdout}${result.stderr}` : `${result.stdout}\n${result.stderr}`;
 }
 
 /**
@@ -82,17 +89,12 @@ export function loadDocBodyTool(promptManager: PromptManager) {
     });
 }
 
-interface ExecCommandServer {
-    serverId: string;
-    sessionId: string;
-}
-
 /**
  * 执行命令工具
  */
-export function execCommandTool(modelManager: ModelConfigManager, commandQueueCall?: CommandQueueCall) {
+export function execCommandTool(modelManager: ModelConfigManager, idMap: Record<string, string>, commandQueueCall?: CommandQueueCall) {
     return tool(
-        async ({ servers, data, watchDescription, watchTimeMs }, config: ToolRunnableConfig) => {
+        async ({ serverIds, data, watchDescription, watchTimeMs }, config: ToolRunnableConfig) => {
             const signal = config?.signal;
             signal?.throwIfAborted();
             const commandQueueItem: CommandQueueItem = {
@@ -108,9 +110,18 @@ export function execCommandTool(modelManager: ModelConfigManager, commandQueueCa
                 // 是否在终端中执行
                 const termExec = runtimeContext.commandExecution === "visual";
                 if (termExec) {
-                    return await visualExecCommand(servers, modelManager, data, watchTimeMs, commandQueueItem, watchDescription, signal);
+                    return await visualExecCommand(
+                        serverIds,
+                        idMap,
+                        modelManager,
+                        data,
+                        watchTimeMs,
+                        commandQueueItem,
+                        watchDescription,
+                        signal,
+                    );
                 }
-                return await silentExecCommand(servers, data, watchTimeMs, commandQueueItem, signal);
+                return await silentExecCommand(serverIds, idMap, data, watchTimeMs, commandQueueItem, signal);
             } finally {
                 if (signal?.aborted) {
                     commandQueueItem.status = "cancelled";
@@ -130,16 +141,9 @@ export function execCommandTool(modelManager: ModelConfigManager, commandQueueCa
                 "工具结果仅用于后续分析，界面会自动在思考区域以 Shell 代码块展示。" +
                 "不要在最终回复中原样复述命令或完整工具输出，也不要自行添加 Markdown 代码块；" +
                 "最终回复只总结结论、异常和必要证据，除非用户明确要求查看原始输出。" +
-                "执行结果是一个对象，键为服务器终端sessionId，值为执行结果。",
+                "执行结果是一个对象，键为服务器id，值为执行结果。",
             schema: z.object({
-                servers: z
-                    .array(
-                        z.object({
-                            serverId: z.string().describe("服务器ID"),
-                            sessionId: z.string().describe("服务器终端sessionId"),
-                        }),
-                    )
-                    .describe("需要执行命令的服务器列表"),
+                serverIds: z.array(z.string()).describe("需要执行命令的服务器列表"),
                 data: z.string().describe("执行的命令"),
                 watchTimeMs: z
                     .number()
@@ -162,17 +166,17 @@ export function execCommandTool(modelManager: ModelConfigManager, commandQueueCa
  * 静默执行命令
  */
 async function silentExecCommand(
-    servers: ExecCommandServer[],
+    serverIds: string[],
+    idMap: Record<string, string>,
     data: string,
     watchTimeMs: number,
     commandQueueItem: CommandQueueItem,
     signal?: AbortSignal,
 ) {
     // 给每个执行命令加上signal信号
-    const serversx = servers.map((server) => {
+    const serversx = serverIds.map((serverId) => {
         return {
-            serverId: server.serverId,
-            sessionId: server.sessionId,
+            serverId,
             signal: new AbortSignal(),
         };
     });
@@ -187,9 +191,18 @@ async function silentExecCommand(
     // 静默执行命令
     const results = await Promise.all(
         serversx.map(async (server) => {
-            const result = await execRemoteWithAbort(server.serverId, data, server.signal);
-            const status = parseCommandResultIsSuccess(data, result);
-            return { sessionId: server.sessionId, result, status };
+            try {
+                const execResult = await execRemoteWithAbort(server.serverId, data, server.signal);
+                const result = mergeRemoteExecOutput(execResult);
+                if (execResult.exitCode !== null && execResult.exitCode !== undefined) {
+                    return { serverId: server.serverId, result, status: execResult.exitCode === 0 ? "success" : "error" };
+                }
+                // 静默执行有可靠退出码时直接使用；只有服务端未返回 ExitStatus 才降级为文本判断。
+                const status = parseCommandResultIsSuccess(data, result);
+                return { serverId: server.serverId, result, status };
+            } catch (error) {
+                return { serverId: server.serverId, result: "静默执行失败", status: "error" };
+            }
         }),
     ).finally(() => {
         signal?.removeEventListener("abort", cancelAll);
@@ -204,7 +217,7 @@ async function silentExecCommand(
     // 返回执行结果
     return results.reduce(
         (acc, result) => {
-            acc[result.sessionId] = result.result;
+            acc[result.serverId] = result.result;
             return acc;
         },
         {} as Record<string, string>,
@@ -215,7 +228,8 @@ async function silentExecCommand(
  * 可视化执行命令
  */
 async function visualExecCommand(
-    servers: ExecCommandServer[],
+    serverIds: string[],
+    idMap: Record<string, string>,
     modelManager: ModelConfigManager,
     data: string,
     watchTimeMs: number,
@@ -231,28 +245,28 @@ async function visualExecCommand(
         term?: TermServer;
     }
     const resultItems: Record<string, Item> = {};
-    for (const server of servers) {
-        const termServer = TermServer.getTermServer(server.sessionId);
+    for (const serverId of serverIds) {
+        const termServer = TermServer.getTermServer(idMap[serverId]);
         if (!termServer) {
-            resultItems[server.sessionId] = {
+            resultItems[serverId] = {
                 result: "终端不存在，请先连接终端。",
                 status: "error",
                 lineCount: 0,
             };
         } else if (!termServer._active()) {
-            resultItems[server.sessionId] = {
+            resultItems[serverId] = {
                 result: "终端已关闭，请先连接终端。",
                 status: "error",
                 lineCount: 0,
             };
         } else {
-            resultItems[server.sessionId] = {
+            resultItems[serverId] = {
                 result: "",
                 status: "running",
                 lineCount: termServer.lineCount,
                 term: termServer,
             };
-            termServer.write(data + "\n");
+            await termServer.write(data + "\n");
         }
     }
     const interrupt = () => {
@@ -270,18 +284,21 @@ async function visualExecCommand(
         signal?.throwIfAborted();
         await sleep(100, signal);
         const useAiWatch = Boolean(watchDescription && watchDescription !== "等待命令执行完成");
-        const _nowTimeMs = Date.now();
+        let _nowTimeMs = Date.now();
         let watchIndex = 0;
-        for (let i = 0; _nowTimeMs < watchEndTimeMs && watchIndex < servers.length; i++) {
+        for (let i = 0; _nowTimeMs < watchEndTimeMs && watchIndex < serverIds.length; i++, _nowTimeMs = Date.now()) {
             signal?.throwIfAborted();
-            const sid = servers[watchIndex].sessionId;
-            const resultItem = resultItems[sid];
+            const serverId = serverIds[watchIndex];
+            const resultItem = resultItems[serverIds[watchIndex]];
             if (!resultItem.term) {
                 // 终端不存在，跳过
                 watchIndex++;
                 continue;
             }
-            const snapshot = snapshotTerminal(sid, resultItem.lineCount);
+            const snapshot = snapshotTerminal(idMap[serverId]!, resultItem.lineCount);
+            console.log("data:::\n", data);
+            console.log("snapshot:::\n", snapshot);
+            console.log("\n\n\n");
             let result = null;
             if (useAiWatch) {
                 result = await runTerminalWatchAgent(
@@ -293,7 +310,7 @@ async function visualExecCommand(
                     },
                     signal,
                 );
-            } else if (parseCommandResultIsFinished(data, snapshot)) {
+            } else if (parseCommandResultShouldStopWatching(data, snapshot)) {
                 result = snapshot;
             }
             if (result) {
@@ -308,10 +325,11 @@ async function visualExecCommand(
                 await sleep(TERMINAL_WATCH_SETTLE_MS, signal);
             }
         }
-        for (const sid in resultItems) {
-            const resultItem = resultItems[sid];
+        for (const serverId in resultItems) {
+            const resultItem = resultItems[serverId];
             if (resultItem.status === "running") {
-                const snapshot = snapshotTerminal(sid, resultItem.lineCount);
+                const sessionId = idMap[serverId];
+                const snapshot = snapshotTerminal(sessionId, resultItem.lineCount);
                 resultItem.term?.write("\x03");
                 resultItem.status = "error";
                 resultItem.result = `观察超时，以下是当前终端增量：\n${snapshot}`;
@@ -324,9 +342,9 @@ async function visualExecCommand(
         else if (allError) commandQueueItem.status = "error";
         else commandQueueItem.status = "partial_success";
         return Object.keys(resultItems).reduce(
-            (acc, sid) => {
-                const resultItem = resultItems[sid];
-                acc[sid] = resultItem.result;
+            (acc, serverId) => {
+                const resultItem = resultItems[serverId];
+                acc[serverId] = resultItem.result;
                 return acc;
             },
             {} as Record<string, string>,
@@ -365,12 +383,13 @@ export function createBuiltinTools(
     promptManager: PromptManager,
     modelManager: ModelConfigManager,
     options: ToolOptions,
+    serverIdMap: Record<string, string>,
 ): StructuredToolInterface[] {
     // commandExecution=silent 走后台 exec，visual 写入当前终端；watchResult 时由 subAgent 观察输出。
     return [
         useSkillTool(promptManager),
         loadDocBodyTool(promptManager),
-        execCommandTool(modelManager, options.commandQueueCall),
+        execCommandTool(modelManager, serverIdMap, options.commandQueueCall),
         askToExecuteTool(),
     ];
 }
