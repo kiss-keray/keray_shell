@@ -264,7 +264,7 @@ declare global {
   export type { Theme, ThemeMode, ServerSyncType, ServerRemoteData, ConfigModel } from './src/stores/config'
   import('./src/stores/config')
   // @ts-ignore
-  export type { TransferStatus, TransferKind, SftpPaneTransferBinding, ByteProgressMeta, LoadingFlag, TransferItem, DownloadStore } from './src/stores/downloadStore'
+  export type { TransferStatus, TransferKind, SetStatusFrom, SftpPaneTransferBinding, ByteProgressMeta, LoadingFlag, TransferItem, DownloadStore } from './src/stores/downloadStore'
   import('./src/stores/downloadStore')
   // @ts-ignore
   export type { Priority, KeyEventCallback } from './src/stores/keyEvent'

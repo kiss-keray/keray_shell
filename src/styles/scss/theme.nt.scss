@@ -923,6 +923,10 @@
             .tab-badge {
                 background: var(--nt-accent-soft);
                 color: var(--nt-text-strong);
+
+                &.loading {
+                    color: var(--nt-accent);
+                }
             }
         }
         .files-view {
@@ -1143,6 +1147,14 @@
             &:hover {
                 background: var(--nt-success-bg-hover);
             }
+        }
+
+        .loading-tip {
+            color: var(--nt-text-fade);
+        }
+
+        .loading-tip-ic {
+            color: var(--nt-accent);
         }
     }
 

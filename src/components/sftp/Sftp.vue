@@ -25,7 +25,7 @@ const props = defineProps<{
 
 const { on, off } = useBus();
 
-const { activeCount } = storeToRefs(useDownloadStore());
+const { activeCount, generateLoading } = storeToRefs(useDownloadStore());
 const { sftpTreeWidthPx } = storeToRefs(useConfigStore());
 
 const server = inject<ChannelInstance>(ChannelInstanceProvideKey)!;
@@ -103,9 +103,18 @@ provide(SftpActiveItemKey, activeItem);
     <div class="sftp-panel relative flex flex-col h-full">
         <div class="tabs shrink-0 flex items-center gap-1">
             <button type="button" class="tab" :class="{ on: activeTab === 'files' }" @click="activeTab = 'files'">文件</button>
-            <button type="button" class="tab" :class="{ on: activeTab === 'downloads' }" @click="activeTab = 'downloads'">
+            <button
+                type="button"
+                class="tab"
+                :class="{ on: activeTab === 'downloads' }"
+                :aria-busy="generateLoading"
+                @click="activeTab = 'downloads'"
+            >
                 传输
-                <span class="tab-badge">{{ activeCount }}</span>
+                <span class="tab-badge" :class="{ loading: generateLoading }">
+                    <Icon v-if="generateLoading" icon="mdi:loading" class="tab-load-ic app-loading-spin" />
+                    <span v-if="!generateLoading">{{ activeCount }}</span>
+                </span>
             </button>
             <div class="sftp-process">
                 <div v-show="process && process < 100" class="process-container">
@@ -135,6 +144,8 @@ provide(SftpActiveItemKey, activeItem);
         border-radius: 8px;
         overflow: hidden;
         .tab {
+            display: inline-flex;
+            align-items: center;
             padding: 4px 10px;
             font-size: var(--font-size-md);
             white-space: nowrap;
@@ -150,6 +161,16 @@ provide(SftpActiveItemKey, activeItem);
     padding: 0 6px;
     border-radius: 999px;
     font-size: var(--font-size-xs);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    min-height: 1.25em;
+    line-height: 1.25;
+}
+.tab-load-ic {
+    flex-shrink: 0;
+    font-size: 0.95em;
 }
 .sftp-process {
     display: flex;

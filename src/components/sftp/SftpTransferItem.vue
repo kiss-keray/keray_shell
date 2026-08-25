@@ -73,14 +73,14 @@ function openContextMenu(e: MouseEvent) {
             ? {
                   label: "取消并删除本地",
                   handler: async () => {
-                      props.item.cancel();
+                      await props.item.cancel();
                       removeLocalIfAny(props.item.localPath);
                   },
               }
             : {
                   label: "取消并删除远程",
                   handler: async () => {
-                      props.item.cancel();
+                      await props.item.cancel();
                       remoteRemove(props.item.serverId, props.item.remotePath);
                   },
               },

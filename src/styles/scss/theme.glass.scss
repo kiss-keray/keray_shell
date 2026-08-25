@@ -768,6 +768,10 @@
         .tab-badge {
             background: var(--glass-accent-soft);
             color: var(--glass-text-strong);
+
+            &.loading {
+                color: var(--glass-accent);
+            }
         }
 
         .process-container {
@@ -947,6 +951,14 @@
             &:hover {
                 background: var(--glass-success-hover);
             }
+        }
+
+        .loading-tip {
+            color: var(--glass-text-muted);
+        }
+
+        .loading-tip-ic {
+            color: var(--glass-accent);
         }
     }
 

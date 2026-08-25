@@ -15,20 +15,62 @@ use std::future::Future;
 use std::io::SeekFrom;
 use std::sync::atomic::{AtomicBool, AtomicI8, AtomicU64, Ordering};
 use std::sync::Arc;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::fs::{remove_file, File, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 use tokio::sync::RwLock;
 use tokio::sync::{mpsc, Mutex};
 use tokio::task::JoinHandle;
 
-static DOWNLOAD_CTRL_STORE: Lazy<RwLock<HashMap<String, Arc<DownloadControl>>>> =
-    Lazy::new(|| RwLock::new(HashMap::new()));
+static DOWNLOAD_CTRL_STORE: Lazy<RwLock<HashMap<String, Arc<DownloadControl>>>> = Lazy::new(|| {
+    // pause/cancel 可能在任务启动前插入控制块；若任务从未启动则无人 Drop，造成泄漏。
+    // 首次访问 store 时启动清理任务：每小时扫描一次，移除创建超过 12 小时的条目。
+    tokio::spawn(async {
+        const INTERVAL_SECS: u64 = 1;
+        const EXPIRE_MS: u64 = 12 * 60 * 60 * 1000;
+        loop {
+            tokio::time::sleep(Duration::from_secs(INTERVAL_SECS)).await;
+            let now = now_millis();
+            let mut map = DOWNLOAD_CTRL_STORE.write().await;
+            let before = map.len();
+            map.retain(|_, ctrl| now.saturating_sub(ctrl.create_time) < EXPIRE_MS);
+            let removed = before - map.len();
+            if removed > 0 {
+                info!("清理过期 DownloadControl: {}", removed);
+            }
+        }
+    });
+    RwLock::new(HashMap::new())
+});
 
-#[derive(Default)]
 struct DownloadControl {
     paused: AtomicBool,
     cancelled: AtomicBool,
+    create_time: u64,
+}
+
+impl Default for DownloadControl {
+    fn default() -> Self {
+        DownloadControl {
+            paused: AtomicBool::new(false),
+            cancelled: AtomicBool::new(false),
+            create_time: now_millis(),
+        }
+    }
+}
+
+struct DownloadControlDrop {
+    request_id: String,
+}
+
+impl Drop for DownloadControlDrop {
+    fn drop(&mut self) {
+        let request_id = self.request_id.clone();
+        tokio::spawn(async move {
+            let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
+            ctrl_map.remove(&request_id);
+        });
+    }
 }
 
 #[derive(Clone, Serialize)]
@@ -40,20 +82,29 @@ pub struct DownloadProgressPayload {
 }
 
 // 获取下载控制器
-async fn with_transfer_ctrl(request_id: &str) -> Arc<DownloadControl> {
+async fn with_transfer_ctrl(request_id: &str) -> (Arc<DownloadControl>, DownloadControlDrop) {
     let mut map = DOWNLOAD_CTRL_STORE.write().await;
-    map.entry(request_id.to_string())
+    let ctrl = map
+        .entry(request_id.to_string())
         .or_insert_with(|| Arc::new(DownloadControl::default()))
-        .clone()
+        .clone();
+    (
+        ctrl,
+        DownloadControlDrop {
+            request_id: request_id.to_string(),
+        },
+    )
 }
 
 // 暂停下载
 #[tauri::command]
 pub async fn transfer_pause(request_id: String) -> Res<()> {
-    let map = DOWNLOAD_CTRL_STORE.read().await;
-    let Some(ctrl) = map.get(&request_id) else {
-        return Res::fail("下载任务不存在");
-    };
+    let mut map = DOWNLOAD_CTRL_STORE.write().await;
+    // 可以提前暂停，就算任务还没建立起来。 bug：如果任务一直不启动会造成内存溢出，信号这里添加了但是没地方释放
+    let ctrl = map
+        .entry(request_id.to_string())
+        .or_insert_with(|| Arc::new(DownloadControl::default()))
+        .clone();
     ctrl.paused.store(true, Ordering::SeqCst);
     Res::ok()
 }
@@ -61,10 +112,11 @@ pub async fn transfer_pause(request_id: String) -> Res<()> {
 // 取消下载
 #[tauri::command]
 pub async fn transfer_cancel(request_id: String) -> Res<()> {
-    let map = DOWNLOAD_CTRL_STORE.read().await;
-    let Some(ctrl) = map.get(&request_id) else {
-        return Res::fail("下载任务不存在");
-    };
+    let mut map = DOWNLOAD_CTRL_STORE.write().await;
+    let ctrl = map
+        .entry(request_id.to_string())
+        .or_insert_with(|| Arc::new(DownloadControl::default()))
+        .clone();
     ctrl.cancelled.store(true, Ordering::SeqCst);
     Res::ok()
 }
@@ -97,7 +149,7 @@ async fn __download_file(
     (
         File,
         (Channel<Msg>, Option<ChannelPoolPermit>),
-        Arc<DownloadControl>,
+        (Arc<DownloadControl>, DownloadControlDrop),
     ),
     String,
 > {
@@ -125,8 +177,6 @@ async fn __download_file(
         }
     };
     let ctrl = with_transfer_ctrl(&request_id).await;
-    ctrl.paused.store(false, Ordering::SeqCst);
-    ctrl.cancelled.store(false, Ordering::SeqCst);
     Ok((local_file, channel, ctrl))
 }
 
@@ -146,13 +196,19 @@ pub async fn cat_download_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (mut local_file, (mut channel, _permit), ctrl) =
+    let (mut local_file, (mut channel, _permit), (ctrl, _ctrl_drop)) =
         match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
                 return Res::fail(&err);
             }
         };
+    if ctrl.paused.load(Ordering::SeqCst) {
+        return Res::of(Paused);
+    }
+    if ctrl.cancelled.load(Ordering::SeqCst) {
+        return Res::of(Cancelled);
+    }
     let remote_path_escaped = remote_path.replace('\'', r#"'\"'\"'"#);
     let cmd = if offset == 0 {
         format!("cat -- '{}'", remote_path_escaped)
@@ -172,17 +228,12 @@ pub async fn cat_download_file(
             return Res::fail("下载失败");
         }
     }
+
     loop {
         if ctrl.cancelled.load(Ordering::SeqCst) {
-            let _ = channel.close().await;
-            let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-            ctrl_map.remove(&request_id);
             return Res::of(Cancelled);
         }
         if ctrl.paused.load(Ordering::SeqCst) {
-            let _ = channel.close().await;
-            let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-            ctrl_map.remove(&request_id);
             return Res::of(Paused);
         }
         let Some(msg) = channel.wait().await else {
@@ -194,8 +245,6 @@ pub async fn cat_download_file(
                     continue;
                 }
                 if let Err(_) = local_file.write_all(data).await {
-                    let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                    ctrl_map.remove(&request_id);
                     return Res::fail("写入本地文件失败");
                 }
                 let delta = data.len() as u64;
@@ -221,8 +270,6 @@ pub async fn cat_download_file(
     }
     if let Some(code) = exit_status {
         if code != 0 {
-            let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-            ctrl_map.remove(&request_id);
             return Res::fail("下载失败");
         }
     }
@@ -230,8 +277,6 @@ pub async fn cat_download_file(
         emit(loaded, pending_delta);
     }
     let _ = local_file.flush().await;
-    let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-    ctrl_map.remove(&request_id);
     Res::of(Success)
 }
 
@@ -249,13 +294,19 @@ pub async fn download_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (local_file, (channel, _permit), ctrl) =
+    let (local_file, (channel, _permit), (ctrl, _ctrl_drop)) =
         match __download_file(&request_id, &server_id, &local_path, &offset).await {
             Ok(e) => e,
             Err(err) => {
                 return Res::fail(&err);
             }
         };
+    if ctrl.paused.load(Ordering::SeqCst) {
+        return Res::of(Paused);
+    }
+    if ctrl.cancelled.load(Ordering::SeqCst) {
+        return Res::of(Cancelled);
+    }
     emit(offset, 0);
     let local_file = Arc::new(Mutex::new(local_file));
     let loaded = Arc::new(AtomicU64::new(offset)); // 已经下载的大小
@@ -263,7 +314,6 @@ pub async fn download_file(
     let last_emit_at = Arc::new(AtomicU64::new(now_millis())); // 上次通知的时间戳
     let res = Arc::new(AtomicI8::new(1)); // 结束状态 0 暂停 -1 取消 1成功
     match _sftp_read(channel, &remote_path, &offset, |bys| {
-        let request_id = request_id.clone();
         let ctrl = ctrl.clone();
         let local_file = local_file.clone();
         let loaded = loaded.clone();
@@ -274,8 +324,6 @@ pub async fn download_file(
             let cancelled = ctrl.cancelled.load(Ordering::SeqCst);
             let paused = ctrl.paused.load(Ordering::SeqCst);
             if cancelled || paused {
-                let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                ctrl_map.remove(&request_id);
                 if cancelled {
                     res.store(-1, Ordering::SeqCst);
                 } else {
@@ -285,8 +333,6 @@ pub async fn download_file(
             }
             let mut local_file = local_file.lock().await;
             if let Err(_) = local_file.write_all(&bys).await {
-                let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                ctrl_map.remove(&request_id);
                 return Err("写入本地文件失败".into());
             }
             let delta = bys.len() as u64;
@@ -331,7 +377,7 @@ async fn __upload_file(
     (
         File,
         (Channel<Msg>, Option<ChannelPoolPermit>),
-        Arc<DownloadControl>,
+        (Arc<DownloadControl>, DownloadControlDrop),
     ),
     String,
 > {
@@ -356,8 +402,6 @@ async fn __upload_file(
         }
     };
     let ctrl = with_transfer_ctrl(&request_id).await;
-    ctrl.paused.store(false, Ordering::SeqCst);
-    ctrl.cancelled.store(false, Ordering::SeqCst);
     Ok((local_file, channel, ctrl))
 }
 
@@ -376,13 +420,19 @@ pub async fn upload_file(
     let emit = |loaded: u64, delta: u64| {
         __emit(&stream, &loaded, &delta, &total);
     };
-    let (local_file, (channel, _permit), ctrl) =
+    let (local_file, (channel, _permit), (ctrl, _ctrl_drop)) =
         match __upload_file(&request_id, &server_id, &local_path, offset).await {
             Ok(e) => e,
             Err(err) => {
                 return Res::fail(&err);
             }
         };
+    if ctrl.paused.load(Ordering::SeqCst) {
+        return Res::of(Paused);
+    }
+    if ctrl.cancelled.load(Ordering::SeqCst) {
+        return Res::of(Cancelled);
+    }
     emit(offset, 0);
     let local_file = Arc::new(Mutex::new(local_file));
     let loaded = Arc::new(AtomicU64::new(offset)); // 已经上传的大小
@@ -408,8 +458,6 @@ pub async fn upload_file(
                         Ok(Some(buf))
                     }
                     Err(_) => {
-                        let mut ctrl_map = DOWNLOAD_CTRL_STORE.write().await;
-                        ctrl_map.remove(&request_id);
                         return Err("读取失败".into());
                     }
                 }
