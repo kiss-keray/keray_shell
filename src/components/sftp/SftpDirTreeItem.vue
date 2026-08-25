@@ -17,7 +17,8 @@ const props = defineProps<{
 }>();
 const appStore = useAppStore();
 const { emit, on, off } = useBus();
-const { addDownloadTask, addUploadTask } = useDownloadStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
+const downloadStore = useDownloadStore();
 const { loadingText } = storeToRefs(appStore);
 
 const server = inject<ChannelInstance>(ChannelInstanceProvideKey)!;
@@ -95,7 +96,7 @@ function uploadFiles(paths: string[], fileItem: RemoteFileItem) {
     }
     const remoteDir = fileItem.linkPath || fileItem.id;
     const bakActiveItem = activeItem.value;
-    addUploadTask({ sessionId: server.sessionId, serverId: server.server.id }, paths, remoteDir, () => {
+    downloadStore.addUploadTask({ sessionId: server.sessionId, serverId: server.server.id }, paths, remoteDir, () => {
         if (bakActiveItem === activeItem.value) {
             activeItem.value = fileItem;
         }
@@ -168,7 +169,7 @@ async function openContextMenu(e: MouseEvent) {
             disabled: offline || isRoot,
             handler: () => {
                 loadingText.value = "下载任务生成中...";
-                const promise = addDownloadTask({ sessionId: server.sessionId, serverId: server.server.id }, [node.id]);
+                const promise = downloadStore.addDownloadTask({ sessionId: server.sessionId, serverId: server.server.id }, [node.id]);
                 promise
                     .catch((e) => {
                         console.error(e);

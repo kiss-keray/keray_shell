@@ -25,8 +25,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue"]);
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const configStore = useConfigStore();
-const { changeConfig } = configStore;
 
 function containerEl() {
     const c = props.container;
@@ -72,7 +72,7 @@ function onPointerDown(e) {
     };
     upHandler = () => {
         endDrag();
-        changeConfig({});
+        configStore.changeConfig({});
     };
     window.addEventListener("mousemove", moveHandler);
     window.addEventListener("mouseup", upHandler, true);

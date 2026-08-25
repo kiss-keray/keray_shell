@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 
 export const PRIORITY_LOWEST = 1;
 export const PRIORITY_LOW = 2;
@@ -61,3 +61,8 @@ export const useKeyEventStore = defineStore("keyEvent", () => {
         register,
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useKeyEventStore, import.meta.hot));
+}

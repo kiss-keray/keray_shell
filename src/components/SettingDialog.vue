@@ -25,10 +25,9 @@ defineOptions({ name: "SettingsDialog" });
 export type SettingsTab = "general" | "appearance" | "layout" | "terminal" | "agent" | "server" | "about";
 
 const configStore = useConfigStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const serverDataStore = useServerDataStore();
 const { loadFalg } = storeToRefs(configStore);
-
-const { uploadServerData, downloadServerData } = serverDataStore;
 
 const activeTab = defineModel<SettingsTab>("activeTab", { required: true });
 
@@ -423,7 +422,7 @@ async function clickUploadServerData() {
     try {
         configStore.serverSyncKey = draft.serverSyncKey;
         configStore.serverSyncData = getServerSyncData();
-        await uploadServerData(draft.serverSyncKey);
+        await serverDataStore.uploadServerData(draft.serverSyncKey);
         showToast("上传成功", "success");
         configStore.changeConfig({
             serverSyncKey: configStore.serverSyncKey,
@@ -442,7 +441,7 @@ async function clickDownloadServerData() {
     try {
         configStore.serverSyncKey = draft.serverSyncKey;
         configStore.serverSyncData = getServerSyncData();
-        await downloadServerData(draft.serverSyncKey);
+        await serverDataStore.downloadServerData(draft.serverSyncKey);
         showToast("下载成功", "success");
         configStore.changeConfig({
             serverSyncKey: configStore.serverSyncKey,

@@ -19,11 +19,11 @@ const props = withDefaults(
     },
 );
 
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const configStore = useConfigStore();
 const appStore = useAppStore();
 const { theme, themeMode } = storeToRefs(configStore);
 const { showOverviewPanel, showTermPanel, showSftpPanel, showAgentPanel } = storeToRefs(appStore);
-const { changeConfig } = configStore;
 
 const isNtTheme = computed(() => theme.value === "nt");
 const isDarkMode = computed(() => themeMode.value === "dark");
@@ -52,11 +52,11 @@ function openServerTreeWin() {
             class="btn"
             :class="{ active: !isNtTheme }"
             title="切换主题（拟态/毛玻璃）"
-            @click="changeConfig({ theme: isNtTheme ? 'glass' : 'nt' })"
+            @click="configStore.changeConfig({ theme: isNtTheme ? 'glass' : 'nt' })"
         >
             <Icon :icon="isNtTheme ? 'mdi:water-outline' : 'mdi:water'" class="text-lg" />
         </button>
-        <button v-if="bts.includes('themeMode')" type="button" class="btn" :class="{ active: !isDarkMode }" title="切换明暗模式" @click="changeConfig({ themeMode: isDarkMode ? 'light' : 'dark' })">
+        <button v-if="bts.includes('themeMode')" type="button" class="btn" :class="{ active: !isDarkMode }" title="切换明暗模式" @click="configStore.changeConfig({ themeMode: isDarkMode ? 'light' : 'dark' })">
             <Icon :icon="isDarkMode ? 'mdi:weather-night' : 'mdi:white-balance-sunny'" class="text-lg" />
         </button>
         <button v-if="bts.includes('overviewPanel')" type="button" class="btn" :class="{ active: showOverviewPanel }" title="显示/隐藏概览面板" @click="showOverviewPanel = !showOverviewPanel">

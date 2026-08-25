@@ -26,7 +26,7 @@ static DOWNLOAD_CTRL_STORE: Lazy<RwLock<HashMap<String, Arc<DownloadControl>>>> 
     // pause/cancel 可能在任务启动前插入控制块；若任务从未启动则无人 Drop，造成泄漏。
     // 首次访问 store 时启动清理任务：每小时扫描一次，移除创建超过 12 小时的条目。
     tokio::spawn(async {
-        const INTERVAL_SECS: u64 = 1;
+        const INTERVAL_SECS: u64 = 60;
         const EXPIRE_MS: u64 = 12 * 60 * 60 * 1000;
         loop {
             tokio::time::sleep(Duration::from_secs(INTERVAL_SECS)).await;

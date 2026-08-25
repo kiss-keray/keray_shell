@@ -18,10 +18,10 @@ const props = defineProps<{
     };
     searchKeyword: string;
 }>();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const serverDataStore = useServerDataStore();
 const keyEventStore = useKeyEventStore();
 const { serverRootGroup } = storeToRefs(serverDataStore);
-const { isGroupModel, isRoot, isServerModel, serverDataChange, deleteServerRow, addServerGroup, findServerDataById, reloadServerData, exportServerData, importServerData } = serverDataStore;
 const { isMultiSelectKey } = storeToRefs(keyEventStore);
 const editName = ref<string | null>(null);
 /** 内联重命名输入框（分组 / 服务器互斥渲染，同一 ref） */
@@ -48,7 +48,7 @@ const isSelected = computed(() => props.selectedRawData.has(props.row));
 /** 是否只有当前一项 */
 const onlySelectThis = computed(() => props.selectedRawData.size === 1 && isSelected.value);
 /** 是否是分组 */
-const isGroup = computed(() => isGroupModel(props.row));
+const isGroup = computed(() => serverDataStore.isGroupModel(props.row));
 /** 分组模型 */
 const groupModel = computed(() => props.row as ServerGroupModel);
 /** 服务器模型 */
@@ -64,7 +64,7 @@ const groupEmpty = computed(() => {
 /** 路径 */
 const path = computed(() => {
     const nf = (g: ServerGroupModel): string => {
-        if (isRoot(g) || !g.parent) return "";
+        if (serverDataStore.isRoot(g) || !g.parent) return "";
         return `${nf(g.parent!)}/${g.name}`;
     };
     if (isGroup.value) {
@@ -90,9 +90,9 @@ const previewServers = computed(() => {
 const selectedServers = computed<ServerDataModel[]>(() => {
     const servers: Set<ServerDataModel> = new Set();
     props.selectedRawData.forEach((item) => {
-        if (isServerModel(item)) {
+        if (serverDataStore.isServerModel(item)) {
             servers.add(item);
-        } else if (isGroupModel(item)) {
+        } else if (serverDataStore.isGroupModel(item)) {
             treeForEach<ServerGroupModel>(item, (item: ServerGroupModel) => {
                 item.servers.forEach((server) => {
                     servers.add(server);
@@ -129,9 +129,9 @@ watch(editName, (data, old) => {
 function match(row: RowData) {
     const keyword = props.searchKeyword.trim().toLowerCase();
     let title = "";
-    if (isGroupModel(row)) {
+    if (serverDataStore.isGroupModel(row)) {
         title = row.name;
-    } else if (isServerModel(row)) {
+    } else if (serverDataStore.isServerModel(row)) {
         title = `${row.name} ${row.ip}:${row.port} ${row.user}`;
     }
     return title.toLowerCase().includes(keyword);
@@ -179,7 +179,7 @@ function openGroup() {
 // 过滤掉分组已经选择 分组下服务器也选中的服务器  只保留最上级选中的分组
 function groupHaveInList(group: ServerGroupModel | undefined, list: RowData[]) {
     if (!group) return false;
-    if (isRoot(group)) return false;
+    if (serverDataStore.isRoot(group)) return false;
     if (list.includes(group)) return true;
     return groupHaveInList(group.parent!, list);
 }
@@ -187,8 +187,8 @@ function groupHaveInList(group: ServerGroupModel | undefined, list: RowData[]) {
 /** 目标能否接收 list（不可移入自身或子孙分组，与粘贴校验一致）。 */
 function canTargetAcceptData(target: RowData, list: RowData[]) {
     if (!list.length) return false;
-    if (isServerModel(target) && groupHaveInList(target.group!, list)) return false;
-    if (isGroupModel(target) && groupHaveInList(target, list)) return false;
+    if (serverDataStore.isServerModel(target) && groupHaveInList(target.group!, list)) return false;
+    if (serverDataStore.isGroupModel(target) && groupHaveInList(target, list)) return false;
     return true;
 }
 
@@ -199,12 +199,12 @@ function canTargetAcceptData(target: RowData, list: RowData[]) {
 function getTopMoveData(list: RowData[]) {
     const topData: RowData[] = [];
     for (const item of list) {
-        if (isRoot(item)) continue;
-        if (isServerModel(item)) {
+        if (serverDataStore.isRoot(item)) continue;
+        if (serverDataStore.isServerModel(item)) {
             if (!groupHaveInList(item.group, list)) {
                 topData.push(item);
             }
-        } else if (isGroupModel(item)) {
+        } else if (serverDataStore.isGroupModel(item)) {
             if (!groupHaveInList(item.parent, list)) {
                 topData.push(item);
             }
@@ -232,9 +232,9 @@ function clickRow() {
             props.selectedRawData.add(props.row);
         }
     } else if (onlySelectThis.value) {
-        if (isServerModel(props.row)) {
+        if (serverDataStore.isServerModel(props.row)) {
             openServers([props.row]);
-        } else if (isGroupModel(props.row)) {
+        } else if (serverDataStore.isGroupModel(props.row)) {
             openGroup();
         }
         return;
@@ -256,7 +256,7 @@ function confirmName(blur: boolean = false) {
     try {
         if (!editName.value) return;
         props.row.name = editName.value;
-        serverDataChange(props.row);
+        serverDataStore.serverDataChange(props.row);
     } finally {
         editName.value = null;
     }
@@ -265,15 +265,15 @@ function confirmName(blur: boolean = false) {
 // 移动数据 如果move为false则表示复制
 // 先过滤掉分组已经选择 分组下服务器也选中的服务器  只保留最上级选中的分组
 function moveData(list: RowData[], target: RowData, move: boolean = false) {
-    const group = isServerModel(target) ? target.group : (target as ServerGroupModel);
+    const group = serverDataStore.isServerModel(target) ? target.group : (target as ServerGroupModel);
     if (!group) return;
     const topData = getTopMoveData(list);
-    const groupList = topData.filter((item) => isGroupModel(item));
-    const serverList = topData.filter((item) => isServerModel(item));
-    const nowGroup = isServerModel(target) ? target.group! : (target as ServerGroupModel);
+    const groupList = topData.filter((item) => serverDataStore.isGroupModel(item));
+    const serverList = topData.filter((item) => serverDataStore.isServerModel(item));
+    const nowGroup = serverDataStore.isServerModel(target) ? target.group! : (target as ServerGroupModel);
     const maxServerOrder = nowGroup.servers.reduce((max, item) => Math.max(max, item.order), 0);
     const maxGroupOrder = nowGroup.children.reduce((max, item) => Math.max(max, item.order), 0);
-    const targetIsGroup = isGroupModel(target);
+    const targetIsGroup = serverDataStore.isGroupModel(target);
     const __baseOrder = targetIsGroup ? maxServerOrder + 1 : target.order + 1; // 算出服务器的插入位置
     const __baseGroupOrder = targetIsGroup ? target.order + 1 : maxGroupOrder + 1;
     if (!move) {
@@ -327,7 +327,7 @@ function moveData(list: RowData[], target: RowData, move: boolean = false) {
     });
     nowGroup.children.push(...groupList);
     nowGroup.servers.push(...serverList);
-    serverDataChange(nowGroup);
+    serverDataStore.serverDataChange(nowGroup);
 }
 
 function copy() {
@@ -344,14 +344,14 @@ function paste(data: RowData) {
     moveData(props.copyData.data, data, props.copyData.type === "cut");
     // 剪切时 粘贴后清空剪切板数据
     if (props.copyData.type === "cut") props.copyData.data = [];
-    if (isGroupModel(data)) {
+    if (serverDataStore.isGroupModel(data)) {
         props.expandedGroupIds.add(data.id);
     }
 }
 
 /** 新建服务器统一进入 edit-server 窗口，保存后由窗口事件刷新当前树。 */
 function openCreateServerWindow(data: RowData) {
-    const group = isServerModel(data) ? data.group : (data as ServerGroupModel);
+    const group = serverDataStore.isServerModel(data) ? data.group : (data as ServerGroupModel);
     openOrFocusEditServerWindow({
         mode: "create",
         groupId: group?.id ?? serverRootGroup.value.id,
@@ -360,7 +360,7 @@ function openCreateServerWindow(data: RowData) {
 
 /** 编辑服务器统一进入 edit-server 窗口，避免在树行内塞复杂表单状态。 */
 function openEditServerWindow(data: RowData) {
-    if (!isServerModel(data)) return;
+    if (!serverDataStore.isServerModel(data)) return;
     openOrFocusEditServerWindow({
         mode: "edit",
         serverId: data.id,
@@ -380,7 +380,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
     }
     const dataHaveInCopyData = !notRow && !canTargetAcceptData(data, props.copyData.data);
     const sl = selectedServers.value.length;
-    const isRootRow = isRoot(data);
+    const isRootRow = serverDataStore.isRoot(data);
     const link = [
         {
             label: (isGroup || multiSelect) && !notRow ? `连接(${sl})` : "连接",
@@ -431,7 +431,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
             });
             if (!ok) return;
             props.selectedRawData.forEach((item) => {
-                deleteServerRow(item);
+                serverDataStore.deleteServerRow(item);
             });
         },
         disabled: isRootRow,
@@ -454,7 +454,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
                 {
                     label: "导出全部",
                     handler: () => {
-                        exportServerData([serverRootGroup.value])
+                        serverDataStore.exportServerData([serverRootGroup.value])
                             .finally(() => {
                                 showToast("导出成功", "success");
                             })
@@ -467,7 +467,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
                     label: "导出选中",
                     handler: () => {
                         if (props.selectedRawData.has(serverRootGroup.value)) {
-                            exportServerData([serverRootGroup.value])
+                            serverDataStore.exportServerData([serverRootGroup.value])
                                 .finally(() => {
                                     showToast("导出成功", "success");
                                 })
@@ -477,7 +477,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
                             return;
                         }
                         const list = getTopMoveData(Array.from(props.selectedRawData.values()));
-                        exportServerData(list)
+                        serverDataStore.exportServerData(list)
                             .finally(() => {
                                 showToast("导出成功", "success");
                             })
@@ -491,7 +491,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
         {
             label: "导入",
             handler: () => {
-                importServerData(isServerModel(data) ? data.group! : (data as ServerGroupModel));
+                serverDataStore.importServerData(serverDataStore.isServerModel(data) ? data.group! : (data as ServerGroupModel));
             },
         },
         {
@@ -547,7 +547,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
                     servers: [],
                 };
                 props.expandedGroupIds.add(group.id);
-                addServerGroup(newGroup, group);
+                serverDataStore.addServerGroup(newGroup, group);
             },
         },
         createServer,
@@ -555,7 +555,7 @@ function openContextMenu(e: MouseEvent, notRow: boolean = false) {
         ...sync,
     ];
     // 通过全局自定义事件交给布局层渲染通用上下文菜单（与具体菜单组件解耦）。
-    document.body.dispatchEvent(new CustomEvent(CustomMenusEventKey, { bubbles: true, detail: { menus: isGroupModel(data) ? groupMenus : serverMenus, target: e } }));
+    document.body.dispatchEvent(new CustomEvent(CustomMenusEventKey, { bubbles: true, detail: { menus: serverDataStore.isGroupModel(data) ? groupMenus : serverMenus, target: e } }));
 }
 
 function bodyKeydown(e: KeyboardEvent): boolean {
@@ -567,7 +567,7 @@ function bodyKeydown(e: KeyboardEvent): boolean {
         result = true;
     }
     // 只有跟节点监听剪切板操作
-    else if (isRoot(props.row)) {
+    else if (serverDataStore.isRoot(props.row)) {
         const ctrl = e.ctrlKey || e.metaKey;
         if (ctrl && e.key === "c") {
             copy();
@@ -598,13 +598,13 @@ onMounted(() => {
     if (!props.row.name) {
         props.row.name = "新建分组";
         editName.value = props.row.name;
-        serverDataChange(props.row);
+        serverDataStore.serverDataChange(props.row);
     }
-    if (isRoot(props.row)) {
+    if (serverDataStore.isRoot(props.row)) {
         getCurrentWindow()
             .listen<EditServerSavedPayload>(EDIT_SERVER_SAVED_EVENT, async ({ payload }) => {
-                await reloadServerData();
-                const server = findServerDataById(payload.editId);
+                await serverDataStore.reloadServerData();
+                const server = serverDataStore.findServerDataById(payload.editId);
                 if (server) {
                     props.selectedRawData.clear();
                     props.selectedRawData.add(server);
@@ -630,7 +630,7 @@ closeFuns.push(keyEventStore.register(bodyKeydown));
 const isDragPreviewTarget = ref<number>(0); // 0 不是目标 1 是目标并且可以移动 2 是目标但是不能移动
 const __injectKey = "server-tree-row-drag-state";
 const dargFlag = inject<Ref<boolean>>(__injectKey, ref(false));
-if (isRoot(props.row)) {
+if (serverDataStore.isRoot(props.row)) {
     provide(__injectKey, dargFlag);
 }
 function dragstart() {
@@ -668,7 +668,7 @@ function dragEnd() {
 
 <template>
     <template v-if="show">
-        <div v-if="isGroup" :draggable="!isRoot(row)" @dragstart.stop="dragstart" @dragover.stop="dragover" @dragleave.stop="dragleave" @drop.stop="drop" @dragend.stop="dragEnd">
+        <div v-if="isGroup" :draggable="!serverDataStore.isRoot(row)" @dragstart.stop="dragstart" @dragover.stop="dragover" @dragleave.stop="dragleave" @drop.stop="drop" @dragend.stop="dragEnd">
             <div
                 class="server-tree-row server-tree-group-row"
                 type="button"

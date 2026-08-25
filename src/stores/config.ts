@@ -1,6 +1,6 @@
 import { emit, listen } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 
 const CONFIG_CACHE_FILE = "config.json";
 
@@ -116,3 +116,8 @@ export const useConfigStore = defineStore("config", () => {
         loadFalg,
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useConfigStore, import.meta.hot));
+}

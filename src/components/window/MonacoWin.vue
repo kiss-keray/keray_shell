@@ -36,10 +36,11 @@ export type MonacoEditorFile = {
 } & MonacoEditorWindowPayload;
 
 const appStore = useAppStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const serverStore = useServerDataStore();
 const localStore = useLocalStore();
 const { windowInitData, loadingText } = toRefs(appStore) as { windowInitData: Ref<MonacoEditorWindowPayload | MonacoEditorWindowPayload[] | null>; loadingText: Ref<string> };
-const { findServerDataById, initTask } = serverStore;
+const { initTask } = serverStore;
 const { tempRootDir } = localStore;
 loadingText.value = "正在打开...";
 
@@ -148,7 +149,7 @@ async function payloadToFile(payload: MonacoEditorWindowPayload): Promise<Monaco
     };
     setTimeout(async () => {
         await initTask;
-        const server = findServerDataById(payload.serverId);
+        const server = serverStore.findServerDataById(payload.serverId);
         file.server = server;
         const remotePath = payload.linkPath || payload.path;
         const item = await oneFileRemoteItem(payload.serverId, remotePath);
@@ -186,7 +187,7 @@ async function fileSave(key: string) {
     const file = editFiles.value.find((f) => f.key === key);
     if (!file || file.loading || file.saving) return;
 
-    const server = findServerDataById(file.serverId);
+    const server = serverStore.findServerDataById(file.serverId);
     if (!server) return;
 
     // 从 Monaco model 读取最新内容，避免 reactive 对象与编辑器不同步

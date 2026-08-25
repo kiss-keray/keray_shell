@@ -215,7 +215,8 @@ const channelInstancesStore = useChannelInstancesStore();
 const { selectSessionId } = storeToRefs(channelInstancesStore);
 const { isMultiSelectKey, isShiftKey } = storeToRefs(keyEventStore);
 const { loadingText } = storeToRefs(appStore);
-const { addDownloadTask, addUploadTask } = useDownloadStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
+const downloadStore = useDownloadStore();
 
 const server = inject<ChannelInstance>(ChannelInstanceProvideKey)!;
 const activeItem = inject<Ref<FileStoreItem>>(SftpActiveItemKey)!;
@@ -460,7 +461,7 @@ async function confirmAddName(name: string, isDir: boolean = true) {
 
 function clickDownload(items: FileStoreItem[]) {
     loadingText.value = "下载任务生成中...";
-    const promise = addDownloadTask(
+    const promise = downloadStore.addDownloadTask(
         { sessionId: server.sessionId, serverId: serverId.value },
         items.map((v) => v.id),
     );
@@ -501,7 +502,7 @@ function uploadFiles(paths: string[], fileItem: RemoteFileItem = activeItem.valu
     }
     const remoteDir = dirItem.linkPath || dirItem.id;
     const bakActiveItem = activeItem.value;
-    addUploadTask({ sessionId: server.sessionId, serverId: serverId.value }, paths, remoteDir, () => {
+    downloadStore.addUploadTask({ sessionId: server.sessionId, serverId: serverId.value }, paths, remoteDir, () => {
         if (bakActiveItem === activeItem.value) {
             activeItem.value = dirItem;
         }

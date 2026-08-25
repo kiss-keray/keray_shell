@@ -1,6 +1,6 @@
 import { appDataDir, join, tempDir } from "@tauri-apps/api/path";
 import { BaseDirectory, exists, mkdir, readDir, readTextFile, remove, rename, writeTextFile } from "@tauri-apps/plugin-fs";
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 import { removeLocalIfAny } from "@/utils/localFsUtils";
 const DEFAULT_CACHE_FILE = "default.json";
 export const RUNTIME_CACHE_FILE = "runtime.json";
@@ -172,3 +172,8 @@ export const useLocalStore = defineStore("local", () => {
         listCacheFiles,
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useLocalStore, import.meta.hot));
+}

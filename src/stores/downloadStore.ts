@@ -415,7 +415,6 @@ export const useDownloadStore = defineStore("sftp-download", () => {
         while (await execRemote(serverId, `test -e ${shellSingleQuote(nextPath)} && echo 1`)) {
             nextPath = `${par}/${base}(${index})${ext}`;
             index += 1;
-            console.log("nextPath", nextPath);
         }
         return nextPath;
     }

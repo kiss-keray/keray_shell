@@ -19,8 +19,8 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue"]);
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const configStore = useConfigStore();
-const { changeConfig } = configStore;
 function onPointerDown(e) {
     e.preventDefault();
     if (e.button !== 0) return;
@@ -45,7 +45,7 @@ function onPointerDown(e) {
         document.body.style.userSelect = prevUserSelect;
         document.removeEventListener("mousemove", onMove);
         document.removeEventListener("mouseup", onUp);
-        changeConfig({});
+        configStore.changeConfig({});
     }
     document.addEventListener("mousemove", onMove);
     document.addEventListener("mouseup", onUp);

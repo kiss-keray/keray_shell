@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 import { emitTo, TauriEvent, type UnlistenFn } from "@tauri-apps/api/event";
 import { currentMonitor, getCurrentWindow } from "@tauri-apps/api/window";
 import { WEBVIEW_INIT_DATA_EVENT, type AppType } from "@/utils/window";
@@ -113,3 +113,8 @@ export const useAppStore = defineStore("app", () => {
         windowInitData, // 窗口初始化数据
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useAppStore, import.meta.hot));
+}

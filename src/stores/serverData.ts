@@ -1,7 +1,7 @@
 import { treeForEachAsync, treeForMap } from "@/utils";
 import { emitTo, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { defineStore, storeToRefs } from "pinia";
+import { acceptHMRUpdate, defineStore, storeToRefs } from "pinia";
 import { AES, ECB, PBKDF2, Utf8 } from "crypto-es";
 import { basename, join } from "@tauri-apps/api/path";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -604,3 +604,8 @@ export const useServerDataStore = defineStore("serverData", () => {
         downloadServerData,
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useServerDataStore, import.meta.hot));
+}

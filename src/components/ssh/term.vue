@@ -23,12 +23,12 @@ const props = withDefaults(
 );
 const appStore = useAppStore();
 const configStore = useConfigStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const serverDataStore = useServerDataStore();
 const keyEventStore = useKeyEventStore();
 const { emit, on } = useBus();
 const { showSftpPanel, showTermPanel, showAgentPanel } = storeToRefs(appStore);
 const { termFontSize, termLineHeight, termFontFamily, termScrollback, sftpPanelHeightPx, agentPanelWidthPx } = storeToRefs(configStore);
-const { serverDataChange } = serverDataStore;
 
 let termServer: TermServer;
 
@@ -309,7 +309,7 @@ onMounted(async () => {
     await termServer.connect(noSnapshot);
     if (noSnapshot) {
         props.server.server.lastConnectAt = Date.now();
-        serverDataChange(props.server.server);
+        serverDataStore.serverDataChange(props.server.server);
     }
     termServerEventListen();
     domEventListen();

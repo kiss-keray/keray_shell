@@ -11,11 +11,11 @@ import { EDIT_SERVER_SAVED_EVENT, type EditServerSavedPayload, type EditServerWi
 type AuthMethod = "password" | "privateKey";
 
 const appStore = useAppStore();
+// 通过 Store 实例调用 action，确保 HMR 后始终读取最新函数。
 const serverDataStore = useServerDataStore();
 const { windowInitData } = storeToRefs(appStore);
 const { homeDir } = appStore;
 const { privateKeyData, serverRootGroup } = storeToRefs(serverDataStore);
-const { findGroupById, addPrivateKey, addServerData, deletePrivateKey, findServerDataById, privateKeyChange, serverDataChange, reloadServerData } = serverDataStore;
 const currentWindow = getCurrentWindow();
 
 const payload = ref<EditServerWindowPayload | null>(null);
@@ -43,7 +43,7 @@ const modeTitle = computed(() => (payload.value?.mode === "edit" ? "编辑服务
 const submitText = computed(() => (payload.value?.mode === "edit" ? "保存修改" : "创建服务器"));
 const isEditingServer = computed(() => payload.value?.mode === "edit");
 const passwordPlaceholder = computed(() => (isEditingServer.value ? "留空则不修改密码" : "输入登录密码"));
-const currentGroup = computed(() => findGroupById(form.groupId) ?? serverRootGroup.value);
+const currentGroup = computed(() => serverDataStore.findGroupById(form.groupId) ?? serverRootGroup.value);
 const currentGroupName = computed(() => groupPath(currentGroup.value));
 const selectedPrivateKey = computed(() => privateKeyData.value.find((item) => item.id === form.prkId));
 const privateKeyEditorTitle = computed(() => (privateKeyEditorId.value ? "编辑私钥" : "新增私钥"));
@@ -84,10 +84,10 @@ function resetPrivateKeyForm() {
 
 async function applyPayload(data: EditServerWindowPayload) {
     payload.value = data;
-    await reloadServerData();
+    await serverDataStore.reloadServerData();
 
     if (data.mode === "edit" && data.serverId) {
-        const server = findServerDataById(data.serverId);
+        const server = serverDataStore.findServerDataById(data.serverId);
         if (!server) {
             showToast("服务器不存在", "error");
             return;
@@ -143,7 +143,7 @@ async function submit(connect: boolean = false) {
     if (!data || !payload.value) return null;
     let editId = payload.value.serverId ?? "";
     if (payload.value.mode === "edit" && payload.value.serverId) {
-        const server = findServerDataById(payload.value.serverId);
+        const server = serverDataStore.findServerDataById(payload.value.serverId);
         if (!server || !server.group) {
             showToast("服务器不存在", "error");
             return null;
@@ -163,7 +163,7 @@ async function submit(connect: boolean = false) {
             server.password = undefined;
             server.prkId = data.prkId;
         }
-        await serverDataChange(server);
+        await serverDataStore.serverDataChange(server);
     } else {
         const group = currentGroup.value;
         if (groupHasSameServerName(group, data.name)) {
@@ -171,7 +171,7 @@ async function submit(connect: boolean = false) {
             return null;
         }
         const maxOrder = group.servers.reduce((max, item) => Math.max(max, item.order), 0);
-        const serverData = await addServerData(
+        const serverData = await serverDataStore.addServerData(
             {
                 ...data,
                 groupId: group.id,
@@ -214,7 +214,7 @@ function savePrivateKey() {
         key.name = name;
         key.content = content;
         key.passphrase = privateKeyForm.passphrase;
-        privateKeyChange(key);
+        serverDataStore.privateKeyChange(key);
         showToast("私钥已更新", "success");
         return;
     }
@@ -222,7 +222,7 @@ function savePrivateKey() {
         showToast("私钥名称已存在", "error");
         return;
     }
-    addPrivateKey({ name, content, passphrase: privateKeyForm.passphrase });
+    serverDataStore.addPrivateKey({ name, content, passphrase: privateKeyForm.passphrase });
     form.prkId = privateKeyData.value.find((item) => item.name === name)?.id ?? form.prkId;
     resetPrivateKeyForm();
     showToast("私钥已新增", "success");
@@ -235,7 +235,7 @@ async function removePrivateKey(key: PrivateKeyModel) {
         danger: true,
     });
     if (!ok) return;
-    deletePrivateKey(key);
+    serverDataStore.deletePrivateKey(key);
     if (form.prkId === key.id) {
         form.prkId = "";
     }

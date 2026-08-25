@@ -1,6 +1,6 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { computed, ref, type Ref } from "vue";
-import { defineStore } from "pinia";
+import { acceptHMRUpdate, defineStore } from "pinia";
 import type { ServerDataModel, ServerRustModel } from "./serverData";
 import type { UnlistenFn } from "@tauri-apps/api/event";
 
@@ -168,3 +168,8 @@ export const useChannelInstancesStore = defineStore("channelInstances", () => {
         select,
     };
 });
+
+/** 开发环境下接收 Store 热更新，同时保留当前 Store 状态 */
+if (import.meta.hot) {
+    import.meta.hot.accept(acceptHMRUpdate(useChannelInstancesStore, import.meta.hot));
+}
