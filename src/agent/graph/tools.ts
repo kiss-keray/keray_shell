@@ -121,7 +121,7 @@ export function execCommandTool(modelManager: ModelConfigManager, idMap: Record<
                         signal,
                     );
                 }
-                return await silentExecCommand(serverIds, idMap, data, watchTimeMs, commandQueueItem, signal);
+                return await silentExecCommand(serverIds, data, watchTimeMs, commandQueueItem, signal);
             } finally {
                 if (signal?.aborted) {
                     commandQueueItem.status = "cancelled";
@@ -167,7 +167,6 @@ export function execCommandTool(modelManager: ModelConfigManager, idMap: Record<
  */
 async function silentExecCommand(
     serverIds: string[],
-    idMap: Record<string, string>,
     data: string,
     watchTimeMs: number,
     commandQueueItem: CommandQueueItem,
@@ -177,12 +176,12 @@ async function silentExecCommand(
     const serversx = serverIds.map((serverId) => {
         return {
             serverId,
-            signal: new AbortSignal(),
+            controller: new AbortController(),
         };
     });
     const cancelAll = () => {
         serversx.forEach((server) => {
-            server.signal.throwIfAborted();
+            server.controller.abort();
         });
     };
     // 超时取消所有命令
@@ -192,7 +191,7 @@ async function silentExecCommand(
     const results = await Promise.all(
         serversx.map(async (server) => {
             try {
-                const execResult = await execRemoteWithAbort(server.serverId, data, server.signal);
+                const execResult = await execRemoteWithAbort(server.serverId, data, server.controller.signal);
                 const result = mergeRemoteExecOutput(execResult);
                 if (execResult.exitCode !== null && execResult.exitCode !== undefined) {
                     return { serverId: server.serverId, result, status: execResult.exitCode === 0 ? "success" : "error" };
@@ -296,9 +295,6 @@ async function visualExecCommand(
                 continue;
             }
             const snapshot = snapshotTerminal(idMap[serverId]!, resultItem.lineCount);
-            console.log("data:::\n", data);
-            console.log("snapshot:::\n", snapshot);
-            console.log("\n\n\n");
             let result = null;
             if (useAiWatch) {
                 result = await runTerminalWatchAgent(

@@ -580,8 +580,9 @@ function usageMetadataAdd(a?: UsageMetadata, b?: UsageMetadata): UsageMetadata {
     function objAdd(a?: Record<string, unknown>, b?: Record<string, unknown>): Record<string, unknown> {
         if (!a || !b) return a || b || {};
         const ax = { ...a, ...b };
-        return Object.entries(ax).reduce((acc: Record<string, unknown>, [key, value]) => {
+        return Object.entries(ax).reduce((acc: Record<string, unknown>, [key, _]) => {
             type nt = number | undefined | null;
+            const value = a[key];
             if (typeof value === "number") {
                 acc[key] = ((value as nt) || 0) + ((b[key] as nt) ?? 0);
             } else if (typeof value === "object") {

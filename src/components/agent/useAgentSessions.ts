@@ -104,7 +104,7 @@ export function useAgentSessions(projectId: string) {
             .map((item) => listed.find((v) => v.id === item))
             .filter((item) => item !== undefined)
             .map(toTab);
-        records.value = saveOpendIds.map((item) => listed.find((v) => v.id === item)!);
+        records.value = saveOpendIds.map((item) => listed.find((v) => v.id === item)!).filter((item) => item);
         activeId.value = saveActiveId;
         if (records.value.length === 0) {
             const boot = createSession(projectId);
